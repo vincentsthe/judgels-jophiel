@@ -1,7 +1,26 @@
-@(message: String)
+@(title: String)
 
-@main("Welcome to Play") {
+@import org.iatoki.judgels.commons.views.html.layouts.main
 
-    @play20.welcome(message, style = "Java")
+@main(title) {
+
+    <div class="col-md-offset-2 col-md-4">
+        <div class="register-form">
+            <div class="title">@title</div>
+            @helper.form(action = org.iatoki.judgels.jophiel.controllers.routes.Application.index()) {
+                <input class="form-control" type="text" name="fullname" placeholder='dsfsfdsfsd'/>
+                <input class="form-control" type="text" name="username" placeholder="Username"/>
+                <input class="form-control" type="text" name="email" placeholder="Email"/>
+                <input class="form-control" type="password" name="password" placeholder='dgdfg'/>
+                <input class="form-control" type="password" name="repeat_password" placeholder='sdf'/>
+                <div class="captcha clearfix">
+                    <img class="captcha-img pull-left" src="" />
+                    <input class="verification form-control pull-right" type="text" name="repeat_password" placeholder='dfsdfdsf'/>
+                </div>
+                <a href="#">get a new code</a>
+                <button type="submit">Sign up</button>
+            }
+        </div>
+    </div>
 
 }
