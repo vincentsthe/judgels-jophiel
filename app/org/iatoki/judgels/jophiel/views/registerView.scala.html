@@ -1,0 +1,21 @@
+@(form: Form[org.iatoki.judgels.jophiel.RegisterForm])
+
+@import play.i18n.Messages
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-4", "col-xs-8") }
+
+<div class="col-xs-6 col-xs-offset-3">
+    <h2>Register</h2>
+    @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postRegister()) {
+
+        @helper.CSRF.formField
+
+        @b3.text(form("username"))
+        @b3.text(form("name"))
+        @b3.email(form("email"))
+        @b3.password(form("password"))
+        @b3.password(form("confirmPassword"))
+
+        @b3.submit('class -> "btn btn-primary") { @Messages.get("general.register") }
+    }
+</div>

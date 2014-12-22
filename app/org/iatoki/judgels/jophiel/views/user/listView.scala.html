@@ -1,0 +1,46 @@
+@(currentPage: org.iatoki.judgels.commons.Page[org.iatoki.judgels.jophiel.User], currentSortBy: String, currentOrder: String, currentFilter: String)
+
+@import play.i18n.Messages
+@import org.iatoki.judgels.commons.views.html.pagination.tablePagination
+@import org.iatoki.judgels.commons.views.html.pagination.tableHeader
+@import org.iatoki.judgels.commons.views.html.pagination.link
+
+@shortLink(newPage: scala.Long, newSortBy: String) = {@link(currentSortBy, true, currentOrder, currentFilter, newPage, newSortBy, org.iatoki.judgels.jophiel.controllers.routes.UserController.list)}
+
+<form class="form form-inline pull-right" action='@org.iatoki.judgels.jophiel.controllers.routes.UserController.list(currentPage.getPageIndex, "", "", "")' method="GET">
+    <input type="hidden" name="orderBy" value="@currentOrder"/>
+    <input type="hidden" name="sortBy" value="@currentSortBy"/>
+    <div class="form-group">
+        <input type="search" class="form-control" name="filterString" value="@currentFilter">
+    </div>
+    <button type="submit" class="btn btn-primary">@Messages.get("general.search")</button>
+</form>
+
+<div class="clearfix"></div>
+
+<div class="table-responsive">
+    <table class="table table-hover table-condensed table-bordered">
+        <tr>
+            @tableHeader("id", Messages.get("user.id"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "id"))
+            @tableHeader("usernameOrEmail", Messages.get("user.usernameOrEmail"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "usernameOrEmail"))
+            @tableHeader("name", Messages.get("user.name"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "name"))
+            @tableHeader("email", Messages.get("user.email"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "email"))
+            <th></th>
+        </tr>
+        @for(page <- currentPage.getList()) {
+            <tr>
+                <td>@page.getId</td>
+                <td>@page.getUsername</td>
+                <td>@page.getName</td>
+                <td>@page.getEmail</td>
+                <td class="text-center">
+                    <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.view(page.getId)"><span class="glyphicon glyphicon-search"></span></a>
+                    <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.update(page.getId)"><span class="glyphicon glyphicon-edit"></span></a>
+                    <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.delete(page.getId)" onclick="confirmLink ( event, this.href )"><span class="glyphicon glyphicon-remove"></span></a>
+                </td>
+            </tr>
+        }
+    </table>
+</div>
+
+@tablePagination(currentPage, currentSortBy, currentOrder, currentFilter, org.iatoki.judgels.jophiel.controllers.routes.UserController.list)

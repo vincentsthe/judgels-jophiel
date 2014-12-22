@@ -1,3 +1,4 @@
+import com.typesafe.sbt.less.Import.LessKeys
 import de.johoop.testngplugin.TestNGPlugin
 import de.johoop.jacoco4sbt.JacocoPlugin.jacoco
 
@@ -44,7 +45,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "less" % "1.7.5",
   "org.webjars" % "prettify" % "4-Mar-2013",
   "org.webjars" % "requirejs" % "2.1.15",
-  "com.puppycrawl.tools" % "checkstyle" % "6.1"
+  "com.puppycrawl.tools" % "checkstyle" % "6.1",
+  "com.nimbusds" % "c2id-server-sdk" % "2.0"
 )
 
 TestNGPlugin.testNGSettings
@@ -56,6 +58,12 @@ TestNGPlugin.testNGOutputDirectory := "target/testng"
 jacoco.settings
 
 parallelExecution in jacoco.Config := false
+
+LessKeys.compress := true
+
+LessKeys.optimization := 3
+
+LessKeys.verbose := true
 
 javaOptions in Test ++= Seq(
   "-Dconfig.resource=test.conf"

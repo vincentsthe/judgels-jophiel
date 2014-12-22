@@ -1,0 +1,13 @@
+@(form: Form[org.iatoki.judgels.jophiel.UserUpsertForm])
+@import org.iatoki.judgels.jophiel.UserUpsertForm
+
+@import play.i18n.Messages
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-2", "col-xs-10") }
+
+@b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postCreate()) {
+
+    @upsertView(form)
+
+    @b3.submit('class -> "btn btn-primary") { @Messages.get("general.create") }
+}

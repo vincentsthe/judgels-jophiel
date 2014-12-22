@@ -1,0 +1,34 @@
+@(form: Form[org.iatoki.judgels.jophiel.ClientCreateForm])
+
+@import play.i18n.Messages
+@import org.iatoki.judgels.jophiel.Scope
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-2", "col-xs-10") }
+
+@b3.form(org.iatoki.judgels.jophiel.controllers.routes.ClientController.postCreate()) {
+
+    @helper.CSRF.formField
+
+    @b3.text(form("name"))
+    @b3.select(form("applicationType"), Seq("WEB_SERVER" -> "Web Server", "ANDROID" -> "Android"))
+    @b3.text(form("redirectURIs"))
+    <div class="form-group" id="">
+        <label class="control-label col-xs-2">Scopes</label>
+        <div class="col-xs-10">
+            <div class="multi-checkbox-list">
+            @for(scope <- Scope.values().zipWithIndex) {
+                <div class="checkbox-wrap">
+                    <div class="checkbox">
+                        <label for="scopes_@scope._2">
+                            <input type="checkbox" id="scopes_@scope._2" name="scopes[@scope._2]" value="@scope._1">
+                            @scope._1
+                        </label>
+                    </div>
+                </div>
+            }
+            </div>
+        </div>
+    </div>
+
+    @b3.submit('class -> "btn btn-primary") { @Messages.get("general.create") }
+}

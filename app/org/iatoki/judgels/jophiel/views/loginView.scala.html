@@ -1,0 +1,26 @@
+@(form: Form[org.iatoki.judgels.jophiel.LoginForm])
+
+@import play.i18n.Messages
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-4", "col-xs-8") }
+
+<div class="col-xs-6 col-xs-offset-3">
+    <h2>Login</h2>
+
+    @if(form.hasGlobalErrors) {
+        @for(error <- form.globalErrors()) {
+            @error.message()
+        }
+    }
+
+    @b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postLogin()) {
+
+        @helper.CSRF.formField
+
+        @b3.text(form("usernameOrEmail"))
+        @b3.password(form("password"))
+
+        @b3.submit('class -> "btn btn-primary") { @Messages.get("general.login") }
+    }
+    Don't have account, <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.register()">Sign Up</a>
+</div>
