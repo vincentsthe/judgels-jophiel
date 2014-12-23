@@ -84,7 +84,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public AuthorizationCode generateAuthorizationCode(String clientJid, String URI, String responseType, String scope) {
+    public AuthorizationCode generateAuthorizationCode(String clientJid, String redirectURI, String responseType, String scope) {
         try {
             ClientModel clientModel = clientDao.findByJid(clientJid);
             List<RedirectURIModel> redirectURIs = redirectURIDao.findByClientJid(clientJid);
@@ -92,7 +92,7 @@ public class ClientServiceImpl implements ClientService {
             boolean check = true;
             int i = 0;
             List<String> enabledScopes = Arrays.asList(clientModel.scopes.split(","));
-            String[] scopes = scope.split(",");
+            String[] scopes = scope.split(" ");
             while ((check) && (i < scopes.length)) {
                 if (!enabledScopes.contains(scopes[i].toUpperCase())) {
                     check = false;
@@ -101,7 +101,7 @@ public class ClientServiceImpl implements ClientService {
                 }
             }
 
-            if ((responseType.equals("code")) && (redirectURIs.stream().filter(r -> r.redirectURI.equals(URI)).count() >= 1) && (check)) {
+            if ((responseType.equals("code")) && (redirectURIs.stream().filter(r -> r.redirectURI.equals(redirectURI)).count() >= 1) && (check)) {
                 AuthorizationCode authorizationCode = new AuthorizationCode();
 
                 AuthorizationCodeModel authorizationCodeModel = new AuthorizationCodeModel();
@@ -109,7 +109,7 @@ public class ClientServiceImpl implements ClientService {
                 authorizationCodeModel.userJid = Utilities.getUserIdFromSession();
                 authorizationCodeModel.code = authorizationCode.toString();
                 authorizationCodeModel.expireTime = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(2);
-                authorizationCodeModel.redirectURI = URI;
+                authorizationCodeModel.redirectURI = redirectURI;
                 authorizationCodeModel.scopes = scope;
 
                 authorizationCodeDao.persist(authorizationCodeModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
@@ -118,7 +118,7 @@ public class ClientServiceImpl implements ClientService {
             } else {
                 return null;
             }
-        } catch(NoResultException e) {
+        } catch (NoResultException e) {
             e.printStackTrace();
             return null;
         }
@@ -165,7 +165,7 @@ public class ClientServiceImpl implements ClientService {
             byte[] encoded = Base64.decodeBase64("MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDCdoHMwrsIiggV6hp7Yf4FZaKqkAeHuk5WAbBzuIDB40gQKKimwfKk+yaR6UKOOduGM3k4eDbaZy3n8NCkWnAvVIwt4rus7LhDhVUNrJGQU9BdK59x+wvhUtMcE2eP0V3hjeJmqzhoJxqLIAcnksU2Z3mmAkgbXecV16fCgo8G1Ny+Ai+FY2ZefRK+LF0u9rGQx5tA6XuQOUWvPJb45YlzmEDLwEMw7nOqwnnN6mSj9cKVfDX33ayvZY0aenEn7SMtrAkia5gBKGKDfN2KECX6OD9joatmNW0b+z9RtAXJvrWtkXhGaZR9+YBLBITllAtgkWMLWCCnDDOM4lNLoj9XAgMBAAECggEACPCz1Psa6DCYYJGLuCJwMEVU7iyC/B13noKjXx6bZM6TMJL99fSyuB0Hz+t+cNV+HzRcnVkBhJb7yE8M+JFj2Pk1HKLw5+lWK1yE5YUKiC0iRjZMNUxKZoiNRhwqRbVlcIo6X2f9xuQNV1oYmhwoTvEA6b3vHLr7dcidYNbpxnGMQZs035um6zShIFNqrmM4poQZZE9NbltOX1k/qxD0+OAAuemU3Y7WzH1XvTwXy7qU8O0PCktTe+QBSJZUPxy1nZwKbF1vdad39KfCjvxemkdUdzuPvlMfi+dsDXjAz71ukUO0r1+4n+l9DYOI8Pq6oI5ZGcwmz5B/Fd8RpPb2gQKBgQDy1o9HCnkL4rw3Wg6hkM46dlPPT7Mm5p+GrNbRxd6bX0wRpXivcasT60u4UZnG7gVVjpqour6tbyRaVNr5F6Cxg6YXDnZKwa8Jz64oUduQqMw7FvGtBG8+NR/26wI53Xoe1nq50ugkq3V3l9TtW9p0ccrsELP7Nu6Fmd4aa9AMFwKBgQDNALqptObo+2jODiuU4+w4wt/hUZa0BbmhjkhJNVpczZvUlXkLtMCq1ESxH4wWzRpBvIlcWpKnSyxzuFD5rtjqHh1kqVbFjQ2k0hRGs5S2vT+aC5oTH4M92nRPCZbWq+26jSVcvAgFj+S6MSOofMDYVOfM3dEKhzNKVsChjGsuwQKBgBCccrKWWc9hVCSpKWUN5b2ECJmexw97KSBqREuXMHIKY8a1PfsqWFyFdOmH03ATKhQ/K/8svwxYFPGE6nGtlxVtfvgGyjq04wdVyIEDkHRlx4qnOCLwsbdcpPIcA0v4BXmEjGKXtb+EZwWmQi92YAwlGI9rWRRvHoPPEa1XAKVDAoGALWgf8D71dl1ZVWqmFJB3Xgsr84hSzQUHnNUbBbwfi7au8WM6MHGUy0HBBUpriRFc43qTIjWdjhiEfA0zQlqMCS8qa4VmhtM7VmqBuzdDlUZNtB0lv16XfzfH00nYcywZt9xTjjrHvBOnIeaIc2VOgZwsy5/GEYLoxWp5uE6V3wECgYALHhV4lk4bH1Gm2S7Od8yPix62dbwoFMjfFiI4Y3dCu7Um93MS34OSWo2pixb9w+1Y/ZNNfrq+tEhUSsJKd3MvE8oskUR4bo4yMQJZC1+FSNUpehjz1Z9XiqJMpsl9GGYXo+nzU27PwlZdorgd8uiH30sNLcm9VG3e72hbQ0EpmQ==".getBytes("utf-8"));
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
             KeyFactory kf = KeyFactory.getInstance("RSA");
-            RSAPrivateKey privateKey = (RSAPrivateKey)kf.generatePrivate(keySpec);
+            RSAPrivateKey privateKey = (RSAPrivateKey) kf.generatePrivate(keySpec);
 
             JWSSigner signer = new RSASSASigner(privateKey);
 
@@ -190,7 +190,7 @@ public class ClientServiceImpl implements ClientService {
             idTokenModel.clientJid = clientId;
             idTokenModel.code = code;
             idTokenModel.redeemed = false;
-            idTokenModel.token = signedJWT.toString();
+            idTokenModel.token = signedJWT.serialize();
 
             idTokenDao.persist(idTokenModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
 
@@ -287,7 +287,7 @@ public class ClientServiceImpl implements ClientService {
     public void updateClient(long clientId, String name, List<String> scopes, List<String> redirectURIs) {
         ClientModel clientModel = clientDao.findById(clientId);
         clientModel.name = name;
-        List<String> scopeList = scopes.stream().filter(s -> (Scope.valueOf(s) != null)).collect(Collectors.toList());
+        List<String> scopeList = scopes.stream().filter(s -> ((s != null) && (Scope.valueOf(s) != null))).collect(Collectors.toList());
         clientModel.scopes = StringUtils.join(scopeList, ",");
 
         clientDao.edit(clientModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());

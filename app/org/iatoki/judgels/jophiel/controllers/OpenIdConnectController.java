@@ -1,7 +1,6 @@
 package org.iatoki.judgels.jophiel.controllers;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
@@ -26,9 +25,6 @@ import org.iatoki.judgels.jophiel.JophielUtilities;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RefreshToken;
 import org.iatoki.judgels.jophiel.UserService;
-import org.iatoki.judgels.jophiel.models.domains.AccessTokenModel;
-import org.iatoki.judgels.jophiel.models.domains.IdTokenModel;
-import org.iatoki.judgels.jophiel.models.domains.RefreshTokenModel;
 import org.iatoki.judgels.jophiel.views.html.authView;
 import org.iatoki.judgels.jophiel.views.html.loginView;
 import play.cache.Cache;
@@ -54,8 +50,8 @@ public class OpenIdConnectController extends Controller {
         this.clientService = clientService;
     }
 
-    private Result showLogin(Form<LoginForm> form) {
-        LazyHtml content = new LazyHtml(loginView.render(form));
+    private Result showLogin(Form<LoginForm> form, String continueUrl) {
+        LazyHtml content = new LazyHtml(loginView.render(form, continueUrl));
         content.appendLayout(c -> noSidebarLayout.render(c));
         content.appendLayout(c -> headerFooterLayout.render(c));
         content.appendLayout(c -> baseLayout.render("TODO", c));
@@ -65,23 +61,21 @@ public class OpenIdConnectController extends Controller {
     @Transactional
     public Result login(String continueUrl) {
         Form<LoginForm> form = Form.form(LoginForm.class);
-
-        return showLogin(form);
+        return showLogin(form, continueUrl);
     }
 
     @Transactional
     public Result postLogin(String continueUrl) {
         Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
-
         if (form.hasErrors()) {
-            return showLogin(form);
+            return showLogin(form, continueUrl);
         } else {
             LoginForm loginData = form.get();
             if (userService.login(loginData.usernameOrEmail, loginData.password)) {
                 return redirect(continueUrl);
             } else {
                 form.reject("Username or email not found or password do not match");
-                return showLogin(form);
+                return showLogin(form, continueUrl);
             }
         }
     }
@@ -150,6 +144,7 @@ public class OpenIdConnectController extends Controller {
         }
     }
 
+    @Transactional
     public Result token() {
         DynamicForm form = DynamicForm.form().bindFromRequest();
 
@@ -177,7 +172,7 @@ public class OpenIdConnectController extends Controller {
                 Client client = clientService.findClientByJid(clientId);
 
                 if (client.getSecret().equals(clientSecret)) {
-                    String[] scopes = scope.split(",");
+                    String[] scopes = scope.split(" ");
                     int i = 0;
                     ImmutableSet.Builder<String> addedSet = ImmutableSet.builder();
                     while (i < scopes.length) {
@@ -193,12 +188,12 @@ public class OpenIdConnectController extends Controller {
 
                         if (!accessToken.isRedeemed()) {
                             result.put("access_token", accessToken.getToken());
-                            if (client.getScopes().contains("offline_access")) {
+                            if (client.getScopes().contains("OFFLINE_ACCESS")) {
                                 RefreshToken refreshToken = clientService.findRefreshTokenByCode(code);
                                 result.put("refresh_token", refreshToken.getToken());
                                 clientService.redeemRefreshTokenById(refreshToken.getId());
                             }
-                            if (client.getScopes().contains("openid")) {
+                            if (client.getScopes().contains("OPENID")) {
                                 IdToken idToken = clientService.findIdTokenByCode(code);
                                 result.put("id_token", idToken.getToken());
                                 clientService.redeemIdTokenById(idToken.getId());

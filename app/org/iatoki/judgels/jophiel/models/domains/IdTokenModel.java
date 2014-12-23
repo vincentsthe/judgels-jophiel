@@ -2,6 +2,7 @@ package org.iatoki.judgels.jophiel.models.domains;
 
 import org.iatoki.judgels.commons.models.domains.AbstractModel;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -21,6 +22,7 @@ public class IdTokenModel extends AbstractModel {
 
     public String clientJid;
 
+    @Column(columnDefinition = "text")
     public String token;
 
     public boolean redeemed;
