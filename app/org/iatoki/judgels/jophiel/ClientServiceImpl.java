@@ -269,7 +269,7 @@ public class ClientServiceImpl implements ClientService {
         clientModel.name = name;
         clientModel.secret = JophielUtilities.hashMD5(UUID.randomUUID().toString());
         clientModel.applicationType = applicationType;
-        List<String> scopeList = scopes.stream().filter(s -> (Scope.valueOf(s) != null)).collect(Collectors.toList());
+        List<String> scopeList = scopes.stream().filter(s -> ((s != null) && (Scope.valueOf(s) != null))).collect(Collectors.toList());
         clientModel.scopes = StringUtils.join(scopeList, ",");
 
         clientDao.persist(clientModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
