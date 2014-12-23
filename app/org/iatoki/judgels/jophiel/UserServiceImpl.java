@@ -3,7 +3,7 @@ package org.iatoki.judgels.jophiel;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.iatoki.judgels.commons.Page;
-import org.iatoki.judgels.commons.helpers.Utilities;
+import org.iatoki.judgels.commons.Utilities;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import org.iatoki.judgels.jophiel.models.domains.EmailModel;

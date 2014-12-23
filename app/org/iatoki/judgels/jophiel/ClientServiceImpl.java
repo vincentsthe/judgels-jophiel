@@ -14,7 +14,7 @@ import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.commons.codec.binary.Base64;
 import org.eclipse.jgit.util.StringUtils;
 import org.iatoki.judgels.commons.Page;
-import org.iatoki.judgels.commons.helpers.Utilities;
+import org.iatoki.judgels.commons.Utilities;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AuthorizationCodeDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.ClientDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.IdTokenDao;
