@@ -31,6 +31,8 @@ import play.cache.Cache;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
+import play.filters.csrf.AddCSRFToken;
+import play.filters.csrf.RequireCSRFCheck;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -58,12 +60,13 @@ public class OpenIdConnectController extends Controller {
         return lazyOk(content);
     }
 
-    @Transactional
+    @AddCSRFToken
     public Result login(String continueUrl) {
         Form<LoginForm> form = Form.form(LoginForm.class);
         return showLogin(form, continueUrl);
     }
 
+    @RequireCSRFCheck
     @Transactional
     public Result postLogin(String continueUrl) {
         Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();

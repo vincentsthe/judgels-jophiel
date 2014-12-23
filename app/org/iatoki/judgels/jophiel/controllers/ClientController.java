@@ -21,6 +21,8 @@ import org.iatoki.judgels.jophiel.views.html.client.viewView;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
+import play.filters.csrf.AddCSRFToken;
+import play.filters.csrf.RequireCSRFCheck;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -54,12 +56,14 @@ public class ClientController extends Controller {
         return lazyOk(content);
     }
 
+    @AddCSRFToken
     public Result create() {
         Form<ClientCreateForm> form = Form.form(ClientCreateForm.class);
 
         return showCreate(form);
     }
 
+    @RequireCSRFCheck
     @Transactional
     public Result postCreate() {
         Form<ClientCreateForm> form = Form.form(ClientCreateForm.class).bindFromRequest();
@@ -99,6 +103,7 @@ public class ClientController extends Controller {
         return lazyOk(content);
     }
 
+    @AddCSRFToken
     @Transactional
     public Result update(long clientId) {
         Client client = clientService.findClientById(clientId);

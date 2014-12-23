@@ -22,6 +22,8 @@ import org.iatoki.judgels.jophiel.User;
 import org.iatoki.judgels.jophiel.UserService;
 import play.data.Form;
 import play.db.jpa.Transactional;
+import play.filters.csrf.AddCSRFToken;
+import play.filters.csrf.RequireCSRFCheck;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -53,6 +55,7 @@ public class UserController extends Controller {
         return lazyOk(content);
     }
 
+    @AddCSRFToken
     public Result create() {
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class);
 
@@ -98,6 +101,7 @@ public class UserController extends Controller {
         return lazyOk(content);
     }
 
+    @AddCSRFToken
     @Transactional
     public Result update(long userId) {
         User user = userService.findUserById(userId);
@@ -107,6 +111,7 @@ public class UserController extends Controller {
         return showUpdate(form, userId);
     }
 
+    @RequireCSRFCheck
     @Transactional
     public Result postUpdate(long userId) {
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).bindFromRequest();
@@ -152,12 +157,14 @@ public class UserController extends Controller {
         return lazyOk(content);
     }
 
+    @AddCSRFToken
     public Result register() {
         Form<RegisterForm> form = Form.form(RegisterForm.class);
 
         return showRegister(form);
     }
 
+    @RequireCSRFCheck
     @Transactional
     public Result postRegister() {
         Form<RegisterForm> form = Form.form(RegisterForm.class).bindFromRequest();
