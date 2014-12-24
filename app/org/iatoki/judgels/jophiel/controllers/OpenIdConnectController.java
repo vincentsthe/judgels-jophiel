@@ -2,7 +2,6 @@ package org.iatoki.judgels.jophiel.controllers;
 
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableSet;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.ResponseType;
@@ -13,6 +12,7 @@ import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.views.html.layouts.baseLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
@@ -39,8 +39,11 @@ import play.mvc.Http;
 import play.mvc.Result;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class OpenIdConnectController extends Controller {
 
@@ -160,11 +163,11 @@ public class OpenIdConnectController extends Controller {
 
             if ((authorizationCode.getRedirectURI().equals(redirectUri)) && (!authorizationCode.isExpired())) {
                 String scope = form.get("scope");
-                String clientId = null;
-                String clientSecret = null;
+                String clientId;
+                String clientSecret;
 
                 if (request().getHeader("Authorization") != null) {
-                    String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization"))).split(":");
+                    String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
                     clientId = userPass[0];
                     clientSecret = userPass[1];
                 } else {
@@ -175,17 +178,12 @@ public class OpenIdConnectController extends Controller {
                 Client client = clientService.findClientByJid(clientId);
 
                 if (client.getSecret().equals(clientSecret)) {
-                    String[] scopes = scope.split(" ");
-                    int i = 0;
-                    ImmutableSet.Builder<String> addedSet = ImmutableSet.builder();
-                    while (i < scopes.length) {
-                        if ((!"".equals(scopes[i])) && (!client.getScopes().contains(scopes[i]))) {
-                            addedSet.add(scopes[i]);
-                        } else {
-                            ++i;
-                        }
-                    }
-                    if (addedSet.build().size() == 0) {
+
+                    Set<String> addedSet = Arrays.asList(scope.split(" ")).stream()
+                            .filter(s -> (!"".equals(s)) && (!client.getScopes().contains(StringUtils.upperCase(s))))
+                            .collect(Collectors.toSet());
+
+                    if (addedSet.isEmpty()) {
                         ObjectNode result = Json.newObject();
                         AccessToken accessToken = clientService.findAccessTokenByCode(code);
 
