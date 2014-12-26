@@ -2,7 +2,7 @@ package org.iatoki.judgels.jophiel;
 
 import org.iatoki.judgels.jophiel.models.domains.IdTokenModel;
 
-public class IdToken {
+public final class IdToken {
 
     private long id;
 

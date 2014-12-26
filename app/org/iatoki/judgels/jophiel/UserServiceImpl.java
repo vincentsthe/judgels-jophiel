@@ -2,8 +2,8 @@ package org.iatoki.judgels.jophiel;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.Page;
-import org.iatoki.judgels.commons.Utilities;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import org.iatoki.judgels.jophiel.models.domains.EmailModel;
@@ -14,7 +14,7 @@ import play.mvc.Http;
 import javax.persistence.NoResultException;
 import java.util.List;
 
-public class UserServiceImpl implements UserService {
+public final class UserServiceImpl implements UserService {
 
     private UserDao userDao;
     private EmailDao emailDao;
@@ -56,12 +56,12 @@ public class UserServiceImpl implements UserService {
         userModel.name = name;
         userModel.password = JophielUtilities.hashSHA256(password);
 
-        userDao.persist(userModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        userDao.persist(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         EmailModel emailModel = new EmailModel(email);
         emailModel.userJid = userModel.jid;
 
-        emailDao.persist(emailModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        emailDao.persist(emailModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
     }
 
     @Override
@@ -73,11 +73,11 @@ public class UserServiceImpl implements UserService {
         userModel.name = name;
         userModel.password = JophielUtilities.hashSHA256(password);
 
-        userDao.edit(userModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         emailModel.email = email;
 
-        emailDao.edit(emailModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        emailDao.edit(emailModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
     }
 
     @Override

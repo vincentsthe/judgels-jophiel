@@ -4,18 +4,28 @@
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-4", "col-xs-8") }
 
-<div class="col-xs-6 col-xs-offset-3">
-    <h2>Register</h2>
-    @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postRegister()) {
+<div class="row">
+    <div class="col-md-12 primary-content-breadcrumb">
+        <ol class="breadcrumb">
 
-        @helper.CSRF.formField
+        </ol>
+    </div>
+</div>
 
-        @b3.text(form("username"))
-        @b3.text(form("name"))
-        @b3.email(form("email"))
-        @b3.password(form("password"))
-        @b3.password(form("confirmPassword"))
+<div class="row login-content">
+    <div class="col-md-6 col-md-offset-3">
+        <h2>@Messages.get("register.heading.register")</h2>
+        @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postRegister()) {
 
-        @b3.submit('class -> "btn btn-primary") { @Messages.get("general.register") }
-    }
+            @helper.CSRF.formField
+
+            @b3.text(form("username"), '_label -> Messages.get("user.field.username"))
+            @b3.text(form("name"), '_label -> Messages.get("user.field.name"))
+            @b3.email(form("email"), '_label -> Messages.get("user.field.email"))
+            @b3.password(form("password"), '_label -> Messages.get("user.field.password"))
+            @b3.password(form("confirmPassword"), '_label -> Messages.get("user.field.confirmPassword"))
+
+            @b3.submit('class -> "btn btn-primary") { @Messages.get("register.register") }
+        }
+    </div>
 </div>

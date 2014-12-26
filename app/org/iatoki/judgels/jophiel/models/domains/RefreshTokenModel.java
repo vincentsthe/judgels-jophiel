@@ -9,7 +9,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "jophiel_refresh_token")
-public class RefreshTokenModel extends AbstractModel {
+public final class RefreshTokenModel extends AbstractModel {
 
     @Id
     @GeneratedValue

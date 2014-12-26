@@ -4,23 +4,33 @@
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-4", "col-xs-8") }
 
-<div class="col-xs-6 col-xs-offset-3">
-    <h2>Login</h2>
+<div class="row">
+    <div class="col-md-12 primary-content-breadcrumb">
+        <ol class="breadcrumb">
 
-    @if(form.hasGlobalErrors) {
-        @for(error <- form.globalErrors()) {
-            @error.message()
+        </ol>
+    </div>
+</div>
+
+<div class="row login-content">
+    <div class="col-md-6 col-md-offset-3">
+        <h2>@Messages.get("login.heading.login")</h2>
+
+        @if(form.hasGlobalErrors) {
+            @for(error <- form.globalErrors()) {
+                @error.message()
+            }
         }
-    }
 
-    @b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postLogin(continueUrl)) {
+        @b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postLogin(continueUrl)) {
 
-        @helper.CSRF.formField
+            @helper.CSRF.formField
 
-        @b3.text(form("usernameOrEmail"))
-        @b3.password(form("password"))
+            @b3.text(form("usernameOrEmail"), '_label -> Messages.get("user.field.usernameOrEmail"))
+            @b3.password(form("password"), '_label -> Messages.get("user.field.password"))
 
-        @b3.submit('class -> "btn btn-primary") { @Messages.get("general.login") }
-    }
-    Don't have account, <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.register()">Sign Up</a>
+            @b3.submit('class -> "btn btn-primary") { @Messages.get("login.login") }
+        }
+        @Messages.get("login.text.dontHaveAccount") <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.register()">@Messages.get("login.register")</a>
+    </div>
 </div>

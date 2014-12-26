@@ -3,16 +3,16 @@
 @import play.i18n.Messages
 @import org.iatoki.judgels.jophiel.Scope
 
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-2", "col-xs-10") }
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-2", "col-md-10") }
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.ClientController.postUpdate(modelId)) {
 
     @helper.CSRF.formField
 
-    @b3.text(form("name"))
-    @b3.text(form("redirectURIs"))
+    @b3.text(form("name"), '_label -> Messages.get("client.field.name"))
+    @b3.text(form("redirectURIs"), '_label -> Messages.get("client.field.redirectURIs"))
     <div class="form-group" id="">
-        <label class="control-label col-xs-2">Scopes</label>
+        <label class="control-label col-xs-2">@Messages.get("client.field.scopes")</label>
         <div class="col-xs-10">
             <div class="multi-checkbox-list">
             @for(scope <- Scope.values().zipWithIndex) {
@@ -29,5 +29,5 @@
         </div>
     </div>
 
-    @b3.submit('class -> "btn btn-primary") { @Messages.get("general.update") }
+    @b3.submit('class -> "btn btn-primary") { @Messages.get("commons.update") }
 }

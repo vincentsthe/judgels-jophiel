@@ -1,13 +1,12 @@
 @(user: org.iatoki.judgels.jophiel.User)
-@import org.iatoki.judgels.jophiel.UserUpsertForm
 
 @import play.i18n.Messages
 
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-2", "col-xs-10") }
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
 
 @b3.form(play.api.mvc.Call("GET", "#")) {
 
-    @b3.static(Messages.get("general.field.id")) { @user.getId }
+    @b3.static(Messages.get("commons.field.id")) { @user.getId }
     @b3.static(Messages.get("user.field.name")) { @user.getName }
     @b3.static(Messages.get("user.field.usernameOrEmail")) { @user.getUsername }
     @b3.static(Messages.get("user.field.email")) { @user.getEmail }

@@ -1,13 +1,12 @@
-@(form: Form[org.iatoki.judgels.jophiel.UserUpsertForm])
-@import org.iatoki.judgels.jophiel.UserUpsertForm
+@(form: Form[org.iatoki.judgels.jophiel.UserUpsertForm])(implicit fieldConstructor: b3.B3FieldConstructor)
 
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-2", "col-xs-10") }
+@import play.i18n.Messages
 
 @helper.CSRF.formField
 
-@b3.text(form("username"))
-@b3.text(form("name"))
-@b3.email(form("email"))
-@b3.password(form("password"))
-@b3.password(form("confirmPassword"))
+@b3.text(form("username"), '_label -> Messages.get("user.field.username"))
+@b3.text(form("name"), '_label -> Messages.get("user.field.name"))
+@b3.email(form("email"), '_label -> Messages.get("user.field.email"))
+@b3.password(form("password"), '_label -> Messages.get("user.field.password"))
+@b3.password(form("confirmPassword"), '_label -> Messages.get("user.field.confirmPassword"))
 

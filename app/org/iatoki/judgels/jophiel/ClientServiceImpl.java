@@ -13,19 +13,19 @@ import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.commons.codec.binary.Base64;
 import org.eclipse.jgit.util.StringUtils;
+import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.Page;
-import org.iatoki.judgels.commons.Utilities;
+import org.iatoki.judgels.jophiel.models.daos.interfaces.AccessTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AuthorizationCodeDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.ClientDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.IdTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RedirectURIDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.AccessTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RefreshTokenDao;
+import org.iatoki.judgels.jophiel.models.domains.AccessTokenModel;
 import org.iatoki.judgels.jophiel.models.domains.AuthorizationCodeModel;
 import org.iatoki.judgels.jophiel.models.domains.ClientModel;
 import org.iatoki.judgels.jophiel.models.domains.IdTokenModel;
 import org.iatoki.judgels.jophiel.models.domains.RedirectURIModel;
-import org.iatoki.judgels.jophiel.models.domains.AccessTokenModel;
 import org.iatoki.judgels.jophiel.models.domains.RefreshTokenModel;
 
 import javax.persistence.NoResultException;
@@ -44,7 +44,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class ClientServiceImpl implements ClientService {
+public final class ClientServiceImpl implements ClientService {
 
     private ClientDao clientDao;
     private RedirectURIDao redirectURIDao;
@@ -106,13 +106,13 @@ public class ClientServiceImpl implements ClientService {
 
                 AuthorizationCodeModel authorizationCodeModel = new AuthorizationCodeModel();
                 authorizationCodeModel.clientJid = clientJid;
-                authorizationCodeModel.userJid = Utilities.getUserIdFromSession();
+                authorizationCodeModel.userJid = IdentityUtils.getUserJid();
                 authorizationCodeModel.code = authorizationCode.toString();
                 authorizationCodeModel.expireTime = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(2);
                 authorizationCodeModel.redirectURI = redirectURI;
                 authorizationCodeModel.scopes = scope;
 
-                authorizationCodeDao.persist(authorizationCodeModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+                authorizationCodeDao.persist(authorizationCodeModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
                 return authorizationCode;
             } else {
@@ -137,7 +137,7 @@ public class ClientServiceImpl implements ClientService {
         accessTokenModel1.scopes = scope;
         accessTokenModel1.token = accessToken.getValue();
 
-        accessTokenDao.persist(accessTokenModel1, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        accessTokenDao.persist(accessTokenModel1, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         return accessTokenModel1.token;
     }
@@ -154,7 +154,7 @@ public class ClientServiceImpl implements ClientService {
         refreshTokenModel1.scopes = scope;
         refreshTokenModel1.token = refreshToken.getValue();
 
-        refreshTokenDao.persist(refreshTokenModel1, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        refreshTokenDao.persist(refreshTokenModel1, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         return refreshTokenModel1.token;
     }
@@ -192,7 +192,7 @@ public class ClientServiceImpl implements ClientService {
             idTokenModel.redeemed = false;
             idTokenModel.token = signedJWT.serialize();
 
-            idTokenDao.persist(idTokenModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+            idTokenDao.persist(idTokenModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | JOSEException | UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -236,7 +236,7 @@ public class ClientServiceImpl implements ClientService {
         accessTokenModel.redeemed = true;
         accessTokenModel.expireTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(14);
 
-        accessTokenDao.edit(accessTokenModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        accessTokenDao.edit(accessTokenModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         return TimeUnit.DAYS.toMillis(14);
     }
@@ -249,7 +249,7 @@ public class ClientServiceImpl implements ClientService {
         }
         refreshTokenModel.redeemed = true;
 
-        refreshTokenDao.edit(refreshTokenModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        refreshTokenDao.edit(refreshTokenModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
     }
 
     @Override
@@ -260,7 +260,7 @@ public class ClientServiceImpl implements ClientService {
         }
         idTokenModel.redeemed = true;
 
-        idTokenDao.edit(idTokenModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        idTokenDao.edit(idTokenModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
     }
 
     @Override
@@ -272,14 +272,14 @@ public class ClientServiceImpl implements ClientService {
         List<String> scopeList = scopes.stream().filter(s -> ((s != null) && (Scope.valueOf(s) != null))).collect(Collectors.toList());
         clientModel.scopes = StringUtils.join(scopeList, ",");
 
-        clientDao.persist(clientModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        clientDao.persist(clientModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         for (String redirectURI : redirectURIs) {
             RedirectURIModel redirectURIModel = new RedirectURIModel();
             redirectURIModel.redirectURI = redirectURI;
             redirectURIModel.clientJid = clientModel.jid;
 
-            redirectURIDao.persist(redirectURIModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+            redirectURIDao.persist(redirectURIModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
         }
     }
 
@@ -290,7 +290,7 @@ public class ClientServiceImpl implements ClientService {
         List<String> scopeList = scopes.stream().filter(s -> ((s != null) && (Scope.valueOf(s) != null))).collect(Collectors.toList());
         clientModel.scopes = StringUtils.join(scopeList, ",");
 
-        clientDao.edit(clientModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+        clientDao.edit(clientModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         List<RedirectURIModel> oldRedirectURIs = redirectURIDao.findByClientJid(clientModel.jid);
         for (RedirectURIModel redirectURIModel : oldRedirectURIs) {
@@ -302,7 +302,7 @@ public class ClientServiceImpl implements ClientService {
             redirectURIModel.redirectURI = redirectURI;
             redirectURIModel.clientJid = clientModel.jid;
 
-            redirectURIDao.persist(redirectURIModel, Utilities.getUserIdFromSession(), Utilities.getIpAddressFromRequest());
+            redirectURIDao.persist(redirectURIModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
         }
     }
 

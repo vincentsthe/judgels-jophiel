@@ -21,10 +21,10 @@
 <div class="table-responsive">
     <table class="table table-hover table-condensed table-bordered">
         <tr>
-            @tableHeader("id", Messages.get("client.id"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "id"))
-            @tableHeader("jid", Messages.get("client.jid"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "jid"))
-            @tableHeader("name", Messages.get("client.name"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "name"))
-            @tableHeader("applicationType", Messages.get("client.applicationType"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "applicationType"))
+            @tableHeader("id", Messages.get("commons.field.id"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "id"))
+            @tableHeader("jid", Messages.get("commons.field.jid"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "jid"))
+            @tableHeader("name", Messages.get("client.field.name"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "name"))
+            @tableHeader("applicationType", Messages.get("client.field.applicationType"), currentSortBy, currentOrder, shortLink(currentPage.getPageIndex(), "applicationType"))
             <th></th>
         </tr>
         @for(page <- currentPage.getList()) {

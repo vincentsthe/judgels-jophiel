@@ -3,7 +3,7 @@ package org.iatoki.judgels.jophiel;
 import org.iatoki.judgels.commons.models.domains.AbstractModel;
 import org.iatoki.judgels.jophiel.models.domains.AuthorizationCodeModel;
 
-public class AuthorizationCode extends AbstractModel {
+public final class AuthorizationCode extends AbstractModel {
 
     private long id;
 

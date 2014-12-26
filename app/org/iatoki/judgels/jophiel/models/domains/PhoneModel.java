@@ -8,7 +8,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "jophiel_phone")
-public class PhoneModel extends AbstractModel {
+public final class PhoneModel extends AbstractModel {
 
     @Id
     public long id;

@@ -9,7 +9,7 @@ import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
-import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
+import org.iatoki.judgels.commons.views.html.layouts.leftSidebarWithoutProfileLayout;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
 import org.iatoki.judgels.jophiel.RegisterForm;
 import org.iatoki.judgels.jophiel.views.html.registerView;
@@ -24,10 +24,10 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.filters.csrf.AddCSRFToken;
 import play.filters.csrf.RequireCSRFCheck;
+import play.i18n.Messages;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.twirl.api.Html;
 
 public class UserController extends Controller {
 
@@ -46,10 +46,10 @@ public class UserController extends Controller {
 
     private Result showCreate(Form<UserUpsertForm> form) {
         LazyHtml content = new LazyHtml(createView.render(form));
-        content.appendLayout(c -> headingLayout.render("user.create", c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.heading.create"), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink("user", routes.UserController.index()),
-                new InternalLink("user.create", routes.UserController.create())
+                new InternalLink(Messages.get("user.heading.users"), routes.UserController.index()),
+                new InternalLink(Messages.get("user.heading.create"), routes.UserController.create())
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -186,7 +186,11 @@ public class UserController extends Controller {
     }
 
     private void appendTemplateLayout(LazyHtml content) {
-        content.appendLayout(c -> leftSidebarLayout.render(ImmutableList.of(Html.apply("TODO")), c));
+        content.appendLayout(c -> leftSidebarWithoutProfileLayout.render(ImmutableList.of(
+                        new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                        new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
+                ), c)
+        );
         content.appendLayout(c -> headerFooterLayout.render(c));
         content.appendLayout(c -> baseLayout.render("TODO", c));
     }

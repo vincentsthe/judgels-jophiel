@@ -2,7 +2,7 @@ package org.iatoki.judgels.jophiel;
 
 import play.data.validation.Constraints;
 
-public class LoginForm {
+public final class LoginForm {
     @Constraints.Required
     public String usernameOrEmail;
 

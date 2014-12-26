@@ -9,20 +9,20 @@ import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
-import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
+import org.iatoki.judgels.commons.views.html.layouts.leftSidebarWithoutProfileLayout;
 import org.iatoki.judgels.jophiel.Client;
-import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.ClientCreateForm;
+import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.ClientUpdateForm;
 import org.iatoki.judgels.jophiel.views.html.client.createView;
 import org.iatoki.judgels.jophiel.views.html.client.listView;
 import org.iatoki.judgels.jophiel.views.html.client.updateView;
 import org.iatoki.judgels.jophiel.views.html.client.viewView;
 import play.data.Form;
-import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.filters.csrf.AddCSRFToken;
 import play.filters.csrf.RequireCSRFCheck;
+import play.i18n.Messages;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -30,7 +30,7 @@ import play.twirl.api.Html;
 
 import java.util.Arrays;
 
-public class ClientController extends Controller {
+public final class ClientController extends Controller {
 
     private static final long PAGE_SIZE = 20;
 
@@ -47,10 +47,10 @@ public class ClientController extends Controller {
 
     private Result showCreate(Form<ClientCreateForm> form) {
         LazyHtml content = new LazyHtml(createView.render(form));
-        content.appendLayout(c -> headingLayout.render("client.create", c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("client.heading.create"), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink("client", routes.ClientController.index()),
-                new InternalLink("client.create", routes.ClientController.create())
+                new InternalLink(Messages.get("client.heading.clients"), routes.ClientController.index()),
+                new InternalLink(Messages.get("client.heading.create"), routes.ClientController.create())
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -83,10 +83,10 @@ public class ClientController extends Controller {
     public Result view(long clientId) {
         Client client = clientService.findClientById(clientId);
         LazyHtml content = new LazyHtml(viewView.render(client));
-        content.appendLayout(c -> headingWithActionLayout.render(client.getName(), new InternalLink("client.update", routes.ClientController.update(clientId)), c));
+        content.appendLayout(c -> headingWithActionLayout.render(client.getName(), new InternalLink(Messages.get("client.heading.update"), routes.ClientController.update(clientId)), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink("client", routes.ClientController.index()),
-                new InternalLink("client.view", routes.ClientController.view(clientId))
+                new InternalLink(Messages.get("client.heading.clients"), routes.ClientController.index()),
+                new InternalLink(Messages.get("client.heading.view"), routes.ClientController.view(clientId))
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -150,7 +150,12 @@ public class ClientController extends Controller {
     }
 
     private void appendTemplateLayout(LazyHtml content) {
-        content.appendLayout(c -> leftSidebarLayout.render(ImmutableList.of(Html.apply("TODO")), c));
+        content.appendLayout(c -> leftSidebarWithoutProfileLayout.render(ImmutableList.of(
+                                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                                new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
+                        ), c)
+        );
+
         content.appendLayout(c -> headerFooterLayout.render(c));
         content.appendLayout(c -> baseLayout.render("TODO", c));
     }

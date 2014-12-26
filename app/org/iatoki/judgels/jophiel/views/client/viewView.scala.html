@@ -7,8 +7,8 @@
 
 @b3.form(play.api.mvc.Call("GET", "#")) {
 
-    @b3.static(Messages.get("general.field.id")) { @client.getId }
-    @b3.static(Messages.get("client.field.jid")) { @client.getJid }
+    @b3.static(Messages.get("commons.field.id")) { @client.getId }
+    @b3.static(Messages.get("commons.field.jid")) { @client.getJid }
     @b3.static(Messages.get("client.field.name")) { @client.getName }
     @b3.static(Messages.get("client.field.applicationType")) { @client.getApplicationType }
     @b3.static(Messages.get("client.field.secret")) { @client.getSecret }

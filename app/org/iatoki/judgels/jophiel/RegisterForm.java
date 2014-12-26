@@ -2,7 +2,7 @@ package org.iatoki.judgels.jophiel;
 
 import play.data.validation.Constraints;
 
-public class RegisterForm {
+public final class RegisterForm {
     @Constraints.Required
     public String username;
 
