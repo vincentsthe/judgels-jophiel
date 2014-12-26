@@ -140,9 +140,9 @@ public final class ClientController extends Controller {
         Page<Client> currentPage = clientService.pageClient(page, PAGE_SIZE, sortBy, orderBy, filterString);
 
         LazyHtml content = new LazyHtml(listView.render(currentPage, sortBy, orderBy, filterString));
-        content.appendLayout(c -> headingWithActionLayout.render("client.list", new InternalLink("client.create", routes.ClientController.create()), c));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.heading.list"), new InternalLink(Messages.get("client.heading.create"), routes.ClientController.create()), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink("client", routes.ClientController.index())
+                new InternalLink(Messages.get("client.heading.clients"), routes.ClientController.index())
         ), c));
         appendTemplateLayout(content);
 

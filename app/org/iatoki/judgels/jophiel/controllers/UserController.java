@@ -139,9 +139,9 @@ public class UserController extends Controller {
         Page<User> currentPage = userService.pageUser(page, PAGE_SIZE, sortBy, orderBy, filterString);
 
         LazyHtml content = new LazyHtml(listView.render(currentPage, sortBy, orderBy, filterString));
-        content.appendLayout(c -> headingWithActionLayout.render("user.list", new InternalLink("user.create", routes.UserController.create()), c));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.heading.list"), new InternalLink(Messages.get("user.heading.create"), routes.UserController.create()), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink("user", routes.UserController.index())
+                new InternalLink(Messages.get("user.heading.users"), routes.UserController.index())
         ), c));
         appendTemplateLayout(content);
 
