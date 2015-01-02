@@ -1,10 +1,10 @@
+user.user=User
 user.users=Users
 
-user.heading.users=Users
-user.heading.list=Users
-user.heading.create=Create User
-user.heading.update=Update User
-user.heading.view=View User
+user.list=Users
+user.create=Create User
+user.update=Update User
+user.view=View User
 
 user.field.username=Username
 user.field.name=Name
@@ -13,13 +13,13 @@ user.field.password=Password
 user.field.confirmPassword=Confirm Password
 user.field.usernameOrEmail=Username or Email
 
+client.client=Client
 client.clients=Clients
 
-client.heading.clients=Clients
-client.heading.list=Clients
-client.heading.create=Create Client
-client.heading.update=Update Client
-client.heading.view=View Client
+client.list=Clients
+client.create=Create Client
+client.update=Update Client
+client.view=View Client
 
 client.field.name=Name
 client.field.applicationType=Application Type
@@ -27,13 +27,11 @@ client.field.redirectURIs=Redirect URIs
 client.field.scopes=Scopes
 client.field.secret=Secret
 
-login.heading.login=Log In
 login.login=Log In
-login.text.dontHaveAccount=Don't have account?
+login.dontHaveAccount=Don't have account?
 login.register=Register
 
-register.heading.register=Register New Account
+register.registerNewAccount=Register New Account
 register.register=Register
 
-auth.heading.authorize=Authorize
 auth.authorize=Authorize

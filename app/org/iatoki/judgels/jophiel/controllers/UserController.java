@@ -46,10 +46,10 @@ public class UserController extends Controller {
 
     private Result showCreate(Form<UserUpsertForm> form) {
         LazyHtml content = new LazyHtml(createView.render(form));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.heading.create"), c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.create"), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("user.heading.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.heading.create"), routes.UserController.create())
+                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                new InternalLink(Messages.get("user.create"), routes.UserController.create())
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -81,10 +81,10 @@ public class UserController extends Controller {
     public Result view(long userId) {
         User user = userService.findUserById(userId);
         LazyHtml content = new LazyHtml(viewView.render(user));
-        content.appendLayout(c -> headingWithActionLayout.render(user.getName(), new InternalLink("user.update", routes.UserController.update(userId)), c));
+        content.appendLayout(c -> headingWithActionLayout.render(user.getName(), new InternalLink(Messages.get("user.update"), routes.UserController.update(userId)), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink("user", routes.UserController.index()),
-                new InternalLink("user.view", routes.UserController.view(userId))
+                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                new InternalLink(Messages.get("user.view"), routes.UserController.view(userId))
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -92,10 +92,10 @@ public class UserController extends Controller {
 
     private Result showUpdate(Form<UserUpsertForm> form, long userId) {
         LazyHtml content = new LazyHtml(updateView.render(form, userId));
-        content.appendLayout(c -> headingLayout.render("user.update", c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.update"), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink("user", routes.UserController.index()),
-                new InternalLink("user.update", routes.UserController.update(userId))
+                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                new InternalLink(Messages.get("user.update"), routes.UserController.update(userId))
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -139,9 +139,9 @@ public class UserController extends Controller {
         Page<User> currentPage = userService.pageUser(page, PAGE_SIZE, sortBy, orderBy, filterString);
 
         LazyHtml content = new LazyHtml(listView.render(currentPage, sortBy, orderBy, filterString));
-        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.heading.list"), new InternalLink(Messages.get("user.heading.create"), routes.UserController.create()), c));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("user.create"), routes.UserController.create()), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("user.heading.users"), routes.UserController.index())
+                new InternalLink(Messages.get("user.users"), routes.UserController.index())
         ), c));
         appendTemplateLayout(content);
 
