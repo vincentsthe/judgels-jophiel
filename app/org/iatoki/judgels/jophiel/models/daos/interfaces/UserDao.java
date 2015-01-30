@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface UserDao extends JudgelsDao<UserModel> {
 
+    List<UserModel> findAll(String filterString);
+
     List<String> findUserJidByFilter(String filterString);
 
     List<String> sortUserJid(Collection<String> userJids, String sortBy, String order);

@@ -7,7 +7,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "jophiel_client")
-public class ClientModel extends AbstractJudgelsModel {
+public final class ClientModel extends AbstractJudgelsModel {
 
     public String name;
 

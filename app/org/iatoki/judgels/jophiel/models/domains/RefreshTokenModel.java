@@ -23,9 +23,9 @@ public final class RefreshTokenModel extends AbstractModel {
 
     public String token;
 
-    public String scopes;
-
     public boolean redeemed;
+
+    public String scopes;
 
     public RefreshTokenModel() {
 

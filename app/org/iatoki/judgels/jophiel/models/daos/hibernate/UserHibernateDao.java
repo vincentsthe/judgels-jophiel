@@ -18,6 +18,23 @@ import java.util.List;
 
 public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserModel> implements UserDao {
 
+
+    @Override
+    public List<UserModel> findAll(String filterString) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<UserModel> query = cb.createQuery(UserModel.class);
+        Root<UserModel> root = query.from(UserModel.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.like(root.get("username"), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get("name"), "%" + filterString + "%"));
+
+        Predicate condition = cb.or(predicates.toArray(new Predicate[predicates.size()]));
+
+        query.where(condition);
+        return JPA.em().createQuery(query).getResultList();
+    }
+
     @Override
     public List<String> findUserJidByFilter(String filterString) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();

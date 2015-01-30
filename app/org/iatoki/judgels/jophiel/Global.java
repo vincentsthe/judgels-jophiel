@@ -27,7 +27,7 @@ import java.util.Map;
 
 public final class Global extends org.iatoki.judgels.commons.Global {
 
-    public Map<Class, Controller> cache;
+    private Map<Class, Controller> cache;
 
     @Override
     public void onStart(Application application) {
@@ -38,7 +38,6 @@ public final class Global extends org.iatoki.judgels.commons.Global {
 
     @Override
     public <A> A getControllerInstance(Class<A> controllerClass) throws Exception {
-
         if (!cache.containsKey(controllerClass)) {
             if (controllerClass.equals(UserController.class)) {
                 UserService userService = createUserService();

@@ -7,4 +7,6 @@ public interface AuthorizationCodeDao extends Dao<Long, AuthorizationCodeModel> 
 
     AuthorizationCodeModel findByCode(String code);
 
+    boolean checkIfAuthorized(String clientJid, String userJid, String scopes);
+
 }

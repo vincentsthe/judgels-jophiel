@@ -29,11 +29,11 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
-public class UserController extends Controller {
+public final class UserController extends Controller {
 
     private static final long PAGE_SIZE = 20;
 
-    private UserService userService;
+    private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;

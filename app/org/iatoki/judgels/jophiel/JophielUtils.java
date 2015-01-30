@@ -6,7 +6,11 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public final class JophielUtilities {
+public final class JophielUtils {
+
+    private JophielUtils() {
+        // prevent instantiation
+    }
 
     public static String hashSHA256(String s) {
         return messageDigest(s, "SHA-256");

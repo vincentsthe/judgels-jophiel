@@ -7,19 +7,25 @@ import java.util.List;
 
 public interface ClientService {
 
+    boolean checkIsClientAuthorized(String clientJid, List<String> scopes);
+
+    boolean checkIsAccessTokenExist(String token);
+
     Client findClientById(long clientId);
 
     Client findClientByJid(String clientJid);
 
-    AuthorizationCode generateAuthorizationCode(String clientJid, String URI, String responseType, String scope);
+    AuthorizationCode generateAuthorizationCode(String clientJid, String URI, String responseType, List<String> scopes);
 
-    String generateAccessToken(String code, String userId, String clientId, String scope);
+    String generateAccessToken(String code, String userId, String clientId, List<String> scopes);
 
-    String generateRefreshToken(String code, String userId, String clientId, String scope);
+    String generateRefreshToken(String code, String userId, String clientId, List<String> scopes);
 
-    void generateIdToken(String code, String userId, String username, String clientId, String nonce, long authTime, String accessToken);
+    void generateIdToken(String code, String userId, String clientId, String nonce, long authTime, String accessToken);
 
     org.iatoki.judgels.jophiel.AuthorizationCode findAuthorizationCodeByCode(String code);
+
+    AccessToken findAccessTokenByAccessToken(String token);
 
     AccessToken findAccessTokenByCode(String code);
 

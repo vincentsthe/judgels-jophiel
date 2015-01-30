@@ -8,7 +8,6 @@ import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import org.iatoki.judgels.jophiel.models.domains.EmailModel;
 import org.iatoki.judgels.jophiel.models.domains.UserModel;
-import org.iatoki.judgels.jophiel.models.metas.MetaEmail;
 import play.mvc.Http;
 
 import javax.persistence.NoResultException;
@@ -25,11 +24,24 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<User> findAllUser(String filterString) {
+        List<UserModel> userModels = userDao.findAll(filterString);
+        ImmutableList.Builder<User> userBuilder = ImmutableList.builder();
+
+        for (UserModel userRecord : userModels) {
+            EmailModel emailRecord  = emailDao.findByUserJid(userRecord.jid);
+            userBuilder.add(new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email));
+        }
+
+        return userBuilder.build();
+    }
+
+    @Override
     public User findUserById(long userId) {
         UserModel userRecord = userDao.findById(userId);
         EmailModel emailRecord = emailDao.findByUserJid(userRecord.jid);
 
-        User user = new User(userRecord.id, userRecord.username, userRecord.name, emailRecord.email);
+        User user = new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email);
 
         return user;
     }
@@ -39,7 +51,7 @@ public final class UserServiceImpl implements UserService {
         UserModel userRecord = userDao.findByJid(userJid);
         EmailModel emailRecord = emailDao.findByUserJid(userRecord.jid);
 
-        User user = new User(userRecord.id, userRecord.username, userRecord.name, emailRecord.email);
+        User user = new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email);
 
         return user;
     }
@@ -54,7 +66,7 @@ public final class UserServiceImpl implements UserService {
         UserModel userModel = new UserModel();
         userModel.username = username;
         userModel.name = name;
-        userModel.password = JophielUtilities.hashSHA256(password);
+        userModel.password = JophielUtils.hashSHA256(password);
 
         userDao.persist(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
@@ -71,7 +83,7 @@ public final class UserServiceImpl implements UserService {
 
         userModel.username = username;
         userModel.name = name;
-        userModel.password = JophielUtilities.hashSHA256(password);
+        userModel.password = JophielUtils.hashSHA256(password);
 
         userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
@@ -104,7 +116,7 @@ public final class UserServiceImpl implements UserService {
 
         if (totalPage > 0) {
             List<String> sortedUserJid = null;
-            if (sortBy.equals(MetaEmail.EMAIL)) {
+            if (sortBy.equals("email")) {
                 sortedUserJid = emailDao.sortUserJid(userJidSet, sortBy, order);
             } else {
                 sortedUserJid = userDao.sortUserJid(userJidSet, sortBy, order);
@@ -116,7 +128,7 @@ public final class UserServiceImpl implements UserService {
             for (int i = 0; i < userModels.size(); ++i) {
                 UserModel userModel = userModels.get(i);
                 EmailModel emailModel = emailModels.get(i);
-                listBuilder.add(new User(userModel.id, userModel.username, userModel.name, emailModel.email));
+                listBuilder.add(new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email));
             }
         }
 
@@ -136,8 +148,8 @@ public final class UserServiceImpl implements UserService {
                 }
             }
 
-            if ((userModel != null) && (userModel.password.equals(JophielUtilities.hashSHA256(password)))) {
-                Http.Context.current().session().put("user", userModel.jid);
+            if ((userModel != null) && (userModel.password.equals(JophielUtils.hashSHA256(password)))) {
+                Http.Context.current().session().put("userJid", userModel.jid);
                 return true;
             } else {
                 return false;

@@ -5,6 +5,10 @@ import org.iatoki.judgels.jophiel.models.domains.AccessTokenModel;
 
 public interface AccessTokenDao extends Dao<Long, AccessTokenModel> {
 
+    boolean checkIsExist(String token);
+
     AccessTokenModel findByCode(String code);
+
+    AccessTokenModel findByToken(String token);
 
 }

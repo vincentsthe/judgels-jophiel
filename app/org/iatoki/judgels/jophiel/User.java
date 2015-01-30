@@ -4,14 +4,17 @@ public final class User {
 
     private long id;
 
+    private String jid;
+
     private String username;
 
     private String name;
 
     private String email;
 
-    public User(long id, String username, String name, String email) {
+    public User(long id, String jid, String username, String name, String email) {
         this.id = id;
+        this.jid = jid;
         this.username = username;
         this.name = name;
         this.email = email;
@@ -19,6 +22,10 @@ public final class User {
 
     public long getId() {
         return id;
+    }
+
+    public String getJid() {
+        return jid;
     }
 
     public String getUsername() {

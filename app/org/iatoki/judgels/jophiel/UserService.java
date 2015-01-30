@@ -2,7 +2,11 @@ package org.iatoki.judgels.jophiel;
 
 import org.iatoki.judgels.commons.Page;
 
+import java.util.List;
+
 public interface UserService {
+
+    List<User> findAllUser(String filterString);
 
     User findUserById(long userId);
 

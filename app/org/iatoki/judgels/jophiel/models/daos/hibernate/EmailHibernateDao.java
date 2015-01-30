@@ -3,7 +3,6 @@ package org.iatoki.judgels.jophiel.models.daos.hibernate;
 import org.iatoki.judgels.commons.models.daos.hibernate.AbstractHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
 import org.iatoki.judgels.jophiel.models.domains.EmailModel;
-import org.iatoki.judgels.jophiel.models.metas.MetaEmail;
 import play.db.jpa.JPA;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -37,7 +36,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
         Root<EmailModel> root = query.from(EmailModel.class);
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.like(root.get(MetaEmail.EMAIL), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get("email"), "%" + filterString + "%"));
 
         Predicate condition = cb.or(predicates.toArray(new Predicate[predicates.size()]));
 
@@ -72,7 +71,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
 
         List<Selection<?>> selection = new ArrayList<>();
         selection.add(root.get("userJid"));
-        selection.add(root.get(MetaEmail.EMAIL));
+        selection.add(root.get("email"));
 
         Predicate condition = root.get("userJid").in(userJids);
 

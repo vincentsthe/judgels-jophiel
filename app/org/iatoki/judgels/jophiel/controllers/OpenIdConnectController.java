@@ -2,6 +2,7 @@ package org.iatoki.judgels.jophiel.controllers;
 
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.ResponseType;
@@ -13,6 +14,7 @@ import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.views.html.layouts.baseLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
@@ -21,9 +23,11 @@ import org.iatoki.judgels.jophiel.AccessToken;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.IdToken;
-import org.iatoki.judgels.jophiel.JophielUtilities;
+import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RefreshToken;
+import org.iatoki.judgels.jophiel.User;
+import org.iatoki.judgels.jophiel.UserAutoComplete;
 import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.views.html.authView;
 import org.iatoki.judgels.jophiel.views.html.loginView;
@@ -45,10 +49,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class OpenIdConnectController extends Controller {
+public final class OpenIdConnectController extends Controller {
 
-    private UserService userService;
-    private ClientService clientService;
+    private final UserService userService;
+    private final ClientService clientService;
 
     public OpenIdConnectController(UserService userService, ClientService clientService) {
         this.userService = userService;
@@ -88,11 +92,11 @@ public class OpenIdConnectController extends Controller {
 
     @Transactional
     public Result authRequest() {
-        if ((session("user") == null) || (!userService.isUserJidExist(session("user")))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.isUserJidExist(IdentityUtils.getUserJid()))) {
             return redirect((routes.OpenIdConnectController.login("http://" + request().host() + request().uri())));
         } else {
             try {
-                String randomHash = JophielUtilities.hashMD5(UUID.randomUUID().toString());
+                String randomHash = JophielUtils.hashMD5(UUID.randomUUID().toString());
                 Cache.set(randomHash, request().uri().substring(request().uri().indexOf("?") + 1));
 
                 AuthenticationRequest req = AuthenticationRequest.parse(request().uri().substring(request().uri().indexOf("?") + 1));
@@ -101,11 +105,15 @@ public class OpenIdConnectController extends Controller {
 
                 List<String> scopes = req.getScope().toStringList();
 
-                LazyHtml content = new LazyHtml(authView.render(randomHash, client, scopes));
-                content.appendLayout(c -> noSidebarLayout.render(c));
-                content.appendLayout(c -> headerFooterLayout.render(c));
-                content.appendLayout(c -> baseLayout.render("TODO", c));
-                return lazyOk(content);
+                if (clientService.checkIsClientAuthorized(clientID.toString(), scopes)) {
+                    return postAuthRequest(randomHash);
+                } else {
+                    LazyHtml content = new LazyHtml(authView.render(randomHash, client, scopes));
+                    content.appendLayout(c -> noSidebarLayout.render(c));
+                    content.appendLayout(c -> headerFooterLayout.render(c));
+                    content.appendLayout(c -> baseLayout.render("TODO", c));
+                    return lazyOk(content);
+                }
             } catch (ParseException e) {
                 e.printStackTrace();
 
@@ -130,13 +138,13 @@ public class OpenIdConnectController extends Controller {
                 Scope scope = req.getScope();
                 String nonce = (req.getNonce() != null) ? req.getNonce().toString() : "";
 
-                AuthorizationCode code = clientService.generateAuthorizationCode(client.getJid(), redirectURI.toString(), responseType.toString(), scope.toString());
+                AuthorizationCode code = clientService.generateAuthorizationCode(client.getJid(), redirectURI.toString(), responseType.toString(), scope.toStringList());
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-                String accessToken = clientService.generateAccessToken(code.getValue(), session("user"), clientID.toString(), scope.toString());
-                String refreshToken = clientService.generateRefreshToken(code.getValue(), session("user"), clientID.toString(), scope.toString());
+                String accessToken = clientService.generateAccessToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
+                String refreshToken = clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
 
-                clientService.generateIdToken(code.getValue(), session("user"), userService.findUserByJid(session("user")).getUsername(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
+                clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
 
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
@@ -166,7 +174,7 @@ public class OpenIdConnectController extends Controller {
                 String clientId;
                 String clientSecret;
 
-                if (request().getHeader("Authorization") != null) {
+                if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
                     String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
                     clientId = userPass[0];
                     clientSecret = userPass[1];
@@ -229,8 +237,118 @@ public class OpenIdConnectController extends Controller {
         }
     }
 
+    @Transactional
     public Result userInfo() {
-        return TODO;
+        DynamicForm form = DynamicForm.form().bindFromRequest();
+        String token;
+        if ((request().getHeader("Authorization") != null) && ("Bearer".equals(request().getHeader("Authorization").split(" ")[0]))) {
+            token = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1]));
+        } else {
+            token = form.get("token");
+        }
+
+        if (clientService.checkIsAccessTokenExist(token)) {
+            AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
+            User user = userService.findUserByJid(accessToken.getUserJid());
+
+            ObjectNode result = Json.newObject();
+            result.put("sub", user.getJid());
+            result.put("name", user.getName());
+            result.put("preferred_username", user.getUsername());
+            result.put("email", user.getEmail());
+
+            return ok(result);
+        } else {
+            // TODO invalid token
+            return notFound();
+        }
+    }
+
+    @Transactional
+    public Result userAutoCompleteList() {
+        response().setHeader("Access-Control-Allow-Origin", "*");
+
+        DynamicForm form = DynamicForm.form().bindFromRequest();
+        String token;
+        if ((request().getHeader("Authorization") != null) && ("Bearer".equals(request().getHeader("Authorization").split(" ")[0]))) {
+            token = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1]));
+        } else {
+            token = form.get("token");
+        }
+
+        if (clientService.checkIsAccessTokenExist(token)) {
+            AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
+            User user = userService.findUserByJid(accessToken.getUserJid());
+            String term = form.get("term");
+            List<User> users = userService.findAllUser(term);
+            ImmutableList.Builder<UserAutoComplete> responseBuilder = ImmutableList.builder();
+
+            for (User user1 : users) {
+                responseBuilder.add(new UserAutoComplete(user1.getJid(), user1.getJid(), user1.getUsername() + " (" + user1.getName() + ")"));
+            }
+
+            return ok(Json.toJson(responseBuilder.build()));
+        } else {
+            // TODO invalid token
+            return notFound();
+        }
+    }
+
+    public Result checkPreUserAutocompleteList() {
+        response().setHeader("Access-Control-Allow-Origin", "*");       // Need to add the correct domain in here!!
+        response().setHeader("Access-Control-Allow-Methods", "GET");    // Only allow POST
+        response().setHeader("Access-Control-Max-Age", "300");          // Cache response for 5 minutes
+        response().setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");         // Ensure this header is also allowed!
+        return ok();
+    }
+
+    @Transactional
+    public Result verifyUserJid() {
+        DynamicForm form = DynamicForm.form().bindFromRequest();
+        String token;
+        if ((request().getHeader("Authorization") != null) && ("Bearer".equals(request().getHeader("Authorization").split(" ")[0]))) {
+            token = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1]));
+        } else {
+            token = form.get("token");
+        }
+
+        if (clientService.checkIsAccessTokenExist(token)) {
+            AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
+            User user = userService.findUserByJid(accessToken.getUserJid());
+            String userJid = form.get("userJid");
+
+            if (userService.isUserJidExist(userJid)) {
+                return ok();
+            } else {
+                return notFound();
+            }
+        } else {
+            // TODO invalid token
+            return notFound();
+        }
+    }
+
+    @Transactional
+    public Result getInfoByUserJid() {
+        DynamicForm form = DynamicForm.form().bindFromRequest();
+        String token;
+        if ((request().getHeader("Authorization") != null) && ("Bearer".equals(request().getHeader("Authorization").split(" ")[0]))) {
+            token = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1]));
+        } else {
+            token = form.get("token");
+        }
+
+        if (clientService.checkIsAccessTokenExist(token)) {
+            AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
+            User user = userService.findUserByJid(accessToken.getUserJid());
+            String userJid = form.get("userJid");
+            User response = userService.findUserByJid(userJid);
+
+            return ok(Json.toJson(response));
+        } else {
+            // TODO invalid token
+            return notFound();
+        }
     }
 
     private Result lazyOk(LazyHtml content) {

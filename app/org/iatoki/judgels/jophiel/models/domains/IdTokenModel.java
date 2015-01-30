@@ -10,7 +10,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "jophiel_id_token")
-public class IdTokenModel extends AbstractModel {
+public final class IdTokenModel extends AbstractModel {
 
     @Id
     @GeneratedValue

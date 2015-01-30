@@ -2,7 +2,7 @@ package org.iatoki.judgels.jophiel;
 
 import org.iatoki.judgels.jophiel.models.domains.RefreshTokenModel;
 
-public class RefreshToken {
+public final class RefreshToken {
 
     private long id;
 

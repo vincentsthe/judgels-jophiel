@@ -7,7 +7,7 @@
 
 @shortLink(newPage: scala.Long, newSortBy: String) = {@link(currentSortBy, true, currentOrder, currentFilter, newPage, newSortBy, org.iatoki.judgels.jophiel.controllers.routes.ClientController.list)}
 
-<form class="form form-inline pull-right" action='@org.iatoki.judgels.jophiel.controllers.routes.UserController.list(currentPage.getPageIndex, "", "", "")' method="GET">
+<form class="form form-inline pull-right" action='@org.iatoki.judgels.jophiel.controllers.routes.ClientController.list(currentPage.getPageIndex, "", "", "")' method="GET">
     <input type="hidden" name="orderBy" value="@currentOrder"/>
     <input type="hidden" name="sortBy" value="@currentSortBy"/>
     <div class="form-group">

@@ -9,7 +9,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "jophiel_redirect_uri")
-public class RedirectURIModel extends AbstractModel {
+public final class RedirectURIModel extends AbstractModel {
 
     @Id
     @GeneratedValue
