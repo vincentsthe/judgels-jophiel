@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.daos.hibernate;
 import org.iatoki.judgels.commons.models.daos.hibernate.AbstractHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AuthorizationCodeDao;
 import org.iatoki.judgels.jophiel.models.domains.AuthorizationCodeModel;
+import org.iatoki.judgels.jophiel.models.domains.AuthorizationCodeModel_;
 import play.db.jpa.JPA;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -18,7 +19,7 @@ public final class AuthorizationCodeHibernateDao extends AbstractHibernateDao<Lo
 
         Root<AuthorizationCodeModel> root =  query.from(AuthorizationCodeModel.class);
 
-        query.where(cb.equal(root.get("code"), code));
+        query.where(cb.equal(root.get(AuthorizationCodeModel_.code), code));
 
         return JPA.em().createQuery(query).getSingleResult();
     }
@@ -30,7 +31,7 @@ public final class AuthorizationCodeHibernateDao extends AbstractHibernateDao<Lo
 
         Root<AuthorizationCodeModel> root = query.from(AuthorizationCodeModel.class);
 
-        query.select(cb.count(root)).where(cb.and(cb.equal(root.get("clientJid"), clientJid), cb.equal(root.get("userJid"), userJid), cb.equal(root.get("scopes"), scopes)));
+        query.select(cb.count(root)).where(cb.and(cb.equal(root.get(AuthorizationCodeModel_.clientJid), clientJid), cb.equal(root.get(AuthorizationCodeModel_.userJid), userJid), cb.equal(root.get(AuthorizationCodeModel_.scopes), scopes)));
 
         return (JPA.em().createQuery(query).getSingleResult() != 0);
     }

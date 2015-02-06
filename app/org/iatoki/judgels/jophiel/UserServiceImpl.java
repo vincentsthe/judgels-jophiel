@@ -58,7 +58,7 @@ public final class UserServiceImpl implements UserService {
 
     @Override
     public boolean isUserJidExist(String userJid) {
-        return (userDao.findByJid(userJid) != null);
+        return userDao.isUserJidExist(userJid);
     }
 
     @Override

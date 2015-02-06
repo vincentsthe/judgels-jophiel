@@ -27,7 +27,6 @@ import java.util.Arrays;
 public final class ClientController extends Controller {
 
     private static final long PAGE_SIZE = 20;
-
     private final ClientService clientService;
 
     public ClientController(ClientService clientService) {
@@ -37,17 +36,6 @@ public final class ClientController extends Controller {
     @Transactional
     public Result index() {
         return list(0, "id", "asc", "");
-    }
-
-    private Result showCreate(Form<ClientCreateForm> form) {
-        LazyHtml content = new LazyHtml(createView.render(form));
-        content.appendLayout(c -> headingLayout.render(Messages.get("client.create"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
-                new InternalLink(Messages.get("client.create"), routes.ClientController.create())
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
     }
 
     @AddCSRFToken
@@ -81,17 +69,6 @@ public final class ClientController extends Controller {
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
                 new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
                 new InternalLink(Messages.get("client.view"), routes.ClientController.view(clientId))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
-    }
-
-    private Result showUpdate(Form<ClientUpdateForm> form, long clientId) {
-        LazyHtml content = new LazyHtml(updateView.render(form, clientId));
-        content.appendLayout(c -> headingLayout.render(Messages.get("client.update"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
-                new InternalLink(Messages.get("client.update"), routes.ClientController.update(clientId))
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -140,6 +117,28 @@ public final class ClientController extends Controller {
         ), c));
         appendTemplateLayout(content);
 
+        return lazyOk(content);
+    }
+
+    private Result showCreate(Form<ClientCreateForm> form) {
+        LazyHtml content = new LazyHtml(createView.render(form));
+        content.appendLayout(c -> headingLayout.render(Messages.get("client.create"), c));
+        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
+                new InternalLink(Messages.get("client.create"), routes.ClientController.create())
+        ), c));
+        appendTemplateLayout(content);
+        return lazyOk(content);
+    }
+
+    private Result showUpdate(Form<ClientUpdateForm> form, long clientId) {
+        LazyHtml content = new LazyHtml(updateView.render(form, clientId));
+        content.appendLayout(c -> headingLayout.render(Messages.get("client.update"), c));
+        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
+                new InternalLink(Messages.get("client.update"), routes.ClientController.update(clientId))
+        ), c));
+        appendTemplateLayout(content);
         return lazyOk(content);
     }
 

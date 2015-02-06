@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.daos.hibernate;
 import org.iatoki.judgels.commons.models.daos.hibernate.AbstractHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RefreshTokenDao;
 import org.iatoki.judgels.jophiel.models.domains.RefreshTokenModel;
+import org.iatoki.judgels.jophiel.models.domains.RefreshTokenModel_;
 import play.db.jpa.JPA;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -18,7 +19,7 @@ public final class RefreshTokenHibernateDao extends AbstractHibernateDao<Long, R
 
         Root<RefreshTokenModel> root =  query.from(RefreshTokenModel.class);
 
-        query.where(cb.equal(root.get("code"), code));
+        query.where(cb.equal(root.get(RefreshTokenModel_.code), code));
 
         return JPA.em().createQuery(query).getSingleResult();
     }
@@ -30,7 +31,7 @@ public final class RefreshTokenHibernateDao extends AbstractHibernateDao<Long, R
 
         Root<RefreshTokenModel> root =  query.from(RefreshTokenModel.class);
 
-        query.where(cb.equal(root.get("token"), token));
+        query.where(cb.equal(root.get(RefreshTokenModel_.token), token));
 
         return JPA.em().createQuery(query).getSingleResult();
     }

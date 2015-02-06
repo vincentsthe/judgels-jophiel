@@ -77,6 +77,11 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    public boolean checkIsClientExist(String clientJid) {
+        return clientDao.isClientExistByJid(clientJid);
+    }
+
+    @Override
     public Client findClientById(long clientId) {
         ClientModel clientModel = clientDao.findById(clientId);
         Set<String> scopeString = ImmutableSet.copyOf(clientModel.scopes.split(","));
@@ -157,7 +162,7 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public String generateRefreshToken(String code, String userId, String clientId, List<String> scopes) {
+    public void generateRefreshToken(String code, String userId, String clientId, List<String> scopes) {
         com.nimbusds.oauth2.sdk.token.RefreshToken refreshToken = new com.nimbusds.oauth2.sdk.token.RefreshToken();
         Collections.sort(scopes);
 
@@ -170,8 +175,6 @@ public final class ClientServiceImpl implements ClientService {
         refreshTokenModel1.token = refreshToken.getValue();
 
         refreshTokenDao.persist(refreshTokenModel1, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
-
-        return refreshTokenModel1.token;
     }
 
     @Override
@@ -222,6 +225,25 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    public AccessToken regenerateAccessToken(String code, String userId, String clientId, List<String> scopes) {
+        com.nimbusds.oauth2.sdk.token.AccessToken accessToken = new BearerAccessToken();
+        Collections.sort(scopes);
+
+        AccessTokenModel accessTokenModel1 = new AccessTokenModel();
+        accessTokenModel1.code = code;
+        accessTokenModel1.clientJid = clientId;
+        accessTokenModel1.userJid = userId;
+        accessTokenModel1.redeemed = false;
+        accessTokenModel1.expireTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
+        accessTokenModel1.scopes = StringUtils.join(scopes, ",");
+        accessTokenModel1.token = accessToken.getValue();
+
+        accessTokenDao.persist(accessTokenModel1, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+
+        return new AccessToken(accessTokenModel1);
+    }
+
+    @Override
     public AccessToken findAccessTokenByAccessToken(String token) {
         AccessTokenModel accessTokenModel = accessTokenDao.findByToken(token);
 
@@ -233,6 +255,13 @@ public final class ClientServiceImpl implements ClientService {
         AccessTokenModel accessTokenModel = accessTokenDao.findByCode(code);
 
         return new AccessToken(accessTokenModel);
+    }
+
+    @Override
+    public RefreshToken findRefreshTokenByRefreshToken(String token) {
+        RefreshTokenModel refreshTokenModel = refreshTokenDao.findByToken(token);
+
+        return new RefreshToken(refreshTokenModel);
     }
 
     @Override

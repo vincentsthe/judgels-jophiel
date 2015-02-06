@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.daos.hibernate;
 import org.iatoki.judgels.commons.models.daos.hibernate.AbstractJudgelsHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import org.iatoki.judgels.jophiel.models.domains.UserModel;
+import org.iatoki.judgels.jophiel.models.domains.UserModel_;
 import play.db.jpa.JPA;
 
 import javax.persistence.NoResultException;
@@ -18,6 +19,15 @@ import java.util.List;
 
 public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserModel> implements UserDao {
 
+    @Override
+    public boolean isUserJidExist(String userJid) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<UserModel> root = query.from(UserModel.class);
+
+        query.select(cb.count(root)).where(cb.equal(root.get(UserModel_.jid), userJid));
+        return (JPA.em().createQuery(query).getSingleResult() != 0);
+    }
 
     @Override
     public List<UserModel> findAll(String filterString) {
@@ -26,8 +36,8 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         Root<UserModel> root = query.from(UserModel.class);
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.like(root.get("username"), "%" + filterString + "%"));
-        predicates.add(cb.like(root.get("name"), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get(UserModel_.username), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get(UserModel_.name), "%" + filterString + "%"));
 
         Predicate condition = cb.or(predicates.toArray(new Predicate[predicates.size()]));
 
@@ -42,12 +52,12 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         Root<UserModel> root = query.from(UserModel.class);
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.like(root.get("username"), "%" + filterString + "%"));
-        predicates.add(cb.like(root.get("name"), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get(UserModel_.username), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get(UserModel_.name), "%" + filterString + "%"));
 
         Predicate condition = cb.or(predicates.toArray(new Predicate[predicates.size()]));
 
-        query.select(root.get("jid")).where(condition);
+        query.select(root.get(UserModel_.jid)).where(condition);
         return JPA.em().createQuery(query).getResultList();
     }
 
@@ -57,7 +67,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         CriteriaQuery<String> query = cb.createQuery(String.class);
         Root<UserModel> root = query.from(UserModel.class);
 
-        Predicate condition = root.get("jid").in(userJids);
+        Predicate condition = root.get(UserModel_.jid).in(userJids);
 
         Order orderBy = null;
         if ("asc".equals(order)) {
@@ -66,7 +76,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
             orderBy = cb.desc(root.get(sortBy));
         }
 
-        query.select(root.get("jid")).where(condition).orderBy(orderBy);
+        query.select(root.get(UserModel_.jid)).where(condition).orderBy(orderBy);
         return JPA.em().createQuery(query).getResultList();
     }
 
@@ -77,16 +87,16 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         Root<UserModel> root = query.from(UserModel.class);
 
         List<Selection<?>> selection = new ArrayList<>();
-        selection.add(root.get("id"));
-        selection.add(root.get("username"));
-        selection.add(root.get("name"));
+        selection.add(root.get(UserModel_.id));
+        selection.add(root.get(UserModel_.username));
+        selection.add(root.get(UserModel_.name));
 
-        Predicate condition = root.get("jid").in(userJids);
+        Predicate condition = root.get(UserModel_.jid).in(userJids);
 
         CriteriaBuilder.Case orderCase = cb.selectCase();
         long i = 0;
         for (String userJid : userJids) {
-            orderCase = orderCase.when(cb.equal(root.get("jid"), userJid), i);
+            orderCase = orderCase.when(cb.equal(root.get(UserModel_.jid), userJid), i);
             ++i;
         }
         Order order = cb.asc(orderCase.otherwise(i));
@@ -107,7 +117,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         CriteriaQuery<UserModel> query = cb.createQuery(UserModel.class);
         Root<UserModel> root = query.from(UserModel.class);
 
-        query.where(cb.equal(root.get("username"), username));
+        query.where(cb.equal(root.get(UserModel_.username), username));
 
         return JPA.em().createQuery(query).getSingleResult();
     }

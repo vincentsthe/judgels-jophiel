@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.daos.hibernate;
 import org.iatoki.judgels.commons.models.daos.hibernate.AbstractHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.IdTokenDao;
 import org.iatoki.judgels.jophiel.models.domains.IdTokenModel;
+import org.iatoki.judgels.jophiel.models.domains.IdTokenModel_;
 import play.db.jpa.JPA;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -18,7 +19,7 @@ public final class IdTokenHibernateDao extends AbstractHibernateDao<Long, IdToke
 
         Root<IdTokenModel> root =  query.from(IdTokenModel.class);
 
-        query.where(cb.equal(root.get("code"), code));
+        query.where(cb.equal(root.get(IdTokenModel_.code), code));
 
         return JPA.em().createQuery(query).getSingleResult();
     }

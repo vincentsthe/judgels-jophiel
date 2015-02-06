@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.daos.hibernate;
 import org.iatoki.judgels.commons.models.daos.hibernate.AbstractHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RedirectURIDao;
 import org.iatoki.judgels.jophiel.models.domains.RedirectURIModel;
+import org.iatoki.judgels.jophiel.models.domains.RedirectURIModel_;
 import play.db.jpa.JPA;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -19,7 +20,7 @@ public final class RedirectURIHibernateDao extends AbstractHibernateDao<Long, Re
 
         Root<RedirectURIModel> root = query.from(RedirectURIModel.class);
 
-        query.where(cb.equal(root.get("clientJid"), clientJid));
+        query.where(cb.equal(root.get(RedirectURIModel_.clientJid), clientJid));
 
         return JPA.em().createQuery(query).getResultList();
     }

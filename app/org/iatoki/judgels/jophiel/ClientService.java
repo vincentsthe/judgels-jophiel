@@ -11,6 +11,8 @@ public interface ClientService {
 
     boolean checkIsAccessTokenExist(String token);
 
+    boolean checkIsClientExist(String clientJid);
+
     Client findClientById(long clientId);
 
     Client findClientByJid(String clientJid);
@@ -19,15 +21,19 @@ public interface ClientService {
 
     String generateAccessToken(String code, String userId, String clientId, List<String> scopes);
 
-    String generateRefreshToken(String code, String userId, String clientId, List<String> scopes);
+    void generateRefreshToken(String code, String userId, String clientId, List<String> scopes);
 
     void generateIdToken(String code, String userId, String clientId, String nonce, long authTime, String accessToken);
 
     org.iatoki.judgels.jophiel.AuthorizationCode findAuthorizationCodeByCode(String code);
 
+    AccessToken regenerateAccessToken(String code, String userId, String clientId, List<String> scopes);
+
     AccessToken findAccessTokenByAccessToken(String token);
 
     AccessToken findAccessTokenByCode(String code);
+
+    RefreshToken findRefreshTokenByRefreshToken(String token);
 
     RefreshToken findRefreshTokenByCode(String code);
 

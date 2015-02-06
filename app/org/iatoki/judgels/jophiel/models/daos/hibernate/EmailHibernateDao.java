@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.daos.hibernate;
 import org.iatoki.judgels.commons.models.daos.hibernate.AbstractHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
 import org.iatoki.judgels.jophiel.models.domains.EmailModel;
+import org.iatoki.judgels.jophiel.models.domains.EmailModel_;
 import play.db.jpa.JPA;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -24,7 +25,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
 
         Root<EmailModel> root = query.from(EmailModel.class);
 
-        query.where(cb.equal(root.get("userJid"), userJid));
+        query.where(cb.equal(root.get(EmailModel_.userJid), userJid));
 
         return JPA.em().createQuery(query).getSingleResult();
     }
@@ -36,11 +37,11 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
         Root<EmailModel> root = query.from(EmailModel.class);
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.like(root.get("email"), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get(EmailModel_.email), "%" + filterString + "%"));
 
         Predicate condition = cb.or(predicates.toArray(new Predicate[predicates.size()]));
 
-        query.select(root.get("userJid")).where(condition);
+        query.select(root.get(EmailModel_.userJid)).where(condition);
         return JPA.em().createQuery(query).getResultList();
     }
 
@@ -50,7 +51,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
         CriteriaQuery<String> query = cb.createQuery(String.class);
         Root<EmailModel> root = query.from(EmailModel.class);
 
-        Predicate condition = root.get("userJid").in(userJids);
+        Predicate condition = root.get(EmailModel_.userJid).in(userJids);
 
         Order orderBy = null;
         if ("asc".equals(order)) {
@@ -59,7 +60,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
             orderBy = cb.desc(root.get(sortBy));
         }
 
-        query.select(root.get("userJid")).where(condition).orderBy(orderBy);
+        query.select(root.get(EmailModel_.userJid)).where(condition).orderBy(orderBy);
         return JPA.em().createQuery(query).getResultList();
     }
 
@@ -70,15 +71,15 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
         Root<EmailModel> root = query.from(EmailModel.class);
 
         List<Selection<?>> selection = new ArrayList<>();
-        selection.add(root.get("userJid"));
-        selection.add(root.get("email"));
+        selection.add(root.get(EmailModel_.userJid));
+        selection.add(root.get(EmailModel_.email));
 
-        Predicate condition = root.get("userJid").in(userJids);
+        Predicate condition = root.get(EmailModel_.userJid).in(userJids);
 
         CriteriaBuilder.Case orderCase = cb.selectCase();
         long i = 0;
         for (String userJid : userJids) {
-            orderCase = orderCase.when(cb.equal(root.get("userJid"), userJid), i);
+            orderCase = orderCase.when(cb.equal(root.get(EmailModel_.userJid), userJid), i);
             ++i;
         }
         Order order = cb.asc(orderCase.otherwise(i));
@@ -99,7 +100,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
         CriteriaQuery<EmailModel> query = cb.createQuery(EmailModel.class);
         Root<EmailModel> root = query.from(EmailModel.class);
 
-        query.where(cb.equal(root.get("email"), email));
+        query.where(cb.equal(root.get(EmailModel_.email), email));
 
         return JPA.em().createQuery(query).getSingleResult();
     }

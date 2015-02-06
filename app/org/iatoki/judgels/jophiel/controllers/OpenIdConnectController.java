@@ -1,6 +1,5 @@
 package org.iatoki.judgels.jophiel.controllers;
 
-
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
@@ -31,6 +30,7 @@ import org.iatoki.judgels.jophiel.UserAutoComplete;
 import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.views.html.authView;
 import org.iatoki.judgels.jophiel.views.html.loginView;
+import play.Logger;
 import play.cache.Cache;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -59,14 +59,6 @@ public final class OpenIdConnectController extends Controller {
         this.clientService = clientService;
     }
 
-    private Result showLogin(Form<LoginForm> form, String continueUrl) {
-        LazyHtml content = new LazyHtml(loginView.render(form, continueUrl));
-        content.appendLayout(c -> noSidebarLayout.render(c));
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
-        return lazyOk(content);
-    }
-
     @AddCSRFToken
     public Result login(String continueUrl) {
         Form<LoginForm> form = Form.form(LoginForm.class);
@@ -78,6 +70,7 @@ public final class OpenIdConnectController extends Controller {
     public Result postLogin(String continueUrl) {
         Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
         if (form.hasErrors()) {
+            Logger.error(form.errors().toString());
             return showLogin(form, continueUrl);
         } else {
             LoginForm loginData = form.get();
@@ -92,19 +85,19 @@ public final class OpenIdConnectController extends Controller {
 
     @Transactional
     public Result authRequest() {
+        String redirectURI = request().uri().substring(request().uri().indexOf("?") + 1);
         if ((IdentityUtils.getUserJid() == null) || (!userService.isUserJidExist(IdentityUtils.getUserJid()))) {
             return redirect((routes.OpenIdConnectController.login("http://" + request().host() + request().uri())));
         } else {
             try {
                 String randomHash = JophielUtils.hashMD5(UUID.randomUUID().toString());
-                Cache.set(randomHash, request().uri().substring(request().uri().indexOf("?") + 1));
+                Cache.set(randomHash, redirectURI);
 
-                AuthenticationRequest req = AuthenticationRequest.parse(request().uri().substring(request().uri().indexOf("?") + 1));
+                AuthenticationRequest req = AuthenticationRequest.parse(redirectURI);
                 ClientID clientID = req.getClientID();
                 Client client = clientService.findClientByJid(clientID.toString());
 
                 List<String> scopes = req.getScope().toStringList();
-
                 if (clientService.checkIsClientAuthorized(clientID.toString(), scopes)) {
                     return postAuthRequest(randomHash);
                 } else {
@@ -115,9 +108,8 @@ public final class OpenIdConnectController extends Controller {
                     return lazyOk(content);
                 }
             } catch (ParseException e) {
-                e.printStackTrace();
-
-                return badRequest();
+                Logger.error("Exception when parsing authentication request.", e);
+                return redirect(redirectURI + "?error=invalid_request");
             }
         }
     }
@@ -129,9 +121,7 @@ public final class OpenIdConnectController extends Controller {
             try {
                 AuthenticationRequest req = AuthenticationRequest.parse(path.toString());
                 ClientID clientID = req.getClientID();
-
                 Client client = clientService.findClientByJid(clientID.toString());
-
                 URI redirectURI = req.getRedirectionURI();
                 ResponseType responseType = req.getResponseType();
                 State state = req.getState();
@@ -139,62 +129,63 @@ public final class OpenIdConnectController extends Controller {
                 String nonce = (req.getNonce() != null) ? req.getNonce().toString() : "";
 
                 AuthorizationCode code = clientService.generateAuthorizationCode(client.getJid(), redirectURI.toString(), responseType.toString(), scope.toStringList());
-                URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
-
                 String accessToken = clientService.generateAccessToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
-                String refreshToken = clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
-
+                clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
                 clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
-
+                URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
-                e.printStackTrace();
-
-                return badRequest();
+                Logger.error("Exception when parsing authentication request.", e);
+                return redirect(path + "?error=invalid_request");
             }
-
         } else {
-            return badRequest();
+            throw new RuntimeException("This exception should never happened.");
         }
     }
 
     @Transactional
     public Result token() {
         DynamicForm form = DynamicForm.form().bindFromRequest();
-
         String grantType = form.get("grant_type");
 
         if ("authorization_code".equals(grantType)) {
-            String code = form.get("code");
-            String redirectUri = form.get("redirect_uri");
-            org.iatoki.judgels.jophiel.AuthorizationCode authorizationCode = clientService.findAuthorizationCodeByCode(code);
+            return processTokenAuthCodeRequest(form);
+        } else if ("refresh_token".equals(grantType)) {
+            return processTokenRefreshTokenRequest(form);
+        } else {
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_grant");
+            return badRequest(node);
+        }
+    }
 
-            if ((authorizationCode.getRedirectURI().equals(redirectUri)) && (!authorizationCode.isExpired())) {
-                String scope = form.get("scope");
-                String clientId;
-                String clientSecret;
+    private Result processTokenAuthCodeRequest(DynamicForm form) {
+        String code = form.get("code");
+        String redirectUri = form.get("redirect_uri");
+        org.iatoki.judgels.jophiel.AuthorizationCode authorizationCode = clientService.findAuthorizationCodeByCode(code);
 
-                if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
-                    String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
-                    clientId = userPass[0];
-                    clientSecret = userPass[1];
-                } else {
-                    clientId = form.get("client_id");
-                    clientSecret = form.get("client_secret");
-                }
+        if ((authorizationCode.getRedirectURI().equals(redirectUri)) && (!authorizationCode.isExpired())) {
+            String scope = form.get("scope");
+            String clientId;
+            String clientSecret;
+            if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
+                String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
+                clientId = userPass[0];
+                clientSecret = userPass[1];
+            } else {
+                clientId = form.get("client_id");
+                clientSecret = form.get("client_secret");
+            }
 
+            if (clientId != null) {
                 Client client = clientService.findClientByJid(clientId);
-
-                if (client.getSecret().equals(clientSecret)) {
-
+                if ((client.getSecret().equals(clientSecret)) && (authorizationCode.getClientJid().equals(client.getJid()))) {
                     Set<String> addedSet = Arrays.asList(scope.split(" ")).stream()
                             .filter(s -> (!"".equals(s)) && (!client.getScopes().contains(StringUtils.upperCase(s))))
                             .collect(Collectors.toSet());
-
                     if (addedSet.isEmpty()) {
                         ObjectNode result = Json.newObject();
                         AccessToken accessToken = clientService.findAccessTokenByCode(code);
-
                         if (!accessToken.isRedeemed()) {
                             result.put("access_token", accessToken.getToken());
                             if (client.getScopes().contains("OFFLINE_ACCESS")) {
@@ -209,31 +200,84 @@ public final class OpenIdConnectController extends Controller {
                             }
                             result.put("token_type", "Bearer");
                             result.put("expire_in", clientService.redeemAccessTokenById(accessToken.getId()));
-
                             return ok(result);
                         } else {
-                            return badRequest();
+                            ObjectNode node = Json.newObject();
+                            node.put("error", "invalid_client");
+                            return badRequest(node);
                         }
                     } else {
-                        // TODO add scopes
-                        return badRequest();
+                        ObjectNode node = Json.newObject();
+                        node.put("error", "invalid_scope");
+                        return badRequest(node);
                     }
                 } else {
-                    // TODO error authentication
-                    return notFound();
+                    ObjectNode node = Json.newObject();
+                    node.put("error", "unauthorized_client");
+                    return unauthorized(node);
                 }
             } else {
-                // TODO code expired
-                return notFound();
+                ObjectNode node = Json.newObject();
+                node.put("error", "invalid_client");
+                return badRequest(node);
             }
-        } else if ("refresh_token".equals(grantType)) {
-            String refreshToken = form.get("refresh_token");
-
-            // TODO support refresh token
-            return TODO;
         } else {
-            // TODO not supported grant type (implicit, dll)
-            return badRequest();
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_request");
+            return badRequest(node);
+        }
+    }
+
+    private Result processTokenRefreshTokenRequest(DynamicForm form) {
+        String refreshToken = form.get("refresh_token");
+
+        RefreshToken refreshToken1 = clientService.findRefreshTokenByRefreshToken(refreshToken);
+        if ((refreshToken1.getToken().equals(refreshToken)) && (refreshToken1.isRedeemed())) {
+            String clientId;
+            String clientSecret;
+            if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
+                String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
+                clientId = userPass[0];
+                clientSecret = userPass[1];
+            } else {
+                clientId = form.get("client_id");
+                clientSecret = form.get("client_secret");
+            }
+
+            if (clientId != null) {
+                Client client = clientService.findClientByJid(clientId);
+                if ((client.getSecret().equals(clientSecret)) && (refreshToken1.getClientJid().equals(client.getJid()))) {
+                    ObjectNode result = Json.newObject();
+                    if (refreshToken1.isRedeemed()) {
+                        AccessToken accessToken = clientService.regenerateAccessToken(refreshToken1.getCode(), refreshToken1.getUserJid(), refreshToken1.getClientJid(), Arrays.asList(refreshToken1.getScopes().split(",")));
+                        result.put("access_token", accessToken.getToken());
+                        if (client.getScopes().contains("OPENID")) {
+                            IdToken idToken = clientService.findIdTokenByCode(refreshToken1.getCode());
+                            result.put("id_token", idToken.getToken());
+                            clientService.redeemIdTokenById(idToken.getId());
+                        }
+                        result.put("token_type", "Bearer");
+                        result.put("expire_in", clientService.redeemAccessTokenById(accessToken.getId()));
+                        return ok(result);
+                    } else {
+                        ObjectNode node = Json.newObject();
+                        node.put("error", "invalid_client");
+                        return badRequest(node);
+                    }
+                } else {
+                    ObjectNode node = Json.newObject();
+                    node.put("error", "unauthorized_client");
+                    return unauthorized(node);
+                }
+            } else {
+                ObjectNode node = Json.newObject();
+                node.put("error", "invalid_client");
+                return badRequest(node);
+            }
+        } else {
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_request");
+            return badRequest(node);
         }
     }
 
@@ -250,17 +294,16 @@ public final class OpenIdConnectController extends Controller {
         if (clientService.checkIsAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
             User user = userService.findUserByJid(accessToken.getUserJid());
-
             ObjectNode result = Json.newObject();
             result.put("sub", user.getJid());
             result.put("name", user.getName());
             result.put("preferred_username", user.getUsername());
             result.put("email", user.getEmail());
-
             return ok(result);
         } else {
-            // TODO invalid token
-            return notFound();
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_token");
+            return unauthorized(node);
         }
     }
 
@@ -286,11 +329,11 @@ public final class OpenIdConnectController extends Controller {
             for (User user1 : users) {
                 responseBuilder.add(new UserAutoComplete(user1.getJid(), user1.getJid(), user1.getUsername() + " (" + user1.getName() + ")"));
             }
-
             return ok(Json.toJson(responseBuilder.build()));
         } else {
-            // TODO invalid token
-            return notFound();
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_token");
+            return unauthorized(node);
         }
     }
 
@@ -323,8 +366,9 @@ public final class OpenIdConnectController extends Controller {
                 return notFound();
             }
         } else {
-            // TODO invalid token
-            return notFound();
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_token");
+            return unauthorized(node);
         }
     }
 
@@ -346,9 +390,18 @@ public final class OpenIdConnectController extends Controller {
 
             return ok(Json.toJson(response));
         } else {
-            // TODO invalid token
-            return notFound();
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_token");
+            return unauthorized(node);
         }
+    }
+
+    private Result showLogin(Form<LoginForm> form, String continueUrl) {
+        LazyHtml content = new LazyHtml(loginView.render(form, continueUrl));
+        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> headerFooterLayout.render(c));
+        content.appendLayout(c -> baseLayout.render("TODO", c));
+        return lazyOk(content);
     }
 
     private Result lazyOk(LazyHtml content) {

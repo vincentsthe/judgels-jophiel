@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface ClientDao extends JudgelsDao<ClientModel> {
 
+    boolean isClientExistByJid(String clientJid);
+
     long countByFilter(String filterString);
 
     List<ClientModel> findByFilterAndSort(String filterString, String sortBy, String order, long first, long max);

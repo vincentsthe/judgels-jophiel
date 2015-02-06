@@ -32,7 +32,6 @@ import play.mvc.Result;
 public final class UserController extends Controller {
 
     private static final long PAGE_SIZE = 20;
-
     private final UserService userService;
 
     public UserController(UserService userService) {
@@ -42,17 +41,6 @@ public final class UserController extends Controller {
     @Transactional
     public Result index() {
         return list(0, "id", "asc", "");
-    }
-
-    private Result showCreate(Form<UserUpsertForm> form) {
-        LazyHtml content = new LazyHtml(createView.render(form));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.create"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.create"), routes.UserController.create())
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
     }
 
     @AddCSRFToken
@@ -85,17 +73,6 @@ public final class UserController extends Controller {
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
                 new InternalLink(Messages.get("user.view"), routes.UserController.view(userId))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
-    }
-
-    private Result showUpdate(Form<UserUpsertForm> form, long userId) {
-        LazyHtml content = new LazyHtml(updateView.render(form, userId));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.update"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.update"), routes.UserController.update(userId))
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -148,15 +125,6 @@ public final class UserController extends Controller {
         return lazyOk(content);
     }
 
-    private Result showRegister(Form<RegisterForm> form) {
-        LazyHtml content = new LazyHtml(registerView.render(form));
-        content.appendLayout(c -> noSidebarLayout.render(c));
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
-
-        return lazyOk(content);
-    }
-
     @AddCSRFToken
     public Result register() {
         Form<RegisterForm> form = Form.form(RegisterForm.class);
@@ -183,6 +151,37 @@ public final class UserController extends Controller {
     public Result logout() {
         session().clear();
         return TODO;
+    }
+
+    private Result showCreate(Form<UserUpsertForm> form) {
+        LazyHtml content = new LazyHtml(createView.render(form));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.create"), c));
+        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                new InternalLink(Messages.get("user.create"), routes.UserController.create())
+        ), c));
+        appendTemplateLayout(content);
+        return lazyOk(content);
+    }
+
+    private Result showUpdate(Form<UserUpsertForm> form, long userId) {
+        LazyHtml content = new LazyHtml(updateView.render(form, userId));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.update"), c));
+        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                new InternalLink(Messages.get("user.update"), routes.UserController.update(userId))
+        ), c));
+        appendTemplateLayout(content);
+        return lazyOk(content);
+    }
+
+    private Result showRegister(Form<RegisterForm> form) {
+        LazyHtml content = new LazyHtml(registerView.render(form));
+        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> headerFooterLayout.render(c));
+        content.appendLayout(c -> baseLayout.render("TODO", c));
+
+        return lazyOk(content);
     }
 
     private void appendTemplateLayout(LazyHtml content) {
