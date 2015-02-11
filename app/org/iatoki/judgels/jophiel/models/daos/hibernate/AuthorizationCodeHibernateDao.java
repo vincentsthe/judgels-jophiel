@@ -12,6 +12,10 @@ import javax.persistence.criteria.Root;
 
 public final class AuthorizationCodeHibernateDao extends AbstractHibernateDao<Long, AuthorizationCodeModel> implements AuthorizationCodeDao {
 
+    public AuthorizationCodeHibernateDao() {
+        super(AuthorizationCodeModel.class);
+    }
+
     @Override
     public AuthorizationCodeModel findByCode(String code) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();

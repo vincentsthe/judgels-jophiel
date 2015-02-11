@@ -12,6 +12,10 @@ import javax.persistence.criteria.Root;
 
 public final class IdTokenHibernateDao extends AbstractHibernateDao<Long, IdTokenModel> implements IdTokenDao {
 
+    public IdTokenHibernateDao() {
+        super(IdTokenModel.class);
+    }
+
     @Override
     public IdTokenModel findByCode(String code) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();

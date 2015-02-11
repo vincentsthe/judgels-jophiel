@@ -69,10 +69,21 @@ public final class UserController extends Controller {
     public Result view(long userId) {
         User user = userService.findUserById(userId);
         LazyHtml content = new LazyHtml(viewView.render(user));
-        content.appendLayout(c -> headingWithActionLayout.render(user.getName(), new InternalLink(Messages.get("user.update"), routes.UserController.update(userId)), c));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.user") + " #" + userId + ": " + user.getName(), new InternalLink(Messages.get("commons.update"), routes.UserController.update(userId)), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
                 new InternalLink(Messages.get("user.view"), routes.UserController.view(userId))
+        ), c));
+        appendTemplateLayout(content);
+        return lazyOk(content);
+    }
+
+    private Result showUpdate(Form<UserUpsertForm> form, long userId, String userName) {
+        LazyHtml content = new LazyHtml(updateView.render(form, userId));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.user") + " #" + userId + ": " + userName, c));
+        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+                new InternalLink(Messages.get("user.update"), routes.UserController.update(userId))
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -85,16 +96,17 @@ public final class UserController extends Controller {
         UserUpsertForm userUpsertForm = new UserUpsertForm(user);
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).fill(userUpsertForm);
 
-        return showUpdate(form, userId);
+        return showUpdate(form, userId, user.getName());
     }
 
     @RequireCSRFCheck
     @Transactional
     public Result postUpdate(long userId) {
+        User user = userService.findUserById(userId);
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).bindFromRequest();
 
-        if (form.hasErrors()) {
-            return showUpdate(form, userId);
+        if (form.hasErrors() || form.hasGlobalErrors()) {
+            return showUpdate(form, userId, user.getName());
         } else {
             UserUpsertForm userUpsertForm = form.get();
 
@@ -112,11 +124,11 @@ public final class UserController extends Controller {
     }
 
     @Transactional
-    public Result list(long page, String sortBy, String orderBy, String filterString) {
-        Page<User> currentPage = userService.pageUser(page, PAGE_SIZE, sortBy, orderBy, filterString);
+    public Result list(long page, String orderBy, String orderDir, String filterString) {
+        Page<User> currentPage = userService.pageUsers(page, PAGE_SIZE, orderBy, orderDir, filterString);
 
-        LazyHtml content = new LazyHtml(listView.render(currentPage, sortBy, orderBy, filterString));
-        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("user.create"), routes.UserController.create()), c));
+        LazyHtml content = new LazyHtml(listView.render(currentPage, orderBy, orderDir, filterString));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("commons.create"), routes.UserController.create()), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index())
         ), c));

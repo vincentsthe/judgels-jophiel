@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.iatoki.judgels.commons.IdentityUtils;
+import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
@@ -38,27 +39,23 @@ public final class UserServiceImpl implements UserService {
 
     @Override
     public User findUserById(long userId) {
-        UserModel userRecord = userDao.findById(userId);
-        EmailModel emailRecord = emailDao.findByUserJid(userRecord.jid);
+        UserModel userModel = userDao.findById(userId);
+        EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
 
-        User user = new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email);
-
-        return user;
+        return createUserFromModels(userModel, emailModel);
     }
 
     @Override
     public User findUserByJid(String userJid) {
-        UserModel userRecord = userDao.findByJid(userJid);
-        EmailModel emailRecord = emailDao.findByUserJid(userRecord.jid);
+        UserModel userModel = userDao.findByJid(userJid);
+        EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
 
-        User user = new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email);
-
-        return user;
+        return createUserFromModels(userModel, emailModel);
     }
 
     @Override
-    public boolean isUserJidExist(String userJid) {
-        return userDao.isUserJidExist(userJid);
+    public boolean existsByJid(String userJid) {
+        return (userDao.findByJid(userJid) != null);
     }
 
     @Override
@@ -66,7 +63,7 @@ public final class UserServiceImpl implements UserService {
         UserModel userModel = new UserModel();
         userModel.username = username;
         userModel.name = name;
-        userModel.password = JophielUtils.hashSHA256(password);
+        userModel.password = JudgelsUtils.hashSHA256(password);
 
         userDao.persist(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
@@ -83,7 +80,7 @@ public final class UserServiceImpl implements UserService {
 
         userModel.username = username;
         userModel.name = name;
-        userModel.password = JophielUtils.hashSHA256(password);
+        userModel.password = JudgelsUtils.hashSHA256(password);
 
         userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
@@ -102,7 +99,7 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<User> pageUser(long page, long pageSize, String sortBy, String order, String filterString) {
+    public Page<User> pageUsers(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString) {
         List<String> userUserJid = userDao.findUserJidByFilter(filterString);
         List<String> emailUserJid = emailDao.findUserJidByFilter(filterString);
 
@@ -115,15 +112,15 @@ public final class UserServiceImpl implements UserService {
         ImmutableList.Builder<User> listBuilder = ImmutableList.builder();
 
         if (totalPage > 0) {
-            List<String> sortedUserJid = null;
-            if (sortBy.equals("email")) {
-                sortedUserJid = emailDao.sortUserJid(userJidSet, sortBy, order);
+            List<String> sortedUserJid;
+            if (orderBy.equals("email")) {
+                sortedUserJid = emailDao.sortUserJid(userJidSet, orderBy, orderDir);
             } else {
-                sortedUserJid = userDao.sortUserJid(userJidSet, sortBy, order);
+                sortedUserJid = userDao.sortUserJid(userJidSet, orderBy, orderDir);
             }
 
-            List<UserModel> userModels = userDao.findBySetOfUserJid(sortedUserJid, page * pageSize, pageSize);
-            List<EmailModel> emailModels = emailDao.findBySetOfUserJid(sortedUserJid, page * pageSize, pageSize);
+            List<UserModel> userModels = userDao.findBySetOfUserJid(sortedUserJid, pageIndex * pageSize, pageSize);
+            List<EmailModel> emailModels = emailDao.findBySetOfUserJid(sortedUserJid, pageIndex * pageSize, pageSize);
 
             for (int i = 0; i < userModels.size(); ++i) {
                 UserModel userModel = userModels.get(i);
@@ -132,8 +129,7 @@ public final class UserServiceImpl implements UserService {
             }
         }
 
-        Page<User> ret = new Page<>(listBuilder.build(), totalPage, page, pageSize);
-        return ret;
+        return new Page<>(listBuilder.build(), totalPage, pageIndex, pageSize);
     }
 
     @Override
@@ -148,7 +144,7 @@ public final class UserServiceImpl implements UserService {
                 }
             }
 
-            if ((userModel != null) && (userModel.password.equals(JophielUtils.hashSHA256(password)))) {
+            if ((userModel != null) && (userModel.password.equals(JudgelsUtils.hashSHA256(password)))) {
                 Http.Context.current().session().put("userJid", userModel.jid);
                 return true;
             } else {
@@ -159,4 +155,7 @@ public final class UserServiceImpl implements UserService {
         }
     }
 
+    private User createUserFromModels(UserModel userModel, EmailModel emailModel) {
+            return new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email);
+    }
 }

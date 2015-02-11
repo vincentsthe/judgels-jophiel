@@ -12,6 +12,10 @@ import javax.persistence.criteria.Root;
 
 public final class RefreshTokenHibernateDao extends AbstractHibernateDao<Long, RefreshTokenModel> implements RefreshTokenDao {
 
+    public RefreshTokenHibernateDao() {
+        super(RefreshTokenModel.class);
+    }
+
     @Override
     public RefreshTokenModel findByCode(String code) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();

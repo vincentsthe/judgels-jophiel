@@ -14,6 +14,7 @@ import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
+import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.views.html.layouts.baseLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
@@ -86,12 +87,12 @@ public final class OpenIdConnectController extends Controller {
     @Transactional
     public Result authRequest() {
         String redirectURI = request().uri().substring(request().uri().indexOf("?") + 1);
-        if ((IdentityUtils.getUserJid() == null) || (!userService.isUserJidExist(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
             return redirect((routes.OpenIdConnectController.login("http://" + request().host() + request().uri())));
         } else {
             try {
-                String randomHash = JophielUtils.hashMD5(UUID.randomUUID().toString());
-                Cache.set(randomHash, redirectURI);
+                String randomHash = JudgelsUtils.hashMD5(UUID.randomUUID().toString());
+                Cache.set(randomHash, request().uri().substring(request().uri().indexOf("?") + 1));
 
                 AuthenticationRequest req = AuthenticationRequest.parse(redirectURI);
                 ClientID clientID = req.getClientID();
@@ -360,7 +361,7 @@ public final class OpenIdConnectController extends Controller {
             User user = userService.findUserByJid(accessToken.getUserJid());
             String userJid = form.get("userJid");
 
-            if (userService.isUserJidExist(userJid)) {
+            if (userService.existsByJid(userJid)) {
                 return ok();
             } else {
                 return notFound();

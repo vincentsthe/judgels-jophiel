@@ -51,6 +51,6 @@ public interface ClientService {
 
     void deleteClient(long clientId);
 
-    Page<Client> pageClient(long page, long pageSize, String sortBy, String order, String filterString);
+    Page<Client> pageClients(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString);
 
 }

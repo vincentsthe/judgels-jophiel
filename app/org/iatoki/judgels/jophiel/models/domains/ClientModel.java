@@ -1,5 +1,6 @@
 package org.iatoki.judgels.jophiel.models.domains;
 
+import org.iatoki.judgels.commons.models.JidPrefix;
 import org.iatoki.judgels.commons.models.domains.AbstractJudgelsModel;
 
 import javax.persistence.Entity;
@@ -7,6 +8,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "jophiel_client")
+@JidPrefix("JOCL")
 public final class ClientModel extends AbstractJudgelsModel {
 
     public String name;

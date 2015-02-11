@@ -2,7 +2,7 @@
 
 @import play.i18n.Messages
 
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-4", "col-xs-8") }
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 <div class="row">
     <div class="col-md-12 primary-content-breadcrumb">
@@ -14,11 +14,11 @@
 
 <div class="row login-content">
     <div class="col-md-6 col-md-offset-3">
-        <h2>@Messages.get("login.heading.login")</h2>
+        <h2>@Messages.get("login.logIn")</h2>
 
         @if(form.hasGlobalErrors) {
-            @for(error <- form.globalErrors()) {
-                @error.message()
+            @for(error <- form.globalErrors) {
+                @error.message
             }
         }
 
@@ -26,11 +26,11 @@
 
             @helper.CSRF.formField
 
-            @b3.text(form("usernameOrEmail"), '_label -> Messages.get("user.field.usernameOrEmail"))
-            @b3.password(form("password"), '_label -> Messages.get("user.field.password"))
+            @b3.text(form("usernameOrEmail"), '_label -> Messages.get("user.usernameOrEmail"))
+            @b3.password(form("password"), '_label -> Messages.get("user.password"))
 
-            @b3.submit('class -> "btn btn-primary") { @Messages.get("login.login") }
+            @b3.submit('class -> "btn btn-primary") { @Messages.get("login.logIn") }
         }
-        @Messages.get("login.text.dontHaveAccount") <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.register()">@Messages.get("login.register")</a>
+        @Messages.get("login.dontHaveAccount") <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.register()">@Messages.get("login.register")</a>
     </div>
 </div>

@@ -12,7 +12,7 @@ public interface UserService {
 
     User findUserByJid(String userJid);
 
-    boolean isUserJidExist(String userJid);
+    boolean existsByJid(String userJid);
 
     void createUser(String username, String name, String email, String password);
 
@@ -20,7 +20,7 @@ public interface UserService {
 
     void deleteUser(long userId);
 
-    Page<User> pageUser(long page, long pageSize, String sortBy, String order, String filterString);
+    Page<User> pageUsers(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString);
 
     boolean login(String usernameOrEmail, String password);
 }

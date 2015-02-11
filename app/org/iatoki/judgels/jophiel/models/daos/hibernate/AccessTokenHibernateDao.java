@@ -12,8 +12,12 @@ import javax.persistence.criteria.Root;
 
 public final class AccessTokenHibernateDao extends AbstractHibernateDao<Long, AccessTokenModel> implements AccessTokenDao {
 
+    public AccessTokenHibernateDao() {
+        super(AccessTokenModel.class);
+    }
+
     @Override
-    public boolean checkIsExist(String token) {
+    public boolean existsByToken(String token) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
 

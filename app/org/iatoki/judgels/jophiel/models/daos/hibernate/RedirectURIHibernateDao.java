@@ -13,6 +13,10 @@ import java.util.List;
 
 public final class RedirectURIHibernateDao extends AbstractHibernateDao<Long, RedirectURIModel> implements RedirectURIDao {
 
+    public RedirectURIHibernateDao() {
+        super(RedirectURIModel.class);
+    }
+
     @Override
     public List<RedirectURIModel> findByClientJid(String clientJid) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();

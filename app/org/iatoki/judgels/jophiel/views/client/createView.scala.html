@@ -9,11 +9,11 @@
 
     @helper.CSRF.formField
 
-    @b3.text(form("name"), '_label -> Messages.get("client.field.name"))
-    @b3.select(form("applicationType"), Seq("WEB_SERVER" -> "Web Server", "ANDROID" -> "Android"), '_label -> Messages.get("client.field.applicationType"))
-    @b3.text(form("redirectURIs"), '_label -> Messages.get("client.field.redirectURIs"))
+    @b3.text(form("name"), '_label -> Messages.get("client.name"))
+    @b3.select(form("applicationType"), Seq("WEB_SERVER" -> "Web Server", "ANDROID" -> "Android"), '_label -> Messages.get("client.applicationType"))
+    @b3.text(form("redirectURIs"), '_label -> Messages.get("client.redirectURIs"))
     <div class="form-group" id="">
-        <label class="control-label col-xs-2">@Messages.get("client.field.scopes")</label>
+        <label class="control-label col-md-2">@Messages.get("client.scopes")</label>
         <div class="col-xs-10">
             <div class="multi-checkbox-list">
             @for(scope <- Scope.values().zipWithIndex) {

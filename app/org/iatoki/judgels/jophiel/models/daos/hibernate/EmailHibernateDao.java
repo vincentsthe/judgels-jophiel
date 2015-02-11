@@ -18,6 +18,10 @@ import java.util.List;
 
 public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailModel> implements EmailDao {
 
+    public EmailHibernateDao() {
+        super(EmailModel.class);
+    }
+
     @Override
     public EmailModel findByUserJid(String userJid) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
@@ -76,7 +80,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
 
         Predicate condition = root.get(EmailModel_.userJid).in(userJids);
 
-        CriteriaBuilder.Case orderCase = cb.selectCase();
+        CriteriaBuilder.Case<Long> orderCase = cb.selectCase();
         long i = 0;
         for (String userJid : userJids) {
             orderCase = orderCase.when(cb.equal(root.get(EmailModel_.userJid), userJid), i);

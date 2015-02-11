@@ -4,9 +4,9 @@
 
 @helper.CSRF.formField
 
-@b3.text(form("username"), '_label -> Messages.get("user.field.username"))
-@b3.text(form("name"), '_label -> Messages.get("user.field.name"))
-@b3.email(form("email"), '_label -> Messages.get("user.field.email"))
-@b3.password(form("password"), '_label -> Messages.get("user.field.password"))
-@b3.password(form("confirmPassword"), '_label -> Messages.get("user.field.confirmPassword"))
+@b3.text(form("username"), '_label -> Messages.get("user.username"))
+@b3.text(form("name"), '_label -> Messages.get("user.name"))
+@b3.email(form("email"), '_label -> Messages.get("user.email"))
+@b3.password(form("password"), '_label -> Messages.get("user.password"))
+@b3.password(form("confirmPassword"), '_label -> Messages.get("user.confirmPassword"))
 

@@ -6,12 +6,13 @@ user.create=Create User
 user.update=Update User
 user.view=View User
 
-user.field.username=Username
-user.field.name=Name
-user.field.email=Email
-user.field.password=Password
-user.field.confirmPassword=Confirm Password
-user.field.usernameOrEmail=Username or Email
+user.username=Username
+user.name=Name
+user.email=Email
+user.password=Password
+user.confirmPassword=Confirm Password
+user.username=Username
+user.usernameOrEmail=Username or Email
 
 client.client=Client
 client.clients=Clients
@@ -21,13 +22,13 @@ client.create=Create Client
 client.update=Update Client
 client.view=View Client
 
-client.field.name=Name
-client.field.applicationType=Application Type
-client.field.redirectURIs=Redirect URIs
-client.field.scopes=Scopes
-client.field.secret=Secret
+client.name=Name
+client.applicationType=Application Type
+client.redirectURIs=Redirect URIs
+client.scopes=Scopes
+client.secret=Secret
 
-login.login=Log In
+login.logIn=Log In
 login.dontHaveAccount=Don't have account?
 login.register=Register
 

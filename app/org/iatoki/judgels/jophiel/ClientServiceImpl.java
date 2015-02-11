@@ -1,7 +1,9 @@
 package org.iatoki.judgels.jophiel;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -14,6 +16,7 @@ import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
+import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AccessTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AuthorizationCodeDao;
@@ -73,12 +76,12 @@ public final class ClientServiceImpl implements ClientService {
 
     @Override
     public boolean checkIsAccessTokenExist(String token) {
-        return accessTokenDao.checkIsExist(token);
+        return accessTokenDao.existsByToken(token);
     }
 
     @Override
     public boolean checkIsClientExist(String clientJid) {
-        return clientDao.isClientExistByJid(clientJid);
+        return clientDao.existsByJid(clientJid);
     }
 
     @Override
@@ -88,7 +91,7 @@ public final class ClientServiceImpl implements ClientService {
         List<RedirectURIModel> redirectURIModels = redirectURIDao.findByClientJid(clientModel.jid);
         List<String> redirectURIs = redirectURIModels.stream().map(r -> r.redirectURI).collect(Collectors.toList());
 
-        return new Client(clientModel.id, clientModel.jid, clientModel.name, clientModel.secret, clientModel.applicationType.toString(), scopeString, redirectURIs);
+        return createClientFromModel(clientModel, scopeString, redirectURIs);
     }
 
     @Override
@@ -99,7 +102,7 @@ public final class ClientServiceImpl implements ClientService {
         List<RedirectURIModel> redirectURIModels = redirectURIDao.findByClientJid(clientModel.jid);
         List<String> redirectURIs = redirectURIModels.stream().map(r -> r.redirectURI).collect(Collectors.toList());
 
-        return new Client(clientModel.id, clientModel.jid, clientModel.name, clientModel.secret, clientModel.applicationType.toString(), scopeString, redirectURIs);
+        return createClientFromModel(clientModel, scopeString, redirectURIs);
     }
 
     @Override
@@ -198,7 +201,7 @@ public final class ClientServiceImpl implements ClientService {
             calendar.add(Calendar.WEEK_OF_MONTH, 2);
             claimsSet.setExpirationTime(calendar.getTime());
             claimsSet.setClaim("auth_time", authTime);
-            claimsSet.setClaim("at_hash", JophielUtils.hashMD5(accessToken).substring(accessToken.length() / 2));
+            claimsSet.setClaim("at_hash", JudgelsUtils.hashMD5(accessToken).substring(accessToken.length() / 2));
 
             SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.RS512), claimsSet);
             signedJWT.sign(signer);
@@ -318,7 +321,7 @@ public final class ClientServiceImpl implements ClientService {
     public void createClient(String name, String applicationType, List<String> scopes, List<String> redirectURIs) {
         ClientModel clientModel = new ClientModel();
         clientModel.name = name;
-        clientModel.secret = JophielUtils.hashMD5(UUID.randomUUID().toString());
+        clientModel.secret = JudgelsUtils.generateNewSecret();
         clientModel.applicationType = applicationType;
         List<String> scopeList = scopes.stream().filter(s -> ((s != null) && (Scope.valueOf(s) != null))).collect(Collectors.toList());
         clientModel.scopes = StringUtils.join(scopeList, ",");
@@ -365,17 +368,16 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public Page<Client> pageClient(long page, long pageSize, String sortBy, String order, String filterString) {
-        long totalPage = clientDao.countByFilter(filterString);
-        List<ClientModel> clientModel = clientDao.findByFilterAndSort(filterString, sortBy, order, page * pageSize, pageSize);
+    public Page<Client> pageClients(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString) {
+        long totalPages = clientDao.countByFilters(filterString, ImmutableMap.of());
+        List<ClientModel> clientModels = clientDao.findSortedByFilters(orderBy, orderDir, filterString, ImmutableMap.of(), pageIndex * pageSize, pageSize);
 
-        List<Client> clients = clientModel
-                .stream()
-                .map(c -> new Client(c.id, c.jid, c.name, c.secret, c.applicationType.toString(),
-                        ImmutableSet.copyOf(c.scopes.split(",")),
-                        ImmutableList.of())).collect(Collectors.toList());
+        List<Client> clients = Lists.transform(clientModels, m -> createClientFromModel(m, ImmutableSet.copyOf(m.scopes.split(",")), ImmutableList.of()));
 
-        return new Page<>(clients, totalPage, page, pageSize);
+        return new Page<>(clients, totalPages, pageIndex, pageSize);
     }
 
+    private Client createClientFromModel(ClientModel clientModel, Set<String> scopeString, List<String> redirectURIs) {
+        return new Client(clientModel.id, clientModel.jid, clientModel.name, clientModel.secret, clientModel.applicationType.toString(), scopeString, redirectURIs);
+    }
 }

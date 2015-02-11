@@ -2,7 +2,9 @@
 
 @import play.i18n.Messages
 
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-xs-3", "col-xs-9") }
+@import org.iatoki.judgels.jophiel.views.html.user.upsertView
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postUpdate(modelId)) {
 

@@ -19,14 +19,8 @@ import java.util.List;
 
 public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserModel> implements UserDao {
 
-    @Override
-    public boolean isUserJidExist(String userJid) {
-        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
-        CriteriaQuery<Long> query = cb.createQuery(Long.class);
-        Root<UserModel> root = query.from(UserModel.class);
-
-        query.select(cb.count(root)).where(cb.equal(root.get(UserModel_.jid), userJid));
-        return (JPA.em().createQuery(query).getSingleResult() != 0);
+    public UserHibernateDao() {
+        super(UserModel.class);
     }
 
     @Override
@@ -93,7 +87,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
 
         Predicate condition = root.get(UserModel_.jid).in(userJids);
 
-        CriteriaBuilder.Case orderCase = cb.selectCase();
+        CriteriaBuilder.Case<Long> orderCase = cb.selectCase();
         long i = 0;
         for (String userJid : userJids) {
             orderCase = orderCase.when(cb.equal(root.get(UserModel_.jid), userJid), i);

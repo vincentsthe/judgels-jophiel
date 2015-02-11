@@ -6,7 +6,7 @@ name := """jophiel"""
 
 version := "1.0-SNAPSHOT"
 
-lazy val main = (project in file("."))
+lazy val jophiel = (project in file("."))
                   .enablePlugins(PlayJava)
                   .disablePlugins(plugins.JUnitXmlReportPlugin)
                   .dependsOn(commons)
@@ -70,5 +70,3 @@ javaOptions in Test ++= Seq(
 )
 
 javacOptions ++= Seq("-s", "app")
-
-javacOptions ++= Seq("-Xlint:unchecked")
