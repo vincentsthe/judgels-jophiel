@@ -10,6 +10,7 @@ lazy val jophiel = (project in file("."))
                   .enablePlugins(PlayJava)
                   .disablePlugins(plugins.JUnitXmlReportPlugin)
                   .dependsOn(commons)
+                  .aggregate(commons)
 
 lazy val commons = RootProject(file("../judgels-play-commons"))
 
@@ -46,7 +47,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "prettify" % "4-Mar-2013",
   "org.webjars" % "requirejs" % "2.1.15",
   "com.puppycrawl.tools" % "checkstyle" % "6.1",
-  "com.nimbusds" % "c2id-server-sdk" % "2.0"
+  "com.nimbusds" % "c2id-server-sdk" % "2.0",
+  "com.typesafe.play" %% "play-mailer" % "2.4.0"
 )
 
 TestNGPlugin.testNGSettings

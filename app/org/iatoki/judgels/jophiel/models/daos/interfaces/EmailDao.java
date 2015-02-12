@@ -18,4 +18,8 @@ public interface EmailDao extends Dao<Long, EmailModel> {
 
     EmailModel findByEmail(String email);
 
+    boolean isExistByCode(String emailCode);
+
+    EmailModel findByCode(String emailCode);
+
 }

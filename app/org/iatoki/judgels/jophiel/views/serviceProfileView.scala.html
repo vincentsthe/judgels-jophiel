@@ -1,0 +1,32 @@
+@(form: Form[org.iatoki.judgels.jophiel.UserProfileForm], form2: Form[org.iatoki.judgels.jophiel.UserProfilePictureForm], returnURI: String)
+
+@import play.i18n.Messages
+
+@import org.iatoki.judgels.jophiel.views.html.user.upsertView
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
+
+<img class="avatar-picture center-block" src="@session().get("avatar")" alt="profilePicture"/>
+<br />
+<br />
+
+@b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postAvatar(returnURI), 'enctype -> "multipart/form-data", 'id -> "avatar-form") {
+    @b3.file(form2("avatar"), '_label -> Messages.get("user.avatar"), 'id -> "avatar-input")
+}
+
+<br />
+<br />
+<br />
+<br />
+
+
+@b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postProfile(returnURI)) {
+
+    @b3.text(form("name"), '_label -> Messages.get("user.name"))
+    @b3.password(form("password"), '_label -> Messages.get("user.password"))
+    @b3.password(form("confirmPassword"), '_label -> Messages.get("user.confirmPassword"))
+
+    @b3.submit('class -> "btn btn-primary") { @Messages.get("commons.update") }
+}
+
+<script type="text/javascript" src="@controllers.routes.Assets.versioned("javascripts/userProfilePicture.js")"></script>

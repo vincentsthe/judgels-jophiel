@@ -12,6 +12,7 @@ public abstract class EmailModel_ extends org.iatoki.judgels.commons.models.doma
 	public static volatile SingularAttribute<EmailModel, String> userJid;
 	public static volatile SingularAttribute<EmailModel, String> email;
 	public static volatile SingularAttribute<EmailModel, Boolean> emailVerified;
+    public static volatile SingularAttribute<EmailModel, String> emailCode;
 
 }
 

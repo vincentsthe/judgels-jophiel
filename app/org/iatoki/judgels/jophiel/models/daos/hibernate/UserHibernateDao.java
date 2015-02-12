@@ -48,6 +48,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(cb.like(root.get(UserModel_.username), "%" + filterString + "%"));
         predicates.add(cb.like(root.get(UserModel_.name), "%" + filterString + "%"));
+        predicates.add(cb.like(root.get(UserModel_.roles), "%" + filterString + "%"));
 
         Predicate condition = cb.or(predicates.toArray(new Predicate[predicates.size()]));
 
@@ -84,6 +85,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         selection.add(root.get(UserModel_.id));
         selection.add(root.get(UserModel_.username));
         selection.add(root.get(UserModel_.name));
+        selection.add(root.get(UserModel_.roles));
 
         Predicate condition = root.get(UserModel_.jid).in(userJids);
 

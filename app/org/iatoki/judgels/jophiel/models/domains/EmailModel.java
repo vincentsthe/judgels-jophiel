@@ -21,22 +21,25 @@ public final class EmailModel extends AbstractModel {
 
     public boolean emailVerified;
 
+    public String emailCode;
+
     public EmailModel() {
 
     }
 
-    public EmailModel(String email) {
+    public EmailModel(String email, String emailCode) {
         this.email = email;
         this.emailVerified = false;
+        this.emailCode = emailCode;
     }
 
-    public EmailModel(String userJid, String email) {
-        this(email);
-        this.userJid = userJid;
-    }
-
-    public EmailModel(long id, String email, boolean emailVerified) {
+    public EmailModel(long id, String userJid, String email) {
         this.id = id;
+        this.userJid = userJid;
+        this.email = email;
+    }
+
+    public EmailModel(String email, boolean emailVerified) {
         this.email = email;
         this.emailVerified = emailVerified;
     }

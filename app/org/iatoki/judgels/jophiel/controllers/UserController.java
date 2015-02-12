@@ -1,6 +1,10 @@
 package org.iatoki.judgels.jophiel.controllers;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import org.apache.commons.io.FilenameUtils;
+import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
@@ -9,26 +13,46 @@ import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
-import org.iatoki.judgels.commons.views.html.layouts.leftSidebarWithoutProfileLayout;
+import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
+import org.iatoki.judgels.jophiel.JophielUtils;
+import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RegisterForm;
+import org.iatoki.judgels.jophiel.User;
+import org.iatoki.judgels.jophiel.UserProfileForm;
+import org.iatoki.judgels.jophiel.UserProfilePictureForm;
+import org.iatoki.judgels.jophiel.UserService;
+import org.iatoki.judgels.jophiel.UserUpsertForm;
+import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
+import org.iatoki.judgels.jophiel.controllers.security.Authorized;
+import org.iatoki.judgels.jophiel.controllers.security.HasRole;
+import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
+import org.iatoki.judgels.jophiel.views.html.loginView;
 import org.iatoki.judgels.jophiel.views.html.registerView;
 import org.iatoki.judgels.jophiel.views.html.user.createView;
 import org.iatoki.judgels.jophiel.views.html.user.listView;
+import org.iatoki.judgels.jophiel.views.html.user.profileView;
 import org.iatoki.judgels.jophiel.views.html.user.updateView;
 import org.iatoki.judgels.jophiel.views.html.user.viewView;
-import org.iatoki.judgels.jophiel.UserUpsertForm;
-import org.iatoki.judgels.jophiel.User;
-import org.iatoki.judgels.jophiel.UserService;
+import play.Logger;
+import play.Play;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.filters.csrf.AddCSRFToken;
 import play.filters.csrf.RequireCSRFCheck;
 import play.i18n.Messages;
+import play.libs.Json;
+import play.libs.mailer.Email;
+import play.libs.mailer.MailerPlugin;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+@Transactional
 public final class UserController extends Controller {
 
     private static final long PAGE_SIZE = 20;
@@ -38,19 +62,23 @@ public final class UserController extends Controller {
         this.userService = userService;
     }
 
-    @Transactional
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result index() {
         return list(0, "id", "asc", "");
     }
 
     @AddCSRFToken
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result create() {
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class);
 
         return showCreate(form);
     }
 
-    @Transactional
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result postCreate() {
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).bindFromRequest();
 
@@ -59,13 +87,14 @@ public final class UserController extends Controller {
         } else {
             UserUpsertForm userUpsertForm = form.get();
 
-            userService.createUser(userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password);
+            userService.createUser(userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password, Arrays.asList(userUpsertForm.roles.split(",")));
 
             return redirect(routes.UserController.index());
         }
     }
 
-    @Transactional
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result view(long userId) {
         User user = userService.findUserById(userId);
         LazyHtml content = new LazyHtml(viewView.render(user));
@@ -78,52 +107,45 @@ public final class UserController extends Controller {
         return lazyOk(content);
     }
 
-    private Result showUpdate(Form<UserUpsertForm> form, long userId, String userName) {
-        LazyHtml content = new LazyHtml(updateView.render(form, userId));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.user") + " #" + userId + ": " + userName, c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.update"), routes.UserController.update(userId))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
-    }
-
     @AddCSRFToken
-    @Transactional
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result update(long userId) {
         User user = userService.findUserById(userId);
         UserUpsertForm userUpsertForm = new UserUpsertForm(user);
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).fill(userUpsertForm);
 
-        return showUpdate(form, userId, user.getName());
+        return showUpdate(form, user);
     }
 
     @RequireCSRFCheck
-    @Transactional
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result postUpdate(long userId) {
         User user = userService.findUserById(userId);
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).bindFromRequest();
 
         if (form.hasErrors() || form.hasGlobalErrors()) {
-            return showUpdate(form, userId, user.getName());
+            return showUpdate(form, user);
         } else {
             UserUpsertForm userUpsertForm = form.get();
 
-            userService.updateUser(userId, userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password);
+            userService.updateUser(userId, userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password, Arrays.asList(userUpsertForm.roles.split(",")));
 
             return redirect(routes.UserController.index());
         }
     }
 
-    @Transactional
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result delete(long userId) {
         userService.deleteUser(userId);
 
         return redirect(routes.UserController.index());
     }
 
-    @Transactional
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
     public Result list(long page, String orderBy, String orderDir, String filterString) {
         Page<User> currentPage = userService.pageUsers(page, PAGE_SIZE, orderBy, orderDir, filterString);
 
@@ -145,7 +167,6 @@ public final class UserController extends Controller {
     }
 
     @RequireCSRFCheck
-    @Transactional
     public Result postRegister() {
         Form<RegisterForm> form = Form.form(RegisterForm.class).bindFromRequest();
 
@@ -153,16 +174,150 @@ public final class UserController extends Controller {
             return showRegister(form);
         } else {
             RegisterForm registerData = form.get();
+            String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
+            Email email = new Email();
+            email.setSubject(Play.application().configuration().getString("application.title") + " User Registration");
+            email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
+            email.addTo(registerData.name + " <" + registerData.email + ">");
+            email.setBodyHtml("<h1>Thanks for the registration</h1>Please activate your account on this <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) +"'>link</a>");
+            MailerPlugin.send(email);
 
-            userService.createUser(registerData.username, registerData.name, registerData.email, registerData.password);
-
-            return TODO;
+            return ok("Thanks for the registration. An email to activate your account has been sent to " + registerData.email);
         }
     }
 
+    @AddCSRFToken
+    public Result login() {
+        Form<LoginForm> form = Form.form(LoginForm.class);
+        return showLogin(form);
+    }
+
+    @RequireCSRFCheck
+    public Result postLogin() {
+        Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
+        if (form.hasErrors()) {
+            Logger.error(form.errors().toString());
+            return showLogin(form);
+        } else {
+            LoginForm loginData = form.get();
+            if (userService.login(loginData.usernameOrEmail, loginData.password)) {
+                return redirect(routes.UserController.profile());
+            } else {
+                form.reject("Username or email not found or password do not match");
+                return showLogin(form);
+            }
+        }
+    }
+
+    public Result verifyEmail(String emailCode) {
+        if (userService.activateEmail(emailCode)) {
+            return ok("Your account has been activated.");
+        } else {
+            return notFound();
+        }
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result profile() {
+        Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+        Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+        User user = userService.findUserByJid(IdentityUtils.getUserJid());
+        form.fill(new UserProfileForm(user));
+
+        return showProfile(form, form2);
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result postProfile() {
+        Form<UserProfileForm> form = Form.form(UserProfileForm.class).bindFromRequest();
+
+        if (form.hasErrors()) {
+            Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+            Logger.error(form.errors().toString());
+            return showProfile(form, form2);
+        } else {
+            UserProfileForm userProfileForm = form.get();
+            if (("".equals(userProfileForm.password) && ("".equals(userProfileForm.confirmPassword)))) {
+                userService.updateProfile(IdentityUtils.getUserJid(), userProfileForm.name);
+                return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.profile());
+            } else if (userProfileForm.password.equals(userProfileForm.confirmPassword)) {
+                userService.updateProfile(IdentityUtils.getUserJid(), userProfileForm.name, userProfileForm.password);
+                return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.profile());
+            } else {
+                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                Logger.error("Password do not match.");
+                return showProfile(form, form2);
+            }
+        }
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result postAvatar() {
+        Http.MultipartFormData body = request().body().asMultipartFormData();
+        Http.MultipartFormData.FilePart avatar = body.getFile("avatar");
+
+        if (avatar != null) {
+            String contentType = avatar.getContentType();
+            if (!((contentType.equals("image/png")) || (contentType.equals("image/jpg")) || (contentType.equals("image/jpeg")))) {
+                flash("failed", Messages.get("views.not_picture"));
+                Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                return showProfile(form, form2);
+            } else {
+                URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
+                session("avatar", profilePictureUrl.toString());
+                return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.profile());
+            }
+        } else {
+            Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+            Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+            User user = userService.findUserByJid(IdentityUtils.getUserJid());
+            return showProfile(form, form2);
+        }
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
     public Result logout() {
+        for (Http.Cookie cookie : request().cookies()) {
+            if ("JO".equals(cookie.name().substring(0, 2))) {
+                response().discardCookie(cookie.name());
+            }
+        }
         session().clear();
-        return TODO;
+        return redirect(routes.UserController.login());
+    }
+
+    private Result showLogin(Form<LoginForm> form) {
+        LazyHtml content = new LazyHtml(loginView.render(form));
+        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> headerFooterLayout.render(c));
+        content.appendLayout(c -> baseLayout.render("TODO", c));
+        return lazyOk(content);
+    }
+
+    private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2) {
+        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
+
+        if (JophielUtils.hasRole("admin")) {
+            internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
+            internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
+        }
+
+        LazyHtml content = new LazyHtml(profileView.render(form, form2));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.profile"), c));
+        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+                new InternalLink(Messages.get("user.profile"), routes.UserController.profile())
+        ), c));
+        content.appendLayout(c -> leftSidebarLayout.render(
+                        IdentityUtils.getUsername(),
+                        IdentityUtils.getUserRealName(),
+                        org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(request()),
+                        org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(request()),
+                        internalLinkBuilder.build(), c)
+        );
+        content.appendLayout(c -> headerFooterLayout.render(c));
+        content.appendLayout(c -> baseLayout.render("TODO", c));
+        return lazyOk(content);
     }
 
     private Result showCreate(Form<UserUpsertForm> form) {
@@ -176,12 +331,12 @@ public final class UserController extends Controller {
         return lazyOk(content);
     }
 
-    private Result showUpdate(Form<UserUpsertForm> form, long userId) {
-        LazyHtml content = new LazyHtml(updateView.render(form, userId));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.update"), c));
+    private Result showUpdate(Form<UserUpsertForm> form, User user) {
+        LazyHtml content = new LazyHtml(updateView.render(form, user.getId()));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.user") + " #" + user.getId() + ": " + user.getUsername(), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.update"), routes.UserController.update(userId))
+                new InternalLink(Messages.get("user.update"), routes.UserController.update(user.getId()))
         ), c));
         appendTemplateLayout(content);
         return lazyOk(content);
@@ -197,13 +352,20 @@ public final class UserController extends Controller {
     }
 
     private void appendTemplateLayout(LazyHtml content) {
-        content.appendLayout(c -> leftSidebarWithoutProfileLayout.render(ImmutableList.of(
-                        new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                        new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
-                ), c)
+        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
+        internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
+        internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
+
+        content.appendLayout(c -> leftSidebarLayout.render(
+                        IdentityUtils.getUsername(),
+                        IdentityUtils.getUserRealName(),
+                        org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(request()),
+                        org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(request()),
+                        internalLinkBuilder.build(), c)
         );
         content.appendLayout(c -> headerFooterLayout.render(c));
         content.appendLayout(c -> baseLayout.render("TODO", c));
+
     }
 
     private Result lazyOk(LazyHtml content) {

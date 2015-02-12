@@ -17,6 +17,10 @@ public final class UserModel extends AbstractJudgelsModel {
 
     public String password;
 
+    public String profilePictureImageName;
+
+    public String roles;
+
     public UserModel() {
 
     }
@@ -26,10 +30,11 @@ public final class UserModel extends AbstractJudgelsModel {
         this.name = name;
     }
 
-    public UserModel(long id, String username, String name) {
+    public UserModel(long id, String username, String name, String roles) {
         this.id = id;
         this.username = username;
         this.name = name;
+        this.roles = roles;
     }
 
 }

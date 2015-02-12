@@ -75,6 +75,7 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
         Root<EmailModel> root = query.from(EmailModel.class);
 
         List<Selection<?>> selection = new ArrayList<>();
+        selection.add(root.get(EmailModel_.id));
         selection.add(root.get(EmailModel_.userJid));
         selection.add(root.get(EmailModel_.email));
 
@@ -105,6 +106,28 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
         Root<EmailModel> root = query.from(EmailModel.class);
 
         query.where(cb.equal(root.get(EmailModel_.email), email));
+
+        return JPA.em().createQuery(query).getSingleResult();
+    }
+
+    @Override
+    public boolean isExistByCode(String emailCode) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<EmailModel> root = query.from(EmailModel.class);
+
+        query.select(cb.count(root)).where(cb.equal(root.get(EmailModel_.emailCode), emailCode));
+
+        return (JPA.em().createQuery(query).getSingleResult() != 0);
+    }
+
+    @Override
+    public EmailModel findByCode(String emailCode) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<EmailModel> query = cb.createQuery(EmailModel.class);
+        Root<EmailModel> root = query.from(EmailModel.class);
+
+        query.where(cb.equal(root.get(EmailModel_.emailCode), emailCode));
 
         return JPA.em().createQuery(query).getSingleResult();
     }

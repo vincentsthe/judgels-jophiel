@@ -12,12 +12,17 @@ import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
+import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.views.html.layouts.baseLayout;
+import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
+import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
+import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
 import org.iatoki.judgels.jophiel.AccessToken;
 import org.iatoki.judgels.jophiel.Client;
@@ -28,9 +33,15 @@ import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RefreshToken;
 import org.iatoki.judgels.jophiel.User;
 import org.iatoki.judgels.jophiel.UserAutoComplete;
+import org.iatoki.judgels.jophiel.UserProfileForm;
+import org.iatoki.judgels.jophiel.UserProfilePictureForm;
 import org.iatoki.judgels.jophiel.UserService;
+import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
+import org.iatoki.judgels.jophiel.controllers.security.HasRole;
+import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import org.iatoki.judgels.jophiel.views.html.authView;
-import org.iatoki.judgels.jophiel.views.html.loginView;
+import org.iatoki.judgels.jophiel.views.html.serviceLoginView;
+import org.iatoki.judgels.jophiel.views.html.serviceProfileView;
 import play.Logger;
 import play.cache.Cache;
 import play.data.DynamicForm;
@@ -38,12 +49,14 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.filters.csrf.AddCSRFToken;
 import play.filters.csrf.RequireCSRFCheck;
+import play.i18n.Messages;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -134,6 +147,8 @@ public final class OpenIdConnectController extends Controller {
                 clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
                 clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
+
+                response().setCookie("JO" + client.getName().substring(0, 2).toUpperCase() + "ID", clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", null, true, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -397,8 +412,101 @@ public final class OpenIdConnectController extends Controller {
         }
     }
 
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result profile(String continueUrl) {
+        Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+        Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+        User user = userService.findUserByJid(IdentityUtils.getUserJid());
+        form.fill(new UserProfileForm(user));
+
+        return showProfile(form, form2, continueUrl);
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result postProfile(String continueUrl) {
+        Form<UserProfileForm> form = Form.form(UserProfileForm.class).bindFromRequest();
+
+        if (form.hasErrors()) {
+            Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+            Logger.error(form.errors().toString());
+            return showProfile(form, form2, continueUrl);
+        } else {
+            UserProfileForm userProfileForm = form.get();
+            if (("".equals(userProfileForm.password) && ("".equals(userProfileForm.confirmPassword)))) {
+                userService.updateProfile(IdentityUtils.getUserJid(), userProfileForm.name);
+                return redirect(continueUrl);
+            } else if (userProfileForm.password.equals(userProfileForm.confirmPassword)) {
+                userService.updateProfile(IdentityUtils.getUserJid(), userProfileForm.name, userProfileForm.password);
+                return redirect(continueUrl);
+            } else {
+                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                Logger.error("Password do not match.");
+                return showProfile(form, form2, continueUrl);
+            }
+        }
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result postAvatar(String continueUrl) {
+        Http.MultipartFormData body = request().body().asMultipartFormData();
+        Http.MultipartFormData.FilePart avatar = body.getFile("avatar");
+
+        if (avatar != null) {
+            String contentType = avatar.getContentType();
+            if (!((contentType.equals("image/png")) || (contentType.equals("image/jpg")) || (contentType.equals("image/jpeg")))) {
+                flash("failed", Messages.get("views.not_picture"));
+                Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                return showProfile(form, form2, continueUrl);
+            } else {
+                URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
+                session("avatar", profilePictureUrl.toString());
+                return redirect(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.profile(continueUrl));
+            }
+        } else {
+            Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+            Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+            return showProfile(form, form2, continueUrl);
+        }
+    }
+
+    private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2, String continueUrl) {
+        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
+
+        if (JophielUtils.hasRole("admin")) {
+            internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
+            internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
+        }
+
+        LazyHtml content = new LazyHtml(serviceProfileView.render(form, form2, continueUrl));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.profile"), c));
+        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+                new InternalLink(Messages.get("user.profile"), routes.OpenIdConnectController.profile(continueUrl))
+        ), c));
+        content.appendLayout(c -> leftSidebarLayout.render(
+                        IdentityUtils.getUsername(),
+                        IdentityUtils.getUserRealName(),
+                        org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.profile(continueUrl).absoluteURL(request()),
+                        org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.logout(continueUrl).absoluteURL(request()),
+                        internalLinkBuilder.build(), c)
+        );
+        content.appendLayout(c -> headerFooterLayout.render(c));
+        content.appendLayout(c -> baseLayout.render("TODO", c));
+        return lazyOk(content);
+    }
+
+    public Result logout(String returnUri) {
+        for (Http.Cookie cookie : request().cookies()) {
+            if ("JO".equals(cookie.name().substring(0, 2))) {
+                response().discardCookie(cookie.name());
+            }
+        }
+        session().clear();
+        return redirect(returnUri);
+    }
+
     private Result showLogin(Form<LoginForm> form, String continueUrl) {
-        LazyHtml content = new LazyHtml(loginView.render(form, continueUrl));
+        LazyHtml content = new LazyHtml(serviceLoginView.render(form, continueUrl));
         content.appendLayout(c -> noSidebarLayout.render(c));
         content.appendLayout(c -> headerFooterLayout.render(c));
         content.appendLayout(c -> baseLayout.render("TODO", c));

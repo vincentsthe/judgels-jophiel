@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.controllers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
@@ -11,6 +12,10 @@ import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientCreateForm;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.ClientUpdateForm;
+import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
+import org.iatoki.judgels.jophiel.controllers.security.Authorized;
+import org.iatoki.judgels.jophiel.controllers.security.HasRole;
+import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import org.iatoki.judgels.jophiel.views.html.client.createView;
 import org.iatoki.judgels.jophiel.views.html.client.listView;
 import org.iatoki.judgels.jophiel.views.html.client.updateView;
@@ -26,6 +31,8 @@ import play.mvc.Result;
 
 import java.util.Arrays;
 
+@Authenticated(value = {LoggedIn.class, HasRole.class})
+@Authorized(value = {"admin"})
 public final class ClientController extends Controller {
 
     private static final long PAGE_SIZE = 20;
@@ -163,12 +170,18 @@ public final class ClientController extends Controller {
     }
 
     private void appendTemplateLayout(LazyHtml content) {
-        content.appendLayout(c -> leftSidebarWithoutProfileLayout.render(ImmutableList.of(
-                                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                                new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
-                        ), c)
-        );
+        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
+        internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
+        internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
 
+
+        content.appendLayout(c -> leftSidebarLayout.render(
+                        IdentityUtils.getUsername(),
+                        IdentityUtils.getUserRealName(),
+                        org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(request()),
+                        org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(request()),
+                        internalLinkBuilder.build(), c)
+        );
         content.appendLayout(c -> headerFooterLayout.render(c));
         content.appendLayout(c -> baseLayout.render("TODO", c));
     }
