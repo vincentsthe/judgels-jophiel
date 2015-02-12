@@ -74,26 +74,35 @@ public final class OpenIdConnectController extends Controller {
     }
 
     @AddCSRFToken
+    @Transactional
     public Result login(String continueUrl) {
-        Form<LoginForm> form = Form.form(LoginForm.class);
-        return showLogin(form, continueUrl);
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<LoginForm> form = Form.form(LoginForm.class);
+            return showLogin(form, continueUrl);
+        } else {
+            return redirect(continueUrl);
+        }
     }
 
     @RequireCSRFCheck
     @Transactional
     public Result postLogin(String continueUrl) {
-        Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
-        if (form.hasErrors()) {
-            Logger.error(form.errors().toString());
-            return showLogin(form, continueUrl);
-        } else {
-            LoginForm loginData = form.get();
-            if (userService.login(loginData.usernameOrEmail, loginData.password)) {
-                return redirect(continueUrl);
-            } else {
-                form.reject("Username or email not found or password do not match");
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
+            if (form.hasErrors()) {
+                Logger.error(form.errors().toString());
                 return showLogin(form, continueUrl);
+            } else {
+                LoginForm loginData = form.get();
+                if (userService.login(loginData.usernameOrEmail, loginData.password)) {
+                    return redirect(continueUrl);
+                } else {
+                    form.reject("Username or email not found or password do not match");
+                    return showLogin(form, continueUrl);
+                }
             }
+        } else {
+            return redirect(continueUrl);
         }
     }
 
@@ -148,7 +157,7 @@ public final class OpenIdConnectController extends Controller {
                 clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-                response().setCookie("JO" + client.getName().substring(0, 2).toUpperCase() + "ID", clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", null, true, true);
+                response().setCookie("JO" + client.getName().substring(0, 2).toUpperCase() + "ID", clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", null, false, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -315,6 +324,7 @@ public final class OpenIdConnectController extends Controller {
             result.put("name", user.getName());
             result.put("preferred_username", user.getUsername());
             result.put("email", user.getEmail());
+            result.put("picture", user.getProfilePictureUrl().toString());
             return ok(result);
         } else {
             ObjectNode node = Json.newObject();
@@ -413,16 +423,18 @@ public final class OpenIdConnectController extends Controller {
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Transactional
     public Result profile(String continueUrl) {
         Form<UserProfileForm> form = Form.form(UserProfileForm.class);
         Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
         User user = userService.findUserByJid(IdentityUtils.getUserJid());
-        form.fill(new UserProfileForm(user));
+        form = form.fill(new UserProfileForm(user));
 
         return showProfile(form, form2, continueUrl);
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Transactional
     public Result postProfile(String continueUrl) {
         Form<UserProfileForm> form = Form.form(UserProfileForm.class).bindFromRequest();
 
@@ -447,6 +459,7 @@ public final class OpenIdConnectController extends Controller {
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Transactional
     public Result postAvatar(String continueUrl) {
         Http.MultipartFormData body = request().body().asMultipartFormData();
         Http.MultipartFormData.FilePart avatar = body.getFile("avatar");

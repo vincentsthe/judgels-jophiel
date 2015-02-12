@@ -45,7 +45,7 @@ public final class ApplicationController extends Controller {
     }
 
     public Result index() {
-        return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.register().absoluteURL(request()));
+        return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.login().absoluteURL(request()));
     }
 
 }

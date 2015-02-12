@@ -14,6 +14,7 @@ import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
 import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
+import org.iatoki.judgels.commons.views.html.layouts.messageView;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
 import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.LoginForm;
@@ -161,57 +162,80 @@ public final class UserController extends Controller {
 
     @AddCSRFToken
     public Result register() {
-        Form<RegisterForm> form = Form.form(RegisterForm.class);
-
-        return showRegister(form);
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<RegisterForm> form = Form.form(RegisterForm.class);
+            return showRegister(form);
+        } else {
+            return redirect(routes.UserController.profile());
+        }
     }
 
     @RequireCSRFCheck
     public Result postRegister() {
-        Form<RegisterForm> form = Form.form(RegisterForm.class).bindFromRequest();
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<RegisterForm> form = Form.form(RegisterForm.class).bindFromRequest();
 
-        if (form.hasErrors()) {
-            return showRegister(form);
+            if (form.hasErrors()) {
+                return showRegister(form);
+            } else {
+                RegisterForm registerData = form.get();
+                String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
+                Email email = new Email();
+                email.setSubject(Play.application().configuration().getString("application.title") + " User Registration");
+                email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
+                email.addTo(registerData.name + " <" + registerData.email + ">");
+                email.setBodyHtml("<h1>Thanks for the registration</h1>Please activate your account on this <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) +"'>link</a>");
+                MailerPlugin.send(email);
+
+                LazyHtml content = new LazyHtml(messageView.render("Thanks for the registration. An email to activate your account has been sent to " + registerData.email));
+                content.appendLayout(c -> noSidebarLayout.render(c));
+                content.appendLayout(c -> headerFooterLayout.render(c));
+                content.appendLayout(c -> baseLayout.render("TODO", c));
+                return lazyOk(content);
+            }
         } else {
-            RegisterForm registerData = form.get();
-            String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
-            Email email = new Email();
-            email.setSubject(Play.application().configuration().getString("application.title") + " User Registration");
-            email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
-            email.addTo(registerData.name + " <" + registerData.email + ">");
-            email.setBodyHtml("<h1>Thanks for the registration</h1>Please activate your account on this <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) +"'>link</a>");
-            MailerPlugin.send(email);
-
-            return ok("Thanks for the registration. An email to activate your account has been sent to " + registerData.email);
+            return redirect(routes.UserController.profile());
         }
     }
 
     @AddCSRFToken
     public Result login() {
-        Form<LoginForm> form = Form.form(LoginForm.class);
-        return showLogin(form);
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<LoginForm> form = Form.form(LoginForm.class);
+            return showLogin(form);
+        } else {
+            return redirect(routes.UserController.profile());
+        }
     }
 
     @RequireCSRFCheck
     public Result postLogin() {
-        Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
-        if (form.hasErrors()) {
-            Logger.error(form.errors().toString());
-            return showLogin(form);
-        } else {
-            LoginForm loginData = form.get();
-            if (userService.login(loginData.usernameOrEmail, loginData.password)) {
-                return redirect(routes.UserController.profile());
-            } else {
-                form.reject("Username or email not found or password do not match");
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
+            if (form.hasErrors()) {
+                Logger.error(form.errors().toString());
                 return showLogin(form);
+            } else {
+                LoginForm loginData = form.get();
+                if (userService.login(loginData.usernameOrEmail, loginData.password)) {
+                    return redirect(routes.UserController.profile());
+                } else {
+                    form.reject("Username or email not found or password do not match");
+                    return showLogin(form);
+                }
             }
+        } else {
+            return redirect(routes.UserController.profile());
         }
     }
 
     public Result verifyEmail(String emailCode) {
         if (userService.activateEmail(emailCode)) {
-            return ok("Your account has been activated.");
+            LazyHtml content = new LazyHtml(messageView.render("Your account has been activated."));
+            content.appendLayout(c -> noSidebarLayout.render(c));
+            content.appendLayout(c -> headerFooterLayout.render(c));
+            content.appendLayout(c -> baseLayout.render("TODO", c));
+            return lazyOk(content);
         } else {
             return notFound();
         }
@@ -271,7 +295,6 @@ public final class UserController extends Controller {
         } else {
             Form<UserProfileForm> form = Form.form(UserProfileForm.class);
             Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
-            User user = userService.findUserByJid(IdentityUtils.getUserJid());
             return showProfile(form, form2);
         }
     }
