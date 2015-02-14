@@ -157,7 +157,7 @@ public final class OpenIdConnectController extends Controller {
                 clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-                String[] domainParts = result.getHost().split(".");
+                String[] domainParts = result.getHost().split("\\.");
                 String mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
                 response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", "." + mainDomain, false, true);
                 return redirect(result.toString());
@@ -517,7 +517,7 @@ public final class OpenIdConnectController extends Controller {
         for (Client client : clients) {
             for (String uRI : client.getRedirectURIs()) {
                 URI uri = URI.create(uRI);
-                String[] domainParts = uri.getHost().split(".");
+                String[] domainParts = uri.getHost().split("\\.");
                 String mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
                 response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", "." + mainDomain, false, true);
             }
