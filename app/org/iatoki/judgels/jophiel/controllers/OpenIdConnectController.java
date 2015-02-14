@@ -509,6 +509,7 @@ public final class OpenIdConnectController extends Controller {
         return lazyOk(content);
     }
 
+    @Transactional
     public Result logout(String returnUri) {
         List<Client> clients = clientService.findAll();
         for (Client client : clients) {
