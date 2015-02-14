@@ -157,7 +157,7 @@ public final class OpenIdConnectController extends Controller {
                 clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", null, false, true);
+                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", "." + result.getHost(), false, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -510,9 +510,11 @@ public final class OpenIdConnectController extends Controller {
     }
 
     public Result logout(String returnUri) {
-        for (Http.Cookie cookie : request().cookies()) {
-            if ("JOID-".equals(cookie.name().substring(0, 5))) {
-                response().discardCookie(cookie.name());
+        List<Client> clients = clientService.findAll();
+        for (Client client : clients) {
+            for (String uRI : client.getRedirectURIs()) {
+                URI uri = URI.create(uRI);
+                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", "." + uri.getHost(), false, true);
             }
         }
         session().clear();

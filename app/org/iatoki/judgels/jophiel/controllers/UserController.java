@@ -16,6 +16,7 @@ import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
 import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.messageView;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
+import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RegisterForm;
@@ -49,9 +50,11 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Transactional
 public final class UserController extends Controller {
@@ -309,9 +312,11 @@ public final class UserController extends Controller {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     public Result logout() {
-        for (Http.Cookie cookie : request().cookies()) {
-            if ("JOID-".equals(cookie.name().substring(0, 5))) {
-                response().discardCookie(cookie.name());
+        List<Client> clients = clientService.findAll();
+        for (Client client : clients) {
+            for (String uRI : client.getRedirectURIs()) {
+                URI uri = URI.create(uRI);
+                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", "." + uri.getHost(), false, true);
             }
         }
         session().clear();

@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -64,6 +63,21 @@ public final class ClientServiceImpl implements ClientService {
         this.accessTokenDao = accessTokenDao;
         this.refreshTokenDao = refreshTokenDao;
         this.idTokenDao = idTokenDao;
+    }
+
+    @Override
+    public List<Client> findAll() {
+        List<ClientModel> clientModels = clientDao.findAll();
+        ImmutableList.Builder<Client> clients = ImmutableList.builder();
+        for (ClientModel clientModel : clientModels) {
+            Set<String> scopeString = ImmutableSet.copyOf(clientModel.scopes.split(","));
+            List<RedirectURIModel> redirectURIModels = redirectURIDao.findByClientJid(clientModel.jid);
+            List<String> redirectURIs = redirectURIModels.stream().map(r -> r.redirectURI).collect(Collectors.toList());
+
+            clients.add(createClientFromModel(clientModel, scopeString, redirectURIs));
+        }
+
+        return clients.build();
     }
 
     @Override

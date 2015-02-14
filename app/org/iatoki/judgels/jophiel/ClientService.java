@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface ClientService {
 
+    List<Client> findAll();
+
     boolean checkIsClientAuthorized(String clientJid, List<String> scopes);
 
     boolean checkIsAccessTokenExist(String token);
