@@ -157,7 +157,9 @@ public final class OpenIdConnectController extends Controller {
                 clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", "." + result.getHost(), false, true);
+                String[] domainParts = result.getHost().split(".");
+                String mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", "." + mainDomain, false, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -515,7 +517,9 @@ public final class OpenIdConnectController extends Controller {
         for (Client client : clients) {
             for (String uRI : client.getRedirectURIs()) {
                 URI uri = URI.create(uRI);
-                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", "." + uri.getHost(), false, true);
+                String[] domainParts = uri.getHost().split(".");
+                String mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", "." + mainDomain, false, true);
             }
         }
         session().clear();
