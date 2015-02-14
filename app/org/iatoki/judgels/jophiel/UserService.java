@@ -14,6 +14,10 @@ public interface UserService {
 
     User findUserByJid(String userJid);
 
+    boolean existByUsername(String username);
+
+    boolean existByEmail(String email);
+
     boolean existsByJid(String userJid);
 
     String registerUser(String username, String name, String email, String password);

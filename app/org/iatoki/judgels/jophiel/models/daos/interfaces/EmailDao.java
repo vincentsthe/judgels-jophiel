@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface EmailDao extends Dao<Long, EmailModel> {
 
+    boolean existByEmail(String email);
+
     EmailModel findByUserJid(String userJid);
 
     List<String> findUserJidByFilter(String filterString);

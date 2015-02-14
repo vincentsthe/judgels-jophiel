@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface UserDao extends JudgelsDao<UserModel> {
 
+    boolean existByUsername(String username);
+
     List<UserModel> findAll(String filterString);
 
     List<String> findUserJidByFilter(String filterString);

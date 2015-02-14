@@ -1,6 +1,7 @@
 @(form: Form[org.iatoki.judgels.jophiel.LoginForm])
 
 @import play.i18n.Messages
+@import org.iatoki.judgels.commons.views.html.formErrorView
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
@@ -16,11 +17,7 @@
     <div class="col-md-6 col-md-offset-3">
         <h2>@Messages.get("login.logIn")</h2>
 
-        @if(form.hasGlobalErrors) {
-            @for(error <- form.globalErrors) {
-                @error.message
-            }
-        }
+        @formErrorView(form)
 
         @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postLogin()) {
 

@@ -87,9 +87,7 @@ public final class UserController extends Controller {
             return showCreate(form);
         } else {
             UserUpsertForm userUpsertForm = form.get();
-
             userService.createUser(userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password, Arrays.asList(userUpsertForm.roles.split(",")));
-
             return redirect(routes.UserController.index());
         }
     }
@@ -130,9 +128,7 @@ public final class UserController extends Controller {
             return showUpdate(form, user);
         } else {
             UserUpsertForm userUpsertForm = form.get();
-
             userService.updateUser(userId, userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password, Arrays.asList(userUpsertForm.roles.split(",")));
-
             return redirect(routes.UserController.index());
         }
     }
@@ -179,19 +175,30 @@ public final class UserController extends Controller {
                 return showRegister(form);
             } else {
                 RegisterForm registerData = form.get();
-                String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
-                Email email = new Email();
-                email.setSubject(Play.application().configuration().getString("application.title") + " User Registration");
-                email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
-                email.addTo(registerData.name + " <" + registerData.email + ">");
-                email.setBodyHtml("<h1>Thanks for the registration</h1>Please activate your account on this <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) +"'>link</a>");
-                MailerPlugin.send(email);
+                if (userService.existByUsername(registerData.username)) {
+                    form.reject("error.register.username.exist");
+                    return showRegister(form);
+                } else if (userService.existByEmail(registerData.email)) {
+                    form.reject("error.register.email.exist");
+                    return showRegister(form);
+                } else if (!registerData.password.equals(registerData.confirmPassword)) {
+                    form.reject("error.register.password.not_match");
+                    return showRegister(form);
+                } else {
+                    String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
+                    Email email = new Email();
+                    email.setSubject(Play.application().configuration().getString("application.title") + " User Registration");
+                    email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
+                    email.addTo(registerData.name + " <" + registerData.email + ">");
+                    email.setBodyHtml("<h1>Thanks for the registration</h1>Please activate your account on this <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>link</a>");
+                    MailerPlugin.send(email);
 
-                LazyHtml content = new LazyHtml(messageView.render("Thanks for the registration. An email to activate your account has been sent to " + registerData.email));
-                content.appendLayout(c -> noSidebarLayout.render(c));
-                content.appendLayout(c -> headerFooterLayout.render(c));
-                content.appendLayout(c -> baseLayout.render("TODO", c));
-                return lazyOk(content);
+                    LazyHtml content = new LazyHtml(messageView.render("Thanks for the registration. An email to activate your account has been sent to " + registerData.email));
+                    content.appendLayout(c -> noSidebarLayout.render(c));
+                    content.appendLayout(c -> headerFooterLayout.render(c));
+                    content.appendLayout(c -> baseLayout.render("TODO", c));
+                    return lazyOk(content);
+                }
             }
         } else {
             return redirect(routes.UserController.profile());
@@ -220,7 +227,7 @@ public final class UserController extends Controller {
                 if (userService.login(loginData.usernameOrEmail, loginData.password)) {
                     return redirect(routes.UserController.profile());
                 } else {
-                    form.reject("Username or email not found or password do not match");
+                    form.reject("error.login.usernameOrEmailOrPassword.invalid");
                     return showLogin(form);
                 }
             }
@@ -269,6 +276,7 @@ public final class UserController extends Controller {
                 return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.profile());
             } else {
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                form.reject("error.profile.password.not_match");
                 Logger.error("Password do not match.");
                 return showProfile(form, form2);
             }
@@ -283,9 +291,9 @@ public final class UserController extends Controller {
         if (avatar != null) {
             String contentType = avatar.getContentType();
             if (!((contentType.equals("image/png")) || (contentType.equals("image/jpg")) || (contentType.equals("image/jpeg")))) {
-                flash("failed", Messages.get("views.not_picture"));
                 Form<UserProfileForm> form = Form.form(UserProfileForm.class);
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                form2.reject("error.profile.not_picture");
                 return showProfile(form, form2);
             } else {
                 URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
@@ -302,7 +310,7 @@ public final class UserController extends Controller {
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     public Result logout() {
         for (Http.Cookie cookie : request().cookies()) {
-            if ("JO".equals(cookie.name().substring(0, 2))) {
+            if ("JOID-".equals(cookie.name().substring(0, 5))) {
                 response().discardCookie(cookie.name());
             }
         }

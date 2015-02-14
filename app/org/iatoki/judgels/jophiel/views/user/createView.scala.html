@@ -2,8 +2,11 @@
 
 @import play.i18n.Messages
 @import org.iatoki.judgels.jophiel.views.html.user.upsertView
+@import org.iatoki.judgels.commons.views.html.formErrorView
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
+
+@formErrorView(form)
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postCreate()) {
 

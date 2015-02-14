@@ -1,6 +1,7 @@
 @(form: Form[org.iatoki.judgels.jophiel.RegisterForm])
 
 @import play.i18n.Messages
+@import org.iatoki.judgels.commons.views.html.formErrorView
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
@@ -15,6 +16,9 @@
 <div class="row login-content">
     <div class="col-md-6 col-md-offset-3">
         <h2>@Messages.get("register.registerNewAccount")</h2>
+
+        @formErrorView(form)
+
         @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postRegister()) {
 
             @helper.CSRF.formField

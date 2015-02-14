@@ -24,6 +24,17 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
     }
 
     @Override
+    public boolean existByUsername(String username) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<UserModel> root = query.from(UserModel.class);
+
+        query.select(cb.count(root)).where(cb.equal(root.get(UserModel_.username), username));
+
+        return (JPA.em().createQuery(query).getSingleResult() != 0);
+    }
+
+    @Override
     public List<UserModel> findAll(String filterString) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
         CriteriaQuery<UserModel> query = cb.createQuery(UserModel.class);

@@ -65,6 +65,16 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean existByUsername(String username) {
+        return userDao.existByUsername(username);
+    }
+
+    @Override
+    public boolean existByEmail(String email) {
+        return emailDao.existByEmail(email);
+    }
+
+    @Override
     public boolean existsByJid(String userJid) {
         return (userDao.findByJid(userJid) != null);
     }

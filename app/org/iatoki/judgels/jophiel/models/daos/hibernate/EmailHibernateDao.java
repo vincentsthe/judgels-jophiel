@@ -23,6 +23,17 @@ public final class EmailHibernateDao extends AbstractHibernateDao<Long, EmailMod
     }
 
     @Override
+    public boolean existByEmail(String email) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<EmailModel> root = query.from(EmailModel.class);
+
+        query.select(cb.count(root)).where(cb.equal(root.get(EmailModel_.email), email));
+
+        return (JPA.em().createQuery(query).getSingleResult() != 0);
+    }
+
+    @Override
     public EmailModel findByUserJid(String userJid) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
         CriteriaQuery<EmailModel> query = cb.createQuery(EmailModel.class);

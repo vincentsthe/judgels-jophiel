@@ -2,13 +2,15 @@
 
 @import play.i18n.Messages
 
-@import org.iatoki.judgels.jophiel.views.html.user.upsertView
+@import org.iatoki.judgels.commons.views.html.formErrorView
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
 
 <img class="avatar-picture center-block" src="@session().get("avatar")" alt="profilePicture"/>
 <br />
 <br />
+
+@formErrorView(form2)
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postAvatar(returnURI), 'enctype -> "multipart/form-data", 'id -> "avatar-form") {
     @b3.file(form2("avatar"), '_label -> Messages.get("user.avatar"), 'id -> "avatar-input")
@@ -19,6 +21,7 @@
 <br />
 <br />
 
+@formErrorView(form)
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postProfile(returnURI)) {
 

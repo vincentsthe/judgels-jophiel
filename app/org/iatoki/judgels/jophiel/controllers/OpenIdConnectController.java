@@ -97,7 +97,7 @@ public final class OpenIdConnectController extends Controller {
                 if (userService.login(loginData.usernameOrEmail, loginData.password)) {
                     return redirect(continueUrl);
                 } else {
-                    form.reject("Username or email not found or password do not match");
+                    form.reject("error.login.usernameOrEmailOrPassword.invalid");
                     return showLogin(form, continueUrl);
                 }
             }
@@ -157,7 +157,7 @@ public final class OpenIdConnectController extends Controller {
                 clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-                response().setCookie("JO" + client.getName().substring(0, 2).toUpperCase() + "ID", clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", null, false, true);
+                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", null, false, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -452,6 +452,7 @@ public final class OpenIdConnectController extends Controller {
                 return redirect(continueUrl);
             } else {
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                form.reject("error.profile.password.not_match");
                 Logger.error("Password do not match.");
                 return showProfile(form, form2, continueUrl);
             }
@@ -467,9 +468,9 @@ public final class OpenIdConnectController extends Controller {
         if (avatar != null) {
             String contentType = avatar.getContentType();
             if (!((contentType.equals("image/png")) || (contentType.equals("image/jpg")) || (contentType.equals("image/jpeg")))) {
-                flash("failed", Messages.get("views.not_picture"));
                 Form<UserProfileForm> form = Form.form(UserProfileForm.class);
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                form2.reject("error.profile.not_picture");
                 return showProfile(form, form2, continueUrl);
             } else {
                 URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
@@ -510,7 +511,7 @@ public final class OpenIdConnectController extends Controller {
 
     public Result logout(String returnUri) {
         for (Http.Cookie cookie : request().cookies()) {
-            if ("JO".equals(cookie.name().substring(0, 2))) {
+            if ("JOID-".equals(cookie.name().substring(0, 5))) {
                 response().discardCookie(cookie.name());
             }
         }
