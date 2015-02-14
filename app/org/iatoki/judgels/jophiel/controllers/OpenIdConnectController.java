@@ -158,8 +158,13 @@ public final class OpenIdConnectController extends Controller {
                 URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
                 String[] domainParts = result.getHost().split("\\.");
-                String mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
-                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", "." + mainDomain, false, true);
+                String mainDomain;
+                if (domainParts.length >= 2) {
+                    mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+                } else {
+                    mainDomain = domainParts[0];
+                }
+                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", mainDomain, false, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -518,8 +523,13 @@ public final class OpenIdConnectController extends Controller {
             for (String uRI : client.getRedirectURIs()) {
                 URI uri = URI.create(uRI);
                 String[] domainParts = uri.getHost().split("\\.");
-                String mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
-                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", "." + mainDomain, false, true);
+                String mainDomain;
+                if (domainParts.length >= 2) {
+                    mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+                } else {
+                    mainDomain = domainParts[0];
+                }
+                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", mainDomain, false, true);
             }
         }
         session().clear();

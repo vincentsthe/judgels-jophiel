@@ -320,8 +320,13 @@ public final class UserController extends Controller {
             for (String uRI : client.getRedirectURIs()) {
                 URI uri = URI.create(uRI);
                 String[] domainParts = uri.getHost().split("\\.");
-                String mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
-                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", "." + mainDomain, false, true);
+                String mainDomain;
+                if (domainParts.length >= 2) {
+                    mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+                } else {
+                    mainDomain = domainParts[0];
+                }
+                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", mainDomain, false, true);
             }
         }
         session().clear();
