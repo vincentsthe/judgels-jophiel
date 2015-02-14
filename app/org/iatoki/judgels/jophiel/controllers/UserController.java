@@ -17,6 +17,7 @@ import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.messageView;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
 import org.iatoki.judgels.jophiel.Client;
+import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RegisterForm;
@@ -61,9 +62,11 @@ public final class UserController extends Controller {
 
     private static final long PAGE_SIZE = 20;
     private final UserService userService;
+    private final ClientService clientService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, ClientService clientService) {
         this.userService = userService;
+        this.clientService = clientService;
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})

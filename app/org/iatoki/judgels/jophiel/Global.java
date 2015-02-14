@@ -41,8 +41,9 @@ public final class Global extends org.iatoki.judgels.commons.Global {
         if (!cache.containsKey(controllerClass)) {
             if (controllerClass.equals(UserController.class)) {
                 UserService userService = createUserService();
+                ClientService clientService = createClientService();
 
-                UserController userController = new UserController(userService);
+                UserController userController = new UserController(userService, clientService);
                 cache.put(UserController.class, userController);
             } else if (controllerClass.equals(ClientController.class)) {
                 ClientService clientService = createClientService();
