@@ -56,6 +56,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
@@ -518,22 +519,27 @@ public final class OpenIdConnectController extends Controller {
 
     @Transactional
     public Result logout(String returnUri) {
-        List<Client> clients = clientService.findAll();
-        for (Client client : clients) {
-            for (String uRI : client.getRedirectURIs()) {
-                URI uri = URI.create(uRI);
-                String[] domainParts = uri.getHost().split("\\.");
-                String mainDomain;
-                if (domainParts.length >= 2) {
-                    mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
-                } else {
-                    mainDomain = domainParts[0];
+        try {
+            List<Client> clients = clientService.findAll();
+            for (Client client : clients) {
+                for (String uRI : client.getRedirectURIs()) {
+                    URI uri = new URI(uRI);
+                    String[] domainParts = uri.getHost().split("\\.");
+                    String mainDomain;
+                    if (domainParts.length >= 2) {
+                        mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+                    } else {
+                        mainDomain = domainParts[0];
+                    }
+                    response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", mainDomain, false, true);
                 }
-                response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", mainDomain, false, true);
             }
+            session().clear();
+            return redirect(returnUri);
+        } catch (URISyntaxException e) {
+            // TODO make sure URI is URI at
+            throw new RuntimeException(e);
         }
-        session().clear();
-        return redirect(returnUri);
     }
 
     private Result showLogin(Form<LoginForm> form, String continueUrl) {
