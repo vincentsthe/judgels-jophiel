@@ -326,7 +326,7 @@ public final class UserController extends Controller {
                     if (domainParts.length >= 2) {
                         mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
                     } else {
-                        mainDomain = domainParts[0];
+                        mainDomain = null;
                     }
                     response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", mainDomain, false, true);
                 }

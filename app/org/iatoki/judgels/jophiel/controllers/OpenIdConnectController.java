@@ -163,7 +163,7 @@ public final class OpenIdConnectController extends Controller {
                 if (domainParts.length >= 2) {
                     mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
                 } else {
-                    mainDomain = domainParts[0];
+                    mainDomain = null;
                 }
                 response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", mainDomain, false, true);
                 return redirect(result.toString());
@@ -529,7 +529,7 @@ public final class OpenIdConnectController extends Controller {
                     if (domainParts.length >= 2) {
                         mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
                     } else {
-                        mainDomain = domainParts[0];
+                        mainDomain = null;
                     }
                     response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", mainDomain, false, true);
                 }
