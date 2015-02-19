@@ -1,6 +1,7 @@
 @(form: Form[org.iatoki.judgels.jophiel.UserProfileForm], form2: Form[org.iatoki.judgels.jophiel.UserProfilePictureForm])
 
 @import play.i18n.Messages
+@import org.iatoki.judgels.jophiel.controllers.routes
 @import org.iatoki.judgels.commons.views.html.formErrorView
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
@@ -11,8 +12,8 @@
 
 @formErrorView(form2)
 
-@b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postAvatar(), 'enctype -> "multipart/form-data", 'id -> "avatar-form") {
-    @b3.file(form2("avatar"), '_label -> Messages.get("user.avatar"), 'id -> "avatar-input")
+@b3.form(routes.UserController.postAvatar(), 'enctype -> "multipart/form-data", 'id -> "avatar-form") {
+    @b3.file(form2("avatar"), '_label -> Messages.get("profile.avatar"), 'id -> "avatar-input")
 }
 
 <br />
@@ -22,7 +23,7 @@
 
 @formErrorView(form)
 
-@b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postProfile()) {
+@b3.form(routes.UserController.postProfile()) {
 
     @b3.text(form("name"), '_label -> Messages.get("user.name"))
     @b3.password(form("password"), '_label -> Messages.get("user.password"))

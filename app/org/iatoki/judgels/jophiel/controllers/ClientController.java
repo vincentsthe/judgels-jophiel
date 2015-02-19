@@ -171,6 +171,7 @@ public final class ClientController extends Controller {
 
     private void appendTemplateLayout(LazyHtml content) {
         ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
+        internalLinkBuilder.add(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()));
         internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
         internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
 

@@ -1,0 +1,10 @@
+@()
+
+@import play.i18n.Messages
+@import org.iatoki.judgels.jophiel.controllers.routes
+
+<h2>@Messages.get("activation.successful")</h2>
+
+<p>@Messages.get("activation.canNowLogin")</p>
+
+<a class="btn btn-primary btn-sm" href="@routes.UserController.login()">@Messages.get("login.logIn")</a>

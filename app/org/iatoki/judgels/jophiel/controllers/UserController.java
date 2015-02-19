@@ -1,8 +1,6 @@
 package org.iatoki.judgels.jophiel.controllers;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
@@ -32,6 +30,7 @@ import org.iatoki.judgels.jophiel.controllers.security.HasRole;
 import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import org.iatoki.judgels.jophiel.views.html.loginView;
 import org.iatoki.judgels.jophiel.views.html.registerView;
+import org.iatoki.judgels.jophiel.views.html.activationView;
 import org.iatoki.judgels.jophiel.views.html.user.createView;
 import org.iatoki.judgels.jophiel.views.html.user.listView;
 import org.iatoki.judgels.jophiel.views.html.user.profileView;
@@ -183,24 +182,26 @@ public final class UserController extends Controller {
             } else {
                 RegisterForm registerData = form.get();
                 if (userService.existByUsername(registerData.username)) {
-                    form.reject("error.register.username.exist");
+                    form.reject("register.error.usernameExists");
                     return showRegister(form);
                 } else if (userService.existByEmail(registerData.email)) {
-                    form.reject("error.register.email.exist");
+                    form.reject("register.error.emailExists");
                     return showRegister(form);
                 } else if (!registerData.password.equals(registerData.confirmPassword)) {
-                    form.reject("error.register.password.not_match");
+                    form.reject("register.error.passwordsDidntMatch");
                     return showRegister(form);
                 } else {
                     String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
                     Email email = new Email();
-                    email.setSubject(Play.application().configuration().getString("application.title") + " User Registration");
+                    email.setSubject(Play.application().configuration().getString("application.sub-title") + " " + Messages.get("registrationEmail.userRegistration"));
                     email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
                     email.addTo(registerData.name + " <" + registerData.email + ">");
-                    email.setBodyHtml("<h1>Thanks for the registration</h1>Please activate your account on this <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>link</a>");
+                    email.setBodyHtml("<p>" + Messages.get("registrationEmail.thankYou") + " " + Play.application().configuration().getString("application.sub-title") + ".</p><p>" + Messages.get("registrationEmail.pleaseActivate") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>here</a>.</p>");
                     MailerPlugin.send(email);
 
-                    LazyHtml content = new LazyHtml(messageView.render("Thanks for the registration. An email to activate your account has been sent to " + registerData.email));
+                    LazyHtml content = new LazyHtml(messageView.render(Messages.get("register.activationEmailSentTo") + " " + registerData.email + "."));
+                    content.appendLayout(c -> headingLayout.render(Messages.get("register.successful"), c));
+                    content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
                     content.appendLayout(c -> noSidebarLayout.render(c));
                     content.appendLayout(c -> headerFooterLayout.render(c));
                     content.appendLayout(c -> baseLayout.render("TODO", c));
@@ -234,7 +235,7 @@ public final class UserController extends Controller {
                 if (userService.login(loginData.usernameOrEmail, loginData.password)) {
                     return redirect(routes.UserController.profile());
                 } else {
-                    form.reject("error.login.usernameOrEmailOrPassword.invalid");
+                    form.reject("login.error.usernameOrEmailOrPasswordInvalid");
                     return showLogin(form);
                 }
             }
@@ -245,7 +246,8 @@ public final class UserController extends Controller {
 
     public Result verifyEmail(String emailCode) {
         if (userService.activateEmail(emailCode)) {
-            LazyHtml content = new LazyHtml(messageView.render("Your account has been activated."));
+            LazyHtml content = new LazyHtml(activationView.render());
+            content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
             content.appendLayout(c -> noSidebarLayout.render(c));
             content.appendLayout(c -> headerFooterLayout.render(c));
             content.appendLayout(c -> baseLayout.render("TODO", c));
@@ -260,7 +262,7 @@ public final class UserController extends Controller {
         Form<UserProfileForm> form = Form.form(UserProfileForm.class);
         Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
         User user = userService.findUserByJid(IdentityUtils.getUserJid());
-        form.fill(new UserProfileForm(user));
+        form = form.fill(new UserProfileForm(user));
 
         return showProfile(form, form2);
     }
@@ -283,7 +285,7 @@ public final class UserController extends Controller {
                 return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.profile());
             } else {
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
-                form.reject("error.profile.password.not_match");
+                form.reject("profile.error.passwordsDidntMatch");
                 Logger.error("Password do not match.");
                 return showProfile(form, form2);
             }
@@ -300,7 +302,7 @@ public final class UserController extends Controller {
             if (!((contentType.equals("image/png")) || (contentType.equals("image/jpg")) || (contentType.equals("image/jpeg")))) {
                 Form<UserProfileForm> form = Form.form(UserProfileForm.class);
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
-                form2.reject("error.profile.not_picture");
+                form2.reject("profile.error.avatarNotPicture");
                 return showProfile(form, form2);
             } else {
                 URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
@@ -348,27 +350,13 @@ public final class UserController extends Controller {
     }
 
     private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2) {
-        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
-
-        if (JophielUtils.hasRole("admin")) {
-            internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
-            internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
-        }
 
         LazyHtml content = new LazyHtml(profileView.render(form, form2));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.profile"), c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("user.profile"), routes.UserController.profile())
+                new InternalLink(Messages.get("profile.profile"), routes.UserController.profile())
         ), c));
-        content.appendLayout(c -> leftSidebarLayout.render(
-                        IdentityUtils.getUsername(),
-                        IdentityUtils.getUserRealName(),
-                        org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(request()),
-                        org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(request()),
-                        internalLinkBuilder.build(), c)
-        );
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
+        appendTemplateLayout(content);
         return lazyOk(content);
     }
 
@@ -405,8 +393,12 @@ public final class UserController extends Controller {
 
     private void appendTemplateLayout(LazyHtml content) {
         ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
-        internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
-        internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
+
+        internalLinkBuilder.add(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()));
+        if (JophielUtils.hasRole("admin")) {
+            internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
+            internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
+        }
 
         content.appendLayout(c -> leftSidebarLayout.render(
                         IdentityUtils.getUsername(),

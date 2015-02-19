@@ -14,6 +14,25 @@ user.confirmPassword=Confirm Password
 user.username=Username
 user.usernameOrEmail=Username or Email
 
+profile.profile=Profile
+profile.avatar=Avatar
+
+profile.error.passwordsDidntMatch=Passwords didn''t match
+profile.error.avatarNotPicture=Avatar is not a picture
+
+register.successful=Registration Successful
+register.activationEmailSentTo=An email for activating your account has been sent to
+register.error.usernameExists=Username already exists
+register.error.emailExists=Email already exists
+register.error.passwordsDidntMatch=Passwords didn''t match
+
+registrationEmail.userRegistration=User Registration
+registrationEmail.thankYou=Thank you for registering in
+registrationEmail.pleaseActivate=Please activate your account
+
+activation.successful=Activation Successful
+activation.canNowLogin=You can now log in.
+
 client.client=Client
 client.clients=Clients
 
@@ -29,8 +48,9 @@ client.scopes=Scopes
 client.secret=Secret
 
 login.logIn=Log In
-login.dontHaveAccount=Don't have account?
-login.register=Register
+login.dontHaveAccount=Don''t have account?
+login.register=Register here
+login.error.usernameOrEmailOrPasswordInvalid=Invalid username or password
 
 register.registerNewAccount=Register New Account
 register.register=Register
