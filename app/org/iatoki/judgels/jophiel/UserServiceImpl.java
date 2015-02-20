@@ -185,15 +185,16 @@ public final class UserServiceImpl implements UserService {
     @Override
     public boolean login(String usernameOrEmail, String password) {
         try {
-            UserModel userModel = userDao.findByUsername(usernameOrEmail);
+            UserModel userModel;
             EmailModel emailModel;
-            if (userModel == null) {
-                emailModel = emailDao.findByEmail(usernameOrEmail);
-                if (emailModel != null) {
-                    userModel = userDao.findByJid(emailModel.userJid);
-                }
-            } else {
+            if (userDao.existByUsername(usernameOrEmail)) {
+                userModel = userDao.findByUsername(usernameOrEmail);
                 emailModel = emailDao.findByUserJid(userModel.jid);
+            } else if (emailDao.existByEmail(usernameOrEmail)) {
+                emailModel = emailDao.findByEmail(usernameOrEmail);
+                userModel = userDao.findByJid(emailModel.userJid);
+            } else {
+                return false;
             }
 
             if ((userModel != null) && (userModel.password.equals(JudgelsUtils.hashSHA256(password))) && (emailModel.emailVerified)) {
