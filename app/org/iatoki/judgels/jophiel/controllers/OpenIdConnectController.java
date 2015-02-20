@@ -98,7 +98,7 @@ public final class OpenIdConnectController extends Controller {
                 if (userService.login(loginData.usernameOrEmail, loginData.password)) {
                     return redirect(continueUrl);
                 } else {
-                    form.reject("error.login.usernameOrEmailOrPassword.invalid");
+                    form.reject("login.error.usernameOrEmailOrPasswordInvalid");
                     return showLogin(form, continueUrl);
                 }
             }

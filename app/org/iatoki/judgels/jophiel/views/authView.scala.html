@@ -13,15 +13,15 @@
 </div>
 
 <div class="row login-content">
-    <div class="col-xs-6 col-xs-offset-3">
-        <h2>@Messages.get("auth.heading.authorize") @client.getName ?</h2>
-
+    <div class="col-md-6 col-md-offset-4">
+        <h2>@Messages.get("auth.authorization")</h2>
+        <p>@Messages.get("auth.wantToAuthorize")  @client.getName @Messages.get("auth.inTheseScopes")?</p>
         @b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postAuthRequest(hash)) {
 
             @helper.CSRF.formField
 
             @for(scope <- scopes) {
-                @b3.static("") {@scope}
+                @b3.static(Messages.get("client.scopes")) {@scope}
             }
 
             @b3.submit('class -> "btn btn-primary") { @Messages.get("auth.authorize") }

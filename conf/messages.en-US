@@ -56,3 +56,6 @@ register.registerNewAccount=Register New Account
 register.register=Register
 
 auth.authorize=Authorize
+auth.authorization=Authorization Request
+auth.wantToAuthorize=Do you want to authorize
+auth.inTheseScopes=in these scopes
