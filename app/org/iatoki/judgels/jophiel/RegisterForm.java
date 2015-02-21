@@ -4,9 +4,9 @@ import play.data.validation.Constraints;
 
 public final class RegisterForm {
     @Constraints.Required
-    @Constraints.MinLength(4)
+    @Constraints.MinLength(3)
     @Constraints.MaxLength(20)
-    @Constraints.Pattern("^[a-zA-Z0-9._-]$")
+    @Constraints.Pattern("^[a-zA-Z0-9\\._]+$")
     public String username;
 
     @Constraints.Required
