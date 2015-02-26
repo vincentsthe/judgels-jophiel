@@ -501,9 +501,9 @@ public final class OpenIdConnectController extends Controller {
         }
 
         LazyHtml content = new LazyHtml(serviceProfileView.render(form, form2, continueUrl));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.profile"), c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("user.profile"), routes.OpenIdConnectController.profile(continueUrl))
+                new InternalLink(Messages.get("profile.profile"), routes.OpenIdConnectController.profile(continueUrl))
         ), c));
         content.appendLayout(c -> leftSidebarLayout.render(
                         IdentityUtils.getUsername(),

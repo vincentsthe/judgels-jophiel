@@ -13,7 +13,7 @@
 @formErrorView(form2)
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.postAvatar(returnURI), 'enctype -> "multipart/form-data", 'id -> "avatar-form") {
-    @b3.file(form2("avatar"), '_label -> Messages.get("user.avatar"), 'id -> "avatar-input")
+    @b3.file(form2("avatar"), '_label -> Messages.get("profile.avatar"), 'id -> "avatar-input")
 }
 
 <br />
