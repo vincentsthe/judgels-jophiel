@@ -40,7 +40,7 @@ GET            /userinfo                         @org.iatoki.judgels.jophiel.con
 POST           /userinfo                         @org.iatoki.judgels.jophiel.controllers.OpenIdConnectController.userInfo()
 OPTIONS        /userAutoComplete                 @org.iatoki.judgels.jophiel.controllers.OpenIdConnectController.checkPreUserAutocompleteList()
 GET            /userAutoComplete                 @org.iatoki.judgels.jophiel.controllers.OpenIdConnectController.userAutoCompleteList()
-GET            /verifyUser                       @org.iatoki.judgels.jophiel.controllers.OpenIdConnectController.verifyUserJid()
+GET            /verifyUser                       @org.iatoki.judgels.jophiel.controllers.OpenIdConnectController.verifyUsername()
 GET            /userInfoByJid                    @org.iatoki.judgels.jophiel.controllers.OpenIdConnectController.getInfoByUserJid()
 
 GET            /                                 @org.iatoki.judgels.jophiel.controllers.ApplicationController.index()
