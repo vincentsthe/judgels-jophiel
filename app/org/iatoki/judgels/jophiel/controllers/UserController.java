@@ -14,8 +14,10 @@ import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
 import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.messageView;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
+import org.iatoki.judgels.jophiel.ChangePasswordForm;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
+import org.iatoki.judgels.jophiel.ForgotPasswordForm;
 import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RegisterForm;
@@ -31,6 +33,8 @@ import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import org.iatoki.judgels.jophiel.views.html.loginView;
 import org.iatoki.judgels.jophiel.views.html.registerView;
 import org.iatoki.judgels.jophiel.views.html.activationView;
+import org.iatoki.judgels.jophiel.views.html.forgotPasswordView;
+import org.iatoki.judgels.jophiel.views.html.changePasswordView;
 import org.iatoki.judgels.jophiel.views.html.user.createView;
 import org.iatoki.judgels.jophiel.views.html.user.listView;
 import org.iatoki.judgels.jophiel.views.html.user.profileView;
@@ -191,22 +195,124 @@ public final class UserController extends Controller {
                     form.reject("register.error.passwordsDidntMatch");
                     return showRegister(form);
                 } else {
-                    String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
+                    try {
+                        String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
+                        Email email = new Email();
+                        email.setSubject(Play.application().configuration().getString("application.sub-title") + " " + Messages.get("registrationEmail.userRegistration"));
+                        email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
+                        email.addTo(registerData.name + " <" + registerData.email + ">");
+                        email.setBodyHtml("<p>" + Messages.get("registrationEmail.thankYou") + " " + Play.application().configuration().getString("application.sub-title") + ".</p><p>" + Messages.get("registrationEmail.pleaseActivate") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>here</a>.</p>");
+                        MailerPlugin.send(email);
+
+                        LazyHtml content = new LazyHtml(messageView.render(Messages.get("register.activationEmailSentTo") + " " + registerData.email + "."));
+                        content.appendLayout(c -> headingLayout.render(Messages.get("register.successful"), c));
+                        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
+                        content.appendLayout(c -> noSidebarLayout.render(c));
+                        content.appendLayout(c -> headerFooterLayout.render(c));
+                        content.appendLayout(c -> baseLayout.render("TODO", c));
+                        return lazyOk(content);
+                    } catch (IllegalStateException e){
+                        form.reject("register.error.usernameOrEmailExists");
+                        return showRegister(form);
+                    }
+                }
+            }
+        } else {
+            return redirect(routes.UserController.profile());
+        }
+    }
+
+    @AddCSRFToken
+    public Result forgotPassword() {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<ForgotPasswordForm> form = Form.form(ForgotPasswordForm.class);
+            return showForgotPassword(form);
+        } else {
+            return redirect(routes.UserController.profile());
+        }
+    }
+
+    @RequireCSRFCheck
+    public Result postForgotPassword() {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<ForgotPasswordForm> form = Form.form(ForgotPasswordForm.class).bindFromRequest();
+
+            if (form.hasErrors()) {
+                return showForgotPassword(form);
+            } else {
+                ForgotPasswordForm forgotData = form.get();
+                if (!userService.existByUsername(forgotData.username)) {
+                    form.reject("forgot_pass.error.usernameNotExists");
+                    return showForgotPassword(form);
+                } else if (!userService.existByEmail(forgotData.email)) {
+                    form.reject("forgot_pass.error.emailNotExists");
+                    return showForgotPassword(form);
+                } else if (!userService.isEmailOwnedByUser(forgotData.email, forgotData.username)) {
+                    form.reject("forgot_pass.error.emailIsNotOwnedByUser");
+                    return showForgotPassword(form);
+                } else {
+                    String forgotCode = userService.forgotPassword(forgotData.username, forgotData.email);
                     Email email = new Email();
-                    email.setSubject(Play.application().configuration().getString("application.sub-title") + " " + Messages.get("registrationEmail.userRegistration"));
+                    email.setSubject(Play.application().configuration().getString("application.sub-title") + " " + Messages.get("forgotPasswordEmail.forgotPassword"));
                     email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
-                    email.addTo(registerData.name + " <" + registerData.email + ">");
-                    email.setBodyHtml("<p>" + Messages.get("registrationEmail.thankYou") + " " + Play.application().configuration().getString("application.sub-title") + ".</p><p>" + Messages.get("registrationEmail.pleaseActivate") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>here</a>.</p>");
+                    email.addTo(forgotData.email);
+                    email.setBodyHtml("<p>" + Messages.get("forgotPasswordEmail.request") + " " + Play.application().configuration().getString("application.sub-title") + ".</p><p>" + Messages.get("forgotPasswordEmail.changePassword") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.changePassword(forgotCode).absoluteURL(request()) + "'>here</a>.</p>");
                     MailerPlugin.send(email);
 
-                    LazyHtml content = new LazyHtml(messageView.render(Messages.get("register.activationEmailSentTo") + " " + registerData.email + "."));
-                    content.appendLayout(c -> headingLayout.render(Messages.get("register.successful"), c));
+                    LazyHtml content = new LazyHtml(messageView.render(Messages.get("forgotPasswordEmail.changePasswordRequestSentTo") + " " + forgotData.email + "."));
+                    content.appendLayout(c -> headingLayout.render(Messages.get("forgotPassword.successful"), c));
                     content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
                     content.appendLayout(c -> noSidebarLayout.render(c));
                     content.appendLayout(c -> headerFooterLayout.render(c));
                     content.appendLayout(c -> baseLayout.render("TODO", c));
                     return lazyOk(content);
                 }
+            }
+        } else {
+            return redirect(routes.UserController.profile());
+        }
+    }
+
+    @AddCSRFToken
+    public Result changePassword(String code) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            if (userService.existForgotPassByCode(code)) {
+                Form<ChangePasswordForm> form = Form.form(ChangePasswordForm.class);
+                return showChangePassword(form, code);
+            } else {
+                return notFound();
+            }
+        } else {
+            return redirect(routes.UserController.profile());
+        }
+    }
+
+    @RequireCSRFCheck
+    public Result postChangePassword(String code) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+            Form<ChangePasswordForm> form = Form.form(ChangePasswordForm.class).bindFromRequest();
+            if (userService.existForgotPassByCode(code)) {
+                if (form.hasErrors()) {
+                    return showChangePassword(form, code);
+                } else {
+                    ChangePasswordForm changeData = form.get();
+                    if (!changeData.password.equals(changeData.confirmPassword)) {
+                        form.reject("change_password.error.passwordsDidntMatch");
+                        return showChangePassword(form, code);
+                    } else {
+                        userService.changePassword(code, changeData.password);
+
+                        LazyHtml content = new LazyHtml(messageView.render(Messages.get("changePassword.success") + "."));
+                        content.appendLayout(c -> headingLayout.render(Messages.get("changePassword.successful"), c));
+                        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
+                        content.appendLayout(c -> noSidebarLayout.render(c));
+                        content.appendLayout(c -> headerFooterLayout.render(c));
+                        content.appendLayout(c -> baseLayout.render("TODO", c));
+                        return lazyOk(content);
+                    }
+                }
+            } else {
+                return notFound();
             }
         } else {
             return redirect(routes.UserController.profile());
@@ -384,6 +490,24 @@ public final class UserController extends Controller {
 
     private Result showRegister(Form<RegisterForm> form) {
         LazyHtml content = new LazyHtml(registerView.render(form));
+        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> headerFooterLayout.render(c));
+        content.appendLayout(c -> baseLayout.render("TODO", c));
+
+        return lazyOk(content);
+    }
+
+    private Result showForgotPassword(Form<ForgotPasswordForm> form) {
+        LazyHtml content = new LazyHtml(forgotPasswordView.render(form));
+        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> headerFooterLayout.render(c));
+        content.appendLayout(c -> baseLayout.render("TODO", c));
+
+        return lazyOk(content);
+    }
+
+    private Result showChangePassword(Form<ChangePasswordForm> form, String code) {
+        LazyHtml content = new LazyHtml(changePasswordView.render(form, code));
         content.appendLayout(c -> noSidebarLayout.render(c));
         content.appendLayout(c -> headerFooterLayout.render(c));
         content.appendLayout(c -> baseLayout.render("TODO", c));

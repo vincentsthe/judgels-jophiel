@@ -25,6 +25,7 @@ register.activationEmailSentTo=An email for activating your account has been sen
 register.error.usernameExists=Username already exists
 register.error.emailExists=Email already exists
 register.error.passwordsDidntMatch=Passwords didn''t match
+register.error.usernameOrEmailExists=Username or email already exists
 
 registrationEmail.userRegistration=User Registration
 registrationEmail.thankYou=Thank you for registering in
@@ -50,10 +51,21 @@ client.secret=Secret
 login.logIn=Log In
 login.dontHaveAccount=Don''t have account?
 login.register=Register here
+login.forgotPassword=Forgot Password?
 login.error.usernameOrEmailOrPasswordInvalid=Invalid username or password
 
 register.registerNewAccount=Register New Account
 register.register=Register
+
+forgotPassword.forgotPassword=Forgot Password
+forgotPassword.successful=Change Password Request
+forgot_pass.error.emailIsNotOwnedByUser=Email is not owned by username
+forgotPasswordEmail.changePasswordRequestSentTo=Change password request has been sent to
+forgotPasswordEmail.request=A request to change password has been requested for your account on
+forgotPasswordEmail.changePassword=To change your password please click
+forgotPassword.changePassword=Change Password
+changePassword.successful= Change Password Successful
+changePassword.success=Your password has been changed
 
 auth.authorize=Authorize
 auth.authorization=Authorization Request

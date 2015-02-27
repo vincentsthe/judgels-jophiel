@@ -7,6 +7,7 @@ import org.iatoki.judgels.jophiel.models.daos.hibernate.AccessTokenHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.AuthorizationCodeHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.ClientHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.EmailHibernateDao;
+import org.iatoki.judgels.jophiel.models.daos.hibernate.ForgotPasswordHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.IdTokenHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.RedirectURIHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.RefreshTokenHibernateDao;
@@ -15,6 +16,7 @@ import org.iatoki.judgels.jophiel.models.daos.interfaces.AccessTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AuthorizationCodeDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.ClientDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
+import org.iatoki.judgels.jophiel.models.daos.interfaces.ForgotPasswordDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.IdTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RedirectURIDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RefreshTokenDao;
@@ -64,8 +66,9 @@ public final class Global extends org.iatoki.judgels.commons.Global {
     private UserService createUserService() {
         UserDao userDao = new UserHibernateDao();
         EmailDao emailDao = new EmailHibernateDao();
+        ForgotPasswordDao forgotPasswordDao = new ForgotPasswordHibernateDao();
 
-        UserService userService = new UserServiceImpl(userDao, emailDao);
+        UserService userService = new UserServiceImpl(userDao, emailDao, forgotPasswordDao);
 
         return userService;
     }

@@ -28,6 +28,8 @@
 
             @b3.submit('class -> "btn btn-primary") { @Messages.get("login.logIn") }
         }
-        @Messages.get("login.dontHaveAccount") <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.register()">@Messages.get("login.register")</a>
+        <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.forgotPassword()" target="_blank">@Messages.get("login.forgotPassword")</a>
+        <br />
+        @Messages.get("login.dontHaveAccount") <a href="@org.iatoki.judgels.jophiel.controllers.routes.UserController.register()" target="_blank">@Messages.get("login.register")</a>
     </div>
 </div>

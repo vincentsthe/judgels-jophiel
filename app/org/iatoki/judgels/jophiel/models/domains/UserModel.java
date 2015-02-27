@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.domains;
 import org.iatoki.judgels.commons.models.JidPrefix;
 import org.iatoki.judgels.commons.models.domains.AbstractJudgelsModel;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
@@ -11,6 +12,7 @@ import javax.persistence.Table;
 @JidPrefix("USER")
 public final class UserModel extends AbstractJudgelsModel {
 
+    @Column(unique = true)
     public String username;
 
     public String name;

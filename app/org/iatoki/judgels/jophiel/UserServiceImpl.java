@@ -2,19 +2,24 @@ package org.iatoki.judgels.jophiel;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
+import org.iatoki.judgels.jophiel.models.daos.interfaces.ForgotPasswordDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import org.iatoki.judgels.jophiel.models.domains.EmailModel;
+import org.iatoki.judgels.jophiel.models.domains.ForgotPasswordModel;
 import org.iatoki.judgels.jophiel.models.domains.UserModel;
 import play.mvc.Http;
 
 import javax.persistence.NoResultException;
+import javax.validation.ConstraintViolationException;
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -25,10 +30,12 @@ public final class UserServiceImpl implements UserService {
 
     private UserDao userDao;
     private EmailDao emailDao;
+    private ForgotPasswordDao forgotPasswordDao;
 
-    public UserServiceImpl(UserDao userDao, EmailDao emailDao) {
+    public UserServiceImpl(UserDao userDao, EmailDao emailDao, ForgotPasswordDao forgotPasswordDao) {
         this.userDao = userDao;
         this.emailDao = emailDao;
+        this.forgotPasswordDao = forgotPasswordDao;
     }
 
     @Override
@@ -49,6 +56,14 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean isEmailOwnedByUser(String email, String username) {
+        UserModel userModel = userDao.findByUsername(username);
+        EmailModel emailModel = emailDao.findByEmail(email);
+
+        return ((emailModel.emailVerified) && (emailModel.userJid.equals(userModel.jid)));
+    }
+
+    @Override
     public User findUserById(long userId) {
         UserModel userModel = userDao.findById(userId);
         EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
@@ -59,6 +74,14 @@ public final class UserServiceImpl implements UserService {
     @Override
     public User findUserByJid(String userJid) {
         UserModel userModel = userDao.findByJid(userJid);
+        EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
+
+        return createUserFromModels(userModel, emailModel);
+    }
+
+    @Override
+    public User findUserByUsername(String username) {
+        UserModel userModel = userDao.findByUsername(username);
         EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
 
         return createUserFromModels(userModel, emailModel);
@@ -80,23 +103,27 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String registerUser(String username, String name, String email, String password) {
-        UserModel userModel = new UserModel();
-        userModel.username = username;
-        userModel.name = name;
-        userModel.password = JudgelsUtils.hashSHA256(password);
-        userModel.profilePictureImageName = "avatar-default.png";
-        userModel.roles = "user";
+    public String registerUser(String username, String name, String email, String password) throws IllegalStateException {
+        try {
+            UserModel userModel = new UserModel();
+            userModel.username = username;
+            userModel.name = name;
+            userModel.password = JudgelsUtils.hashSHA256(password);
+            userModel.profilePictureImageName = "avatar-default.png";
+            userModel.roles = "user";
 
-        userDao.persist(userModel, "guest", IdentityUtils.getIpAddress());
+            userDao.persist(userModel, "guest", IdentityUtils.getIpAddress());
 
-        String emailCode = JudgelsUtils.hashMD5(UUID.randomUUID().toString());
-        EmailModel emailModel = new EmailModel(email, emailCode);
-        emailModel.userJid = userModel.jid;
+            String emailCode = JudgelsUtils.hashMD5(UUID.randomUUID().toString());
+            EmailModel emailModel = new EmailModel(email, emailCode);
+            emailModel.userJid = userModel.jid;
 
-        emailDao.persist(emailModel, "guest", IdentityUtils.getIpAddress());
+            emailDao.persist(emailModel, "guest", IdentityUtils.getIpAddress());
 
-        return emailCode;
+            return emailCode;
+        } catch (ConstraintViolationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
@@ -235,14 +262,14 @@ public final class UserServiceImpl implements UserService {
     public URL updateProfilePicture(String userJid, File imageFile, String extension) {
         try {
             String newImageName = IdentityUtils.getUserJid() + "-" + JudgelsUtils.hashMD5(UUID.randomUUID().toString()) + "." + extension;
-            imageFile.renameTo(new File("public/images/avatar/", newImageName));
+            FileUtils.copyFile(imageFile, new File("public/images/avatar/", newImageName));
 
             UserModel userModel = userDao.findByJid(userJid);
             userModel.profilePictureImageName = newImageName;
 
             userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
             return new URL(controllers.routes.Assets.at("images/avatar/" + newImageName).absoluteURL(Http.Context.current().request()));
-        } catch (MalformedURLException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -251,13 +278,49 @@ public final class UserServiceImpl implements UserService {
     public boolean activateEmail(String emailCode) {
         if (emailDao.isExistByCode(emailCode)) {
             EmailModel emailModel = emailDao.findByCode(emailCode);
-            emailModel.emailVerified = true;
+            if (!emailModel.emailVerified) {
+                emailModel.emailVerified = true;
 
-            emailDao.edit(emailModel, emailModel.userJid, IdentityUtils.getIpAddress());
-            return true;
+                emailDao.edit(emailModel, emailModel.userJid, IdentityUtils.getIpAddress());
+                return true;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }
+    }
+
+    @Override
+    public String forgotPassword(String username, String email) {
+        UserModel userModel = userDao.findByUsername(username);
+
+        String code = JudgelsUtils.hashMD5(UUID.randomUUID().toString());
+        ForgotPasswordModel forgotPasswordModel = new ForgotPasswordModel();
+        forgotPasswordModel.userJid = userModel.jid;
+        forgotPasswordModel.code = code;
+        forgotPasswordModel.used = false;
+
+        forgotPasswordDao.persist(forgotPasswordModel, "guest", IdentityUtils.getIpAddress());
+        return code;
+    }
+
+    @Override
+    public boolean existForgotPassByCode(String code) {
+        return forgotPasswordDao.isExistByCode(code);
+    }
+
+    @Override
+    public void changePassword(String code, String password) {
+        ForgotPasswordModel forgotPasswordModel = forgotPasswordDao.findByCode(code);
+        forgotPasswordModel.used = true;
+
+        forgotPasswordDao.edit(forgotPasswordModel, "guest", IdentityUtils.getIpAddress());
+
+        UserModel userModel = userDao.findByJid(forgotPasswordModel.userJid);
+        userModel.password = JudgelsUtils.hashSHA256(password);
+
+        userDao.edit(userModel, "guest", IdentityUtils.getIpAddress());
     }
 
     private User createUserFromModels(UserModel userModel, EmailModel emailModel) {

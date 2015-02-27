@@ -62,6 +62,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public final class OpenIdConnectController extends Controller {
@@ -165,7 +166,7 @@ public final class OpenIdConnectController extends Controller {
                 } else {
                     mainDomain = null;
                 }
-                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), null, "/", mainDomain, false, true);
+                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), (int) (System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS)), "/", mainDomain, false, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -361,7 +362,7 @@ public final class OpenIdConnectController extends Controller {
             ImmutableList.Builder<UserAutoComplete> responseBuilder = ImmutableList.builder();
 
             for (User user1 : users) {
-                responseBuilder.add(new UserAutoComplete(user1.getJid(), user1.getJid(), user1.getUsername() + " (" + user1.getName() + ")"));
+                responseBuilder.add(new UserAutoComplete(user1.getJid(), user1.getUsername(), user1.getUsername() + " (" + user1.getName() + ")"));
             }
             return ok(Json.toJson(responseBuilder.build()));
         } else {
@@ -380,7 +381,7 @@ public final class OpenIdConnectController extends Controller {
     }
 
     @Transactional
-    public Result verifyUserJid() {
+    public Result verifyUsername() {
         DynamicForm form = DynamicForm.form().bindFromRequest();
         String token;
         if ((request().getHeader("Authorization") != null) && ("Bearer".equals(request().getHeader("Authorization").split(" ")[0]))) {
@@ -392,15 +393,25 @@ public final class OpenIdConnectController extends Controller {
         if (clientService.checkIsAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
             User user = userService.findUserByJid(accessToken.getUserJid());
-            String userJid = form.get("userJid");
+            String username = form.get("username");
 
-            if (userService.existsByJid(userJid)) {
-                return ok();
+            if (userService.existByUsername(username)) {
+                User user1 = userService.findUserByUsername(username);
+
+                ObjectNode objectNode = Json.newObject();
+                objectNode.put("success", true);
+                objectNode.put("jid", user1.getJid());
+
+                return ok(objectNode);
             } else {
-                return notFound();
+                ObjectNode objectNode = Json.newObject();
+                objectNode.put("success", false);
+
+                return ok(objectNode);
             }
         } else {
             ObjectNode node = Json.newObject();
+            node.put("success", false);
             node.put("error", "invalid_token");
             return unauthorized(node);
         }

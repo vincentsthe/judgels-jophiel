@@ -10,9 +10,13 @@ public interface UserService {
 
     List<User> findAllUser(String filterString);
 
+    boolean isEmailOwnedByUser(String email, String username);
+
     User findUserById(long userId);
 
     User findUserByJid(String userJid);
+
+    User findUserByUsername(String username);
 
     boolean existByUsername(String username);
 
@@ -20,7 +24,7 @@ public interface UserService {
 
     boolean existsByJid(String userJid);
 
-    String registerUser(String username, String name, String email, String password);
+    String registerUser(String username, String name, String email, String password) throws IllegalStateException;
 
     void createUser(String username, String name, String email, String password, List<String> roles);
 
@@ -39,4 +43,10 @@ public interface UserService {
     URL updateProfilePicture(String userJid, File imageFile, String imageType);
 
     boolean activateEmail(String emailCode);
+
+    String forgotPassword(String username, String email);
+
+    boolean existForgotPassByCode(String code);
+
+    void changePassword(String code, String password);
 }
