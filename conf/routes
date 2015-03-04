@@ -57,3 +57,5 @@ GET            /change_pass/:code                @org.iatoki.judgels.jophiel.con
 POST           /change_pass/:code                @org.iatoki.judgels.jophiel.controllers.UserController.postChangePassword(code: String)
 GET            /logout                           @org.iatoki.judgels.jophiel.controllers.UserController.logout()
 GET            /verifyEmail/:code                @org.iatoki.judgels.jophiel.controllers.UserController.verifyEmail(code: String)
+
+GET            /avatar/:imageName                @org.iatoki.judgels.jophiel.controllers.UserController.renderAvatarImage(imageName: String)

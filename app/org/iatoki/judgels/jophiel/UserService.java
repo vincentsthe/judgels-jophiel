@@ -49,4 +49,6 @@ public interface UserService {
     boolean existForgotPassByCode(String code);
 
     void changePassword(String code, String password);
+
+    File getAvatarImageFile(String imageName);
 }

@@ -491,6 +491,11 @@ public final class OpenIdConnectController extends Controller {
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
                 form2.reject("error.profile.not_picture");
                 return showProfile(form, form2, continueUrl);
+            } else if (avatar.getFile().length() > (2 << 20)) {
+                Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                form2.reject("profile.error.overSizeLimit");
+                return showProfile(form, form2, continueUrl);
             } else {
                 URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
                 session("avatar", profilePictureUrl.toString());

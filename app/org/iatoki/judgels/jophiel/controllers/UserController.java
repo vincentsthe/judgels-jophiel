@@ -37,7 +37,7 @@ import org.iatoki.judgels.jophiel.views.html.forgotPasswordView;
 import org.iatoki.judgels.jophiel.views.html.changePasswordView;
 import org.iatoki.judgels.jophiel.views.html.user.createView;
 import org.iatoki.judgels.jophiel.views.html.user.listView;
-import org.iatoki.judgels.jophiel.views.html.user.profileView;
+import org.iatoki.judgels.jophiel.views.html.user.editProfileView;
 import org.iatoki.judgels.jophiel.views.html.user.updateView;
 import org.iatoki.judgels.jophiel.views.html.user.viewView;
 import play.Logger;
@@ -47,18 +47,23 @@ import play.db.jpa.Transactional;
 import play.filters.csrf.AddCSRFToken;
 import play.filters.csrf.RequireCSRFCheck;
 import play.i18n.Messages;
-import play.libs.Json;
 import play.libs.mailer.Email;
 import play.libs.mailer.MailerPlugin;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @Transactional
@@ -410,6 +415,11 @@ public final class UserController extends Controller {
                 Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
                 form2.reject("profile.error.avatarNotPicture");
                 return showProfile(form, form2);
+            } else if (avatar.getFile().length() > (2 << 20)) {
+                Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                form2.reject("profile.error.overSizeLimit");
+                return showProfile(form, form2);
             } else {
                 URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
                 session("avatar", profilePictureUrl.toString());
@@ -447,6 +457,29 @@ public final class UserController extends Controller {
         }
     }
 
+    public Result renderAvatarImage(String imageName) {
+        File image = userService.getAvatarImageFile(imageName);
+        if (!image.exists()) {
+            return notFound();
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+        response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
+        response().setHeader("Last-Modified", sdf.format(new Date(image.lastModified())));
+
+        try {
+            BufferedImage in = ImageIO.read(image);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            String type = FilenameUtils.getExtension(image.getAbsolutePath());
+
+            ImageIO.write(in, type, baos);
+            return ok(baos.toByteArray()).as("image/" + type);
+        } catch (IOException e) {
+            return internalServerError();
+        }
+    }
+
     private Result showLogin(Form<LoginForm> form) {
         LazyHtml content = new LazyHtml(loginView.render(form));
         content.appendLayout(c -> noSidebarLayout.render(c));
@@ -457,7 +490,7 @@ public final class UserController extends Controller {
 
     private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2) {
 
-        LazyHtml content = new LazyHtml(profileView.render(form, form2));
+        LazyHtml content = new LazyHtml(editProfileView.render(form, form2));
         content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
                 new InternalLink(Messages.get("profile.profile"), routes.UserController.profile())

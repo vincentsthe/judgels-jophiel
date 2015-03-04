@@ -40,19 +40,15 @@ public final class UserServiceImpl implements UserService {
 
     @Override
     public List<User> findAllUser(String filterString) {
-        try {
-            List<UserModel> userModels = userDao.findAll(filterString);
-            ImmutableList.Builder<User> userBuilder = ImmutableList.builder();
+        List<UserModel> userModels = userDao.findAll(filterString);
+        ImmutableList.Builder<User> userBuilder = ImmutableList.builder();
 
-            for (UserModel userRecord : userModels) {
-                EmailModel emailRecord  = emailDao.findByUserJid(userRecord.jid);
-                userBuilder.add(new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email, new URL(controllers.routes.Assets.at("images/avatar/" + userRecord.profilePictureImageName).absoluteURL(Http.Context.current().request())), Arrays.asList(userRecord.roles.split(","))));
-            }
-
-            return userBuilder.build();
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+        for (UserModel userRecord : userModels) {
+            EmailModel emailRecord  = emailDao.findByUserJid(userRecord.jid);
+            userBuilder.add(new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email, getAvatarImageUrl(userRecord.profilePictureImageName), Arrays.asList(userRecord.roles.split(","))));
         }
+
+        return userBuilder.build();
     }
 
     @Override
@@ -173,40 +169,36 @@ public final class UserServiceImpl implements UserService {
 
     @Override
     public Page<User> pageUsers(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString) {
-        try {
-            List<String> userUserJid = userDao.findUserJidByFilter(filterString);
-            List<String> emailUserJid = emailDao.findUserJidByFilter(filterString);
+        List<String> userUserJid = userDao.findUserJidByFilter(filterString);
+        List<String> emailUserJid = emailDao.findUserJidByFilter(filterString);
 
-            ImmutableSet.Builder<String> setBuilder = ImmutableSet.builder();
-            setBuilder.addAll(userUserJid);
-            setBuilder.addAll(emailUserJid);
+        ImmutableSet.Builder<String> setBuilder = ImmutableSet.builder();
+        setBuilder.addAll(userUserJid);
+        setBuilder.addAll(emailUserJid);
 
-            ImmutableSet<String> userJidSet = setBuilder.build();
-            long totalPage = userJidSet.size();
-            ImmutableList.Builder<User> listBuilder = ImmutableList.builder();
+        ImmutableSet<String> userJidSet = setBuilder.build();
+        long totalPage = userJidSet.size();
+        ImmutableList.Builder<User> listBuilder = ImmutableList.builder();
 
-            if (totalPage > 0) {
-                List<String> sortedUserJid;
-                if (orderBy.equals("email")) {
-                    sortedUserJid = emailDao.sortUserJid(userJidSet, orderBy, orderDir);
-                } else {
-                    sortedUserJid = userDao.sortUserJid(userJidSet, orderBy, orderDir);
-                }
-
-                List<UserModel> userModels = userDao.findBySetOfUserJid(sortedUserJid, pageIndex * pageSize, pageSize);
-                List<EmailModel> emailModels = emailDao.findBySetOfUserJid(sortedUserJid, pageIndex * pageSize, pageSize);
-
-                for (int i = 0; i < userModels.size(); ++i) {
-                    UserModel userModel = userModels.get(i);
-                    EmailModel emailModel = emailModels.get(i);
-                    listBuilder.add(new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email, new URL(controllers.routes.Assets.at("images/avatar/" + userModel.profilePictureImageName).absoluteURL(Http.Context.current().request())), Arrays.asList(userModel.roles.split(","))));
-                }
+        if (totalPage > 0) {
+            List<String> sortedUserJid;
+            if (orderBy.equals("email")) {
+                sortedUserJid = emailDao.sortUserJid(userJidSet, orderBy, orderDir);
+            } else {
+                sortedUserJid = userDao.sortUserJid(userJidSet, orderBy, orderDir);
             }
 
-            return new Page<>(listBuilder.build(), totalPage, pageIndex, pageSize);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            List<UserModel> userModels = userDao.findBySetOfUserJid(sortedUserJid, pageIndex * pageSize, pageSize);
+            List<EmailModel> emailModels = emailDao.findBySetOfUserJid(sortedUserJid, pageIndex * pageSize, pageSize);
+
+            for (int i = 0; i < userModels.size(); ++i) {
+                UserModel userModel = userModels.get(i);
+                EmailModel emailModel = emailModels.get(i);
+                listBuilder.add(new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email, getAvatarImageUrl(userModel.profilePictureImageName), Arrays.asList(userModel.roles.split(","))));
+            }
         }
+
+        return new Page<>(listBuilder.build(), totalPage, pageIndex, pageSize);
     }
 
     @Override
@@ -228,7 +220,7 @@ public final class UserServiceImpl implements UserService {
                 Http.Context.current().session().put("userJid", userModel.jid);
                 Http.Context.current().session().put("username", userModel.username);
                 Http.Context.current().session().put("name", userModel.name);
-                Http.Context.current().session().put("avatar", controllers.routes.Assets.at("images/avatar/" + userModel.profilePictureImageName).absoluteURL(Http.Context.current().request()));
+                Http.Context.current().session().put("avatar", getAvatarImageUrl(userModel.profilePictureImageName).toString());
                 Http.Context.current().session().put("role", userModel.roles);
                 return true;
             } else {
@@ -262,13 +254,13 @@ public final class UserServiceImpl implements UserService {
     public URL updateProfilePicture(String userJid, File imageFile, String extension) {
         try {
             String newImageName = IdentityUtils.getUserJid() + "-" + JudgelsUtils.hashMD5(UUID.randomUUID().toString()) + "." + extension;
-            FileUtils.copyFile(imageFile, new File("public/images/avatar/", newImageName));
+            FileUtils.copyFile(imageFile, new File(JophielProperties.getInstance().getAvatarDir(), newImageName));
 
             UserModel userModel = userDao.findByJid(userJid);
             userModel.profilePictureImageName = newImageName;
 
             userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
-            return new URL(controllers.routes.Assets.at("images/avatar/" + newImageName).absoluteURL(Http.Context.current().request()));
+            return getAvatarImageUrl(newImageName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -323,9 +315,19 @@ public final class UserServiceImpl implements UserService {
         userDao.edit(userModel, "guest", IdentityUtils.getIpAddress());
     }
 
+    @Override
+    public File getAvatarImageFile(String imageName) {
+        return FileUtils.getFile(JophielProperties.getInstance().getAvatarDir(), imageName);
+    }
+
+
     private User createUserFromModels(UserModel userModel, EmailModel emailModel) {
+        return new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email, getAvatarImageUrl(userModel.profilePictureImageName), Arrays.asList(userModel.roles.split(",")));
+    }
+
+    private URL getAvatarImageUrl(String imageName) {
         try {
-            return new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email, new URL(controllers.routes.Assets.at("images/avatar/" + userModel.profilePictureImageName).absoluteURL(Http.Context.current().request())), Arrays.asList(userModel.roles.split(",")));
+            return new URL(org.iatoki.judgels.jophiel.controllers.routes.UserController.renderAvatarImage(imageName).absoluteURL(Http.Context.current().request()));
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }

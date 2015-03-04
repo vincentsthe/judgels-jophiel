@@ -19,6 +19,7 @@ profile.avatar=Avatar
 
 profile.error.passwordsDidntMatch=Passwords didn''t match
 profile.error.avatarNotPicture=Avatar is not a picture
+profile.error.overSizeLimit=Avatar size is maximum 2 MB
 
 register.successful=Registration Successful
 register.activationEmailSentTo=An email for activating your account has been sent to
