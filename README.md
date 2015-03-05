@@ -18,7 +18,7 @@ To set up Jophiel, you need to:
 3. Copy conf/db_default.conf into conf/db.conf and change the configuration accordingly. **Refer to the default configuration file for explanation of the configuration keys.** 
 
 To run Jophiel, just run "activator" then it will check and download all dependencies and enter Play Console.
-In activator console use "run" command to run Jophiel. By default it will listen on port 9000. For more information of Play Console, please read the [documentation](https://www.playframework.com/documentation/2.3.x/PlayConsole).
+In Play Console use "run" command to run Jophiel. By default it will listen on port 9000. For more information of Play Console, please read the [documentation](https://www.playframework.com/documentation/2.3.x/PlayConsole).
 
 After login on Jophiel, add "admin" value separated by "," to role column of your user record on table "jophiel_user" then relogin (logout and login again) to access full feature.
 
