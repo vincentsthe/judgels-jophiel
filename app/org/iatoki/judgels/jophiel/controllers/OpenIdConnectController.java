@@ -166,7 +166,7 @@ public final class OpenIdConnectController extends Controller {
                 } else {
                     mainDomain = null;
                 }
-                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), (int) (System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS)), "/", mainDomain, false, true);
+                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), (int) (TimeUnit.SECONDS.convert(14, TimeUnit.DAYS)), "/", mainDomain, false, true);
                 return redirect(result.toString());
             } catch (ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
