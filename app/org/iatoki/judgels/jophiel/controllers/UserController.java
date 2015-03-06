@@ -61,6 +61,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -467,16 +468,35 @@ public final class UserController extends Controller {
         response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
         response().setHeader("Last-Modified", sdf.format(new Date(image.lastModified())));
 
-        try {
-            BufferedImage in = ImageIO.read(image);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        if (request().hasHeader("If-Modified-Since")) {
+            try {
+                Date lastUpdate = sdf.parse(request().getHeader("If-Modified-Since"));
+                if (image.lastModified() > lastUpdate.getTime()) {
+                    BufferedImage in = ImageIO.read(image);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-            String type = FilenameUtils.getExtension(image.getAbsolutePath());
+                    String type = FilenameUtils.getExtension(image.getAbsolutePath());
 
-            ImageIO.write(in, type, baos);
-            return ok(baos.toByteArray()).as("image/" + type);
-        } catch (IOException e) {
-            return internalServerError();
+                    ImageIO.write(in, type, baos);
+                    return ok(baos.toByteArray()).as("image/" + type);
+                } else {
+                    return status(304);
+                }
+            } catch (ParseException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            try {
+                BufferedImage in = ImageIO.read(image);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                String type = FilenameUtils.getExtension(image.getAbsolutePath());
+
+                ImageIO.write(in, type, baos);
+                return ok(baos.toByteArray()).as("image/" + type);
+            } catch (IOException e) {
+                return internalServerError();
+            }
         }
     }
 

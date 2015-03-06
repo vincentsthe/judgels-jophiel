@@ -96,6 +96,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
         selection.add(root.get(UserModel_.id));
         selection.add(root.get(UserModel_.username));
         selection.add(root.get(UserModel_.name));
+        selection.add(root.get(UserModel_.profilePictureImageName));
         selection.add(root.get(UserModel_.roles));
 
         Predicate condition = root.get(UserModel_.jid).in(userJids);

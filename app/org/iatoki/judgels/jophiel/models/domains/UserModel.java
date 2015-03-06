@@ -32,10 +32,11 @@ public final class UserModel extends AbstractJudgelsModel {
         this.name = name;
     }
 
-    public UserModel(long id, String username, String name, String roles) {
+    public UserModel(long id, String username, String name, String profilePictureImageName, String roles) {
         this.id = id;
         this.username = username;
         this.name = name;
+        this.profilePictureImageName = profilePictureImageName;
         this.roles = roles;
     }
 
