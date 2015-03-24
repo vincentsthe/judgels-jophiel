@@ -4,7 +4,7 @@ import de.johoop.jacoco4sbt.JacocoPlugin.jacoco
 
 name := """jophiel"""
 
-version := "1.0-SNAPSHOT"
+version := "0.1.0"
 
 lazy val jophiel = (project in file("."))
                   .enablePlugins(PlayJava)
@@ -48,7 +48,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "requirejs" % "2.1.15",
   "com.puppycrawl.tools" % "checkstyle" % "6.1",
   "com.nimbusds" % "c2id-server-sdk" % "2.0",
-  "com.typesafe.play" %% "play-mailer" % "2.4.0"
+  "com.typesafe.play" %% "play-mailer" % "2.4.0",
+  "com.amazonaws" % "aws-java-sdk" % "1.0.002"
 )
 
 TestNGPlugin.testNGSettings
