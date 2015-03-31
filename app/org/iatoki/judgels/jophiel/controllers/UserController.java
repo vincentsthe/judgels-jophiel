@@ -6,19 +6,16 @@ import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
-import org.iatoki.judgels.commons.views.html.layouts.baseLayout;
 import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
-import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.messageView;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
 import org.iatoki.judgels.jophiel.ChangePasswordForm;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.ForgotPasswordForm;
-import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RegisterForm;
 import org.iatoki.judgels.jophiel.User;
@@ -114,12 +111,13 @@ public final class UserController extends Controller {
         User user = userService.findUserById(userId);
         LazyHtml content = new LazyHtml(viewView.render(user));
         content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.user") + " #" + userId + ": " + user.getName(), new InternalLink(Messages.get("commons.update"), routes.UserController.update(userId)), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
                 new InternalLink(Messages.get("user.view"), routes.UserController.view(userId))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "User - View");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     @AddCSRFToken
@@ -164,12 +162,13 @@ public final class UserController extends Controller {
 
         LazyHtml content = new LazyHtml(listView.render(currentPage, orderBy, orderDir, filterString));
         content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("commons.create"), routes.UserController.create()), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index())
-        ), c));
-        appendTemplateLayout(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Users");
 
-        return lazyOk(content);
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     @AddCSRFToken
@@ -215,8 +214,8 @@ public final class UserController extends Controller {
                         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
                         content.appendLayout(c -> noSidebarLayout.render(c));
                         content.appendLayout(c -> headerFooterLayout.render(c));
-                        content.appendLayout(c -> baseLayout.render("TODO", c));
-                        return lazyOk(content);
+                        ControllerUtils.getInstance().appendTemplateLayout(content, "After Register");
+                        return ControllerUtils.getInstance().lazyOk(content);
                     } catch (IllegalStateException e){
                         form.reject("register.error.usernameOrEmailExists");
                         return showRegister(form);
@@ -270,8 +269,8 @@ public final class UserController extends Controller {
                     content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
                     content.appendLayout(c -> noSidebarLayout.render(c));
                     content.appendLayout(c -> headerFooterLayout.render(c));
-                    content.appendLayout(c -> baseLayout.render("TODO", c));
-                    return lazyOk(content);
+                    ControllerUtils.getInstance().appendTemplateLayout(content, "After Forgot Password");
+                    return ControllerUtils.getInstance().lazyOk(content);
                 }
             }
         } else {
@@ -310,11 +309,10 @@ public final class UserController extends Controller {
 
                         LazyHtml content = new LazyHtml(messageView.render(Messages.get("changePassword.success") + "."));
                         content.appendLayout(c -> headingLayout.render(Messages.get("changePassword.successful"), c));
-                        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
                         content.appendLayout(c -> noSidebarLayout.render(c));
                         content.appendLayout(c -> headerFooterLayout.render(c));
-                        content.appendLayout(c -> baseLayout.render("TODO", c));
-                        return lazyOk(content);
+                        ControllerUtils.getInstance().appendTemplateLayout(content, "After Change Password");
+                        return ControllerUtils.getInstance().lazyOk(content);
                     }
                 }
             } else {
@@ -359,11 +357,9 @@ public final class UserController extends Controller {
     public Result verifyEmail(String emailCode) {
         if (userService.activateEmail(emailCode)) {
             LazyHtml content = new LazyHtml(activationView.render());
-            content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
             content.appendLayout(c -> noSidebarLayout.render(c));
-            content.appendLayout(c -> headerFooterLayout.render(c));
-            content.appendLayout(c -> baseLayout.render("TODO", c));
-            return lazyOk(content);
+            ControllerUtils.getInstance().appendTemplateLayout(content, "Verify Email");
+            return ControllerUtils.getInstance().lazyOk(content);
         } else {
             return notFound();
         }
@@ -503,94 +499,68 @@ public final class UserController extends Controller {
     private Result showLogin(Form<LoginForm> form) {
         LazyHtml content = new LazyHtml(loginView.render(form));
         content.appendLayout(c -> noSidebarLayout.render(c));
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
-        return lazyOk(content);
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Login");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2) {
 
         LazyHtml content = new LazyHtml(editProfileView.render(form, form2));
         content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("profile.profile"), routes.UserController.profile())
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Profile");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result showCreate(Form<UserUpsertForm> form) {
         LazyHtml content = new LazyHtml(createView.render(form));
         content.appendLayout(c -> headingLayout.render(Messages.get("user.create"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
                 new InternalLink(Messages.get("user.create"), routes.UserController.create())
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Change Password");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result showUpdate(Form<UserUpsertForm> form, User user) {
         LazyHtml content = new LazyHtml(updateView.render(form, user.getId()));
         content.appendLayout(c -> headingLayout.render(Messages.get("user.user") + " #" + user.getId() + ": " + user.getUsername(), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
                 new InternalLink(Messages.get("user.update"), routes.UserController.update(user.getId()))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "User - Update");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result showRegister(Form<RegisterForm> form) {
         LazyHtml content = new LazyHtml(registerView.render(form));
         content.appendLayout(c -> noSidebarLayout.render(c));
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Register");
 
-        return lazyOk(content);
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result showForgotPassword(Form<ForgotPasswordForm> form) {
         LazyHtml content = new LazyHtml(forgotPasswordView.render(form));
         content.appendLayout(c -> noSidebarLayout.render(c));
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Forgot Password");
 
-        return lazyOk(content);
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result showChangePassword(Form<ChangePasswordForm> form, String code) {
         LazyHtml content = new LazyHtml(changePasswordView.render(form, code));
         content.appendLayout(c -> noSidebarLayout.render(c));
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Change Password");
 
-        return lazyOk(content);
-    }
-
-    private void appendTemplateLayout(LazyHtml content) {
-        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
-
-        internalLinkBuilder.add(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()));
-        if (JophielUtils.hasRole("admin")) {
-            internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
-            internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
-        }
-
-        content.appendLayout(c -> leftSidebarLayout.render(
-                        IdentityUtils.getUsername(),
-                        IdentityUtils.getUserRealName(),
-                        org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(request()),
-                        org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(request()),
-                        internalLinkBuilder.build(), c)
-        );
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
-
-    }
-
-    private Result lazyOk(LazyHtml content) {
-        return getResult(content, Http.Status.OK);
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result getResult(LazyHtml content, int statusCode) {

@@ -18,11 +18,7 @@ import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.LazyHtml;
-import org.iatoki.judgels.commons.views.html.layouts.baseLayout;
-import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
-import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
-import org.iatoki.judgels.commons.views.html.layouts.leftSidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
 import org.iatoki.judgels.jophiel.AccessToken;
 import org.iatoki.judgels.jophiel.Client;
@@ -128,9 +124,8 @@ public final class OpenIdConnectController extends Controller {
                 } else {
                     LazyHtml content = new LazyHtml(authView.render(randomHash, client, scopes));
                     content.appendLayout(c -> noSidebarLayout.render(c));
-                    content.appendLayout(c -> headerFooterLayout.render(c));
-                    content.appendLayout(c -> baseLayout.render("TODO", c));
-                    return lazyOk(content);
+                    ControllerUtils.getInstance().appendTemplateLayout(content, "Auth");
+                    return ControllerUtils.getInstance().lazyOk(content);
                 }
             } catch (ParseException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -189,128 +184,6 @@ public final class OpenIdConnectController extends Controller {
         } else {
             ObjectNode node = Json.newObject();
             node.put("error", "invalid_grant");
-            return badRequest(node);
-        }
-    }
-
-    private Result processTokenAuthCodeRequest(DynamicForm form) {
-        String code = form.get("code");
-        String redirectUri = form.get("redirect_uri");
-        org.iatoki.judgels.jophiel.AuthorizationCode authorizationCode = clientService.findAuthorizationCodeByCode(code);
-
-        if ((authorizationCode.getRedirectURI().equals(redirectUri)) && (!authorizationCode.isExpired())) {
-            String scope = form.get("scope");
-            String clientId;
-            String clientSecret;
-            if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
-                String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
-                clientId = userPass[0];
-                clientSecret = userPass[1];
-            } else {
-                clientId = form.get("client_id");
-                clientSecret = form.get("client_secret");
-            }
-
-            if (clientId != null) {
-                Client client = clientService.findClientByJid(clientId);
-                if ((client.getSecret().equals(clientSecret)) && (authorizationCode.getClientJid().equals(client.getJid()))) {
-                    Set<String> addedSet = Arrays.asList(scope.split(" ")).stream()
-                            .filter(s -> (!"".equals(s)) && (!client.getScopes().contains(StringUtils.upperCase(s))))
-                            .collect(Collectors.toSet());
-                    if (addedSet.isEmpty()) {
-                        ObjectNode result = Json.newObject();
-                        AccessToken accessToken = clientService.findAccessTokenByCode(code);
-                        if (!accessToken.isRedeemed()) {
-                            result.put("access_token", accessToken.getToken());
-                            if (client.getScopes().contains("OFFLINE_ACCESS")) {
-                                RefreshToken refreshToken = clientService.findRefreshTokenByCode(code);
-                                result.put("refresh_token", refreshToken.getToken());
-                                clientService.redeemRefreshTokenById(refreshToken.getId());
-                            }
-                            if (client.getScopes().contains("OPENID")) {
-                                IdToken idToken = clientService.findIdTokenByCode(code);
-                                result.put("id_token", idToken.getToken());
-                                clientService.redeemIdTokenById(idToken.getId());
-                            }
-                            result.put("token_type", "Bearer");
-                            result.put("expire_in", clientService.redeemAccessTokenById(accessToken.getId()));
-                            return ok(result);
-                        } else {
-                            ObjectNode node = Json.newObject();
-                            node.put("error", "invalid_client");
-                            return badRequest(node);
-                        }
-                    } else {
-                        ObjectNode node = Json.newObject();
-                        node.put("error", "invalid_scope");
-                        return badRequest(node);
-                    }
-                } else {
-                    ObjectNode node = Json.newObject();
-                    node.put("error", "unauthorized_client");
-                    return unauthorized(node);
-                }
-            } else {
-                ObjectNode node = Json.newObject();
-                node.put("error", "invalid_client");
-                return badRequest(node);
-            }
-        } else {
-            ObjectNode node = Json.newObject();
-            node.put("error", "invalid_request");
-            return badRequest(node);
-        }
-    }
-
-    private Result processTokenRefreshTokenRequest(DynamicForm form) {
-        String refreshToken = form.get("refresh_token");
-
-        RefreshToken refreshToken1 = clientService.findRefreshTokenByRefreshToken(refreshToken);
-        if ((refreshToken1.getToken().equals(refreshToken)) && (refreshToken1.isRedeemed())) {
-            String clientId;
-            String clientSecret;
-            if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
-                String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
-                clientId = userPass[0];
-                clientSecret = userPass[1];
-            } else {
-                clientId = form.get("client_id");
-                clientSecret = form.get("client_secret");
-            }
-
-            if (clientId != null) {
-                Client client = clientService.findClientByJid(clientId);
-                if ((client.getSecret().equals(clientSecret)) && (refreshToken1.getClientJid().equals(client.getJid()))) {
-                    ObjectNode result = Json.newObject();
-                    if (refreshToken1.isRedeemed()) {
-                        AccessToken accessToken = clientService.regenerateAccessToken(refreshToken1.getCode(), refreshToken1.getUserJid(), refreshToken1.getClientJid(), Arrays.asList(refreshToken1.getScopes().split(",")));
-                        result.put("access_token", accessToken.getToken());
-                        if (client.getScopes().contains("OPENID")) {
-                            IdToken idToken = clientService.findIdTokenByCode(refreshToken1.getCode());
-                            result.put("id_token", idToken.getToken());
-                            clientService.redeemIdTokenById(idToken.getId());
-                        }
-                        result.put("token_type", "Bearer");
-                        result.put("expire_in", clientService.redeemAccessTokenById(accessToken.getId()));
-                        return ok(result);
-                    } else {
-                        ObjectNode node = Json.newObject();
-                        node.put("error", "invalid_client");
-                        return badRequest(node);
-                    }
-                } else {
-                    ObjectNode node = Json.newObject();
-                    node.put("error", "unauthorized_client");
-                    return unauthorized(node);
-                }
-            } else {
-                ObjectNode node = Json.newObject();
-                node.put("error", "invalid_client");
-                return badRequest(node);
-            }
-        } else {
-            ObjectNode node = Json.newObject();
-            node.put("error", "invalid_request");
             return badRequest(node);
         }
     }
@@ -508,31 +381,6 @@ public final class OpenIdConnectController extends Controller {
         }
     }
 
-    private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2, String continueUrl) {
-        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
-
-        if (JophielUtils.hasRole("admin")) {
-            internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
-            internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
-        }
-
-        LazyHtml content = new LazyHtml(serviceProfileView.render(form, form2, continueUrl));
-        content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("profile.profile"), routes.OpenIdConnectController.profile(continueUrl))
-        ), c));
-        content.appendLayout(c -> leftSidebarLayout.render(
-                        IdentityUtils.getUsername(),
-                        IdentityUtils.getUserRealName(),
-                        org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.profile(continueUrl).absoluteURL(request()),
-                        org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.logout(continueUrl).absoluteURL(request()),
-                        internalLinkBuilder.build(), c)
-        );
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
-        return lazyOk(content);
-    }
-
     @Transactional
     public Result logout(String returnUri) {
         try {
@@ -558,16 +406,151 @@ public final class OpenIdConnectController extends Controller {
         }
     }
 
+    private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2, String continueUrl) {
+        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
+
+        if (JophielUtils.hasRole("admin")) {
+            internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
+            internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
+        }
+
+        LazyHtml content = new LazyHtml(serviceProfileView.render(form, form2, continueUrl));
+        content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
+                new InternalLink(Messages.get("profile.profile"), routes.OpenIdConnectController.profile(continueUrl))
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "User - Profile");
+        return ControllerUtils.getInstance().lazyOk(content);
+    }
+
     private Result showLogin(Form<LoginForm> form, String continueUrl) {
         LazyHtml content = new LazyHtml(serviceLoginView.render(form, continueUrl));
         content.appendLayout(c -> noSidebarLayout.render(c));
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
-        return lazyOk(content);
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Login");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
-    private Result lazyOk(LazyHtml content) {
-        return getResult(content, Http.Status.OK);
+    private Result processTokenAuthCodeRequest(DynamicForm form) {
+        String code = form.get("code");
+        String redirectUri = form.get("redirect_uri");
+        org.iatoki.judgels.jophiel.AuthorizationCode authorizationCode = clientService.findAuthorizationCodeByCode(code);
+
+        if ((authorizationCode.getRedirectURI().equals(redirectUri)) && (!authorizationCode.isExpired())) {
+            String scope = form.get("scope");
+            String clientId;
+            String clientSecret;
+            if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
+                String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
+                clientId = userPass[0];
+                clientSecret = userPass[1];
+            } else {
+                clientId = form.get("client_id");
+                clientSecret = form.get("client_secret");
+            }
+
+            if (clientId != null) {
+                Client client = clientService.findClientByJid(clientId);
+                if ((client.getSecret().equals(clientSecret)) && (authorizationCode.getClientJid().equals(client.getJid()))) {
+                    Set<String> addedSet = Arrays.asList(scope.split(" ")).stream()
+                            .filter(s -> (!"".equals(s)) && (!client.getScopes().contains(StringUtils.upperCase(s))))
+                            .collect(Collectors.toSet());
+                    if (addedSet.isEmpty()) {
+                        ObjectNode result = Json.newObject();
+                        AccessToken accessToken = clientService.findAccessTokenByCode(code);
+                        if (!accessToken.isRedeemed()) {
+                            result.put("access_token", accessToken.getToken());
+                            if (client.getScopes().contains("OFFLINE_ACCESS")) {
+                                RefreshToken refreshToken = clientService.findRefreshTokenByCode(code);
+                                result.put("refresh_token", refreshToken.getToken());
+                                clientService.redeemRefreshTokenById(refreshToken.getId());
+                            }
+                            if (client.getScopes().contains("OPENID")) {
+                                IdToken idToken = clientService.findIdTokenByCode(code);
+                                result.put("id_token", idToken.getToken());
+                                clientService.redeemIdTokenById(idToken.getId());
+                            }
+                            result.put("token_type", "Bearer");
+                            result.put("expire_in", clientService.redeemAccessTokenById(accessToken.getId()));
+                            return ok(result);
+                        } else {
+                            ObjectNode node = Json.newObject();
+                            node.put("error", "invalid_client");
+                            return badRequest(node);
+                        }
+                    } else {
+                        ObjectNode node = Json.newObject();
+                        node.put("error", "invalid_scope");
+                        return badRequest(node);
+                    }
+                } else {
+                    ObjectNode node = Json.newObject();
+                    node.put("error", "unauthorized_client");
+                    return unauthorized(node);
+                }
+            } else {
+                ObjectNode node = Json.newObject();
+                node.put("error", "invalid_client");
+                return badRequest(node);
+            }
+        } else {
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_request");
+            return badRequest(node);
+        }
+    }
+
+    private Result processTokenRefreshTokenRequest(DynamicForm form) {
+        String refreshToken = form.get("refresh_token");
+
+        RefreshToken refreshToken1 = clientService.findRefreshTokenByRefreshToken(refreshToken);
+        if ((refreshToken1.getToken().equals(refreshToken)) && (refreshToken1.isRedeemed())) {
+            String clientId;
+            String clientSecret;
+            if ((request().getHeader("Authorization") != null) && ("Basic".equals(request().getHeader("Authorization").split(" ")[0]))) {
+                String[] userPass = new String(Base64.decodeBase64(request().getHeader("Authorization").split(" ")[1])).split(":");
+                clientId = userPass[0];
+                clientSecret = userPass[1];
+            } else {
+                clientId = form.get("client_id");
+                clientSecret = form.get("client_secret");
+            }
+
+            if (clientId != null) {
+                Client client = clientService.findClientByJid(clientId);
+                if ((client.getSecret().equals(clientSecret)) && (refreshToken1.getClientJid().equals(client.getJid()))) {
+                    ObjectNode result = Json.newObject();
+                    if (refreshToken1.isRedeemed()) {
+                        AccessToken accessToken = clientService.regenerateAccessToken(refreshToken1.getCode(), refreshToken1.getUserJid(), refreshToken1.getClientJid(), Arrays.asList(refreshToken1.getScopes().split(",")));
+                        result.put("access_token", accessToken.getToken());
+                        if (client.getScopes().contains("OPENID")) {
+                            IdToken idToken = clientService.findIdTokenByCode(refreshToken1.getCode());
+                            result.put("id_token", idToken.getToken());
+                            clientService.redeemIdTokenById(idToken.getId());
+                        }
+                        result.put("token_type", "Bearer");
+                        result.put("expire_in", clientService.redeemAccessTokenById(accessToken.getId()));
+                        return ok(result);
+                    } else {
+                        ObjectNode node = Json.newObject();
+                        node.put("error", "invalid_client");
+                        return badRequest(node);
+                    }
+                } else {
+                    ObjectNode node = Json.newObject();
+                    node.put("error", "unauthorized_client");
+                    return unauthorized(node);
+                }
+            } else {
+                ObjectNode node = Json.newObject();
+                node.put("error", "invalid_client");
+                return badRequest(node);
+            }
+        } else {
+            ObjectNode node = Json.newObject();
+            node.put("error", "invalid_request");
+            return badRequest(node);
+        }
     }
 
     private Result getResult(LazyHtml content, int statusCode) {

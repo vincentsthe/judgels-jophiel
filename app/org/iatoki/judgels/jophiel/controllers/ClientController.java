@@ -63,7 +63,6 @@ public final class ClientController extends Controller {
             return showCreate(form);
         } else {
             ClientCreateForm clientCreateForm = form.get();
-
             clientService.createClient(clientCreateForm.name, clientCreateForm.applicationType, clientCreateForm.scopes, Arrays.asList(clientCreateForm.redirectURIs.split(",")));
 
             return redirect(routes.ClientController.index());
@@ -75,24 +74,13 @@ public final class ClientController extends Controller {
         Client client = clientService.findClientById(clientId);
         LazyHtml content = new LazyHtml(viewView.render(client));
         content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.client") + " #" + clientId + ": " + client.getName(), new InternalLink(Messages.get("commons.update"), routes.ClientController.update(clientId)), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
                 new InternalLink(Messages.get("client.view"), routes.ClientController.view(clientId))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
-    }
-
-    private Result showUpdate(Form<ClientUpdateForm> form, long clientId, String clientName) {
-        LazyHtml content = new LazyHtml(updateView.render(form, clientId));
-        content.appendLayout(c -> headingLayout.render(Messages.get("client.client") + " #" + clientId + ": " + clientName, c));
-
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
-                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
-                new InternalLink(Messages.get("client.update"), routes.ClientController.update(clientId))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Client - View");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     @AddCSRFToken
@@ -139,56 +127,37 @@ public final class ClientController extends Controller {
 
         LazyHtml content = new LazyHtml(listView.render(currentPage, orderBy, orderDir, filterString));
         content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.list"), new InternalLink(Messages.get("commons.create"), routes.ClientController.create()), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
-        ), c));
-        appendTemplateLayout(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Clients");
 
-        return lazyOk(content);
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result showCreate(Form<ClientCreateForm> form) {
         LazyHtml content = new LazyHtml(createView.render(form));
         content.appendLayout(c -> headingLayout.render(Messages.get("client.create"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
                 new InternalLink(Messages.get("client.create"), routes.ClientController.create())
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Client - Create");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
-    private Result showUpdate(Form<ClientUpdateForm> form, long clientId) {
+    private Result showUpdate(Form<ClientUpdateForm> form, long clientId, String clientName) {
         LazyHtml content = new LazyHtml(updateView.render(form, clientId));
-        content.appendLayout(c -> headingLayout.render(Messages.get("client.update"), c));
-        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(
+        content.appendLayout(c -> headingLayout.render(Messages.get("client.client") + " #" + clientId + ": " + clientName, c));
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
                 new InternalLink(Messages.get("client.update"), routes.ClientController.update(clientId))
-        ), c));
-        appendTemplateLayout(content);
-        return lazyOk(content);
-    }
-
-    private void appendTemplateLayout(LazyHtml content) {
-        ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
-        internalLinkBuilder.add(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()));
-        internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
-        internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
-
-
-        content.appendLayout(c -> leftSidebarLayout.render(
-                        IdentityUtils.getUsername(),
-                        IdentityUtils.getUserRealName(),
-                        org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(request()),
-                        org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(request()),
-                        internalLinkBuilder.build(), c)
-        );
-        content.appendLayout(c -> headerFooterLayout.render(c));
-        content.appendLayout(c -> baseLayout.render("TODO", c));
-    }
-
-    private Result lazyOk(LazyHtml content) {
-        return getResult(content, Http.Status.OK);
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Client - Update");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
     private Result getResult(LazyHtml content, int statusCode) {
