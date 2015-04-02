@@ -16,6 +16,7 @@ user.usernameOrEmail=Username or Email
 
 profile.profile=Profile
 profile.avatar=Avatar
+profile.activities=Activities
 
 profile.error.passwordsDidntMatch=Passwords didn''t match
 profile.error.avatarNotPicture=Avatar is not a picture
@@ -43,7 +44,7 @@ client.create=Create Client
 client.update=Update Client
 client.view=View Client
 
-client.name=Name
+client.name=Client Name
 client.applicationType=Application Type
 client.redirectURIs=Redirect URIs
 client.scopes=Scopes
@@ -72,3 +73,8 @@ auth.authorize=Authorize
 auth.authorization=Authorization Request
 auth.wantToAuthorize=Do you want to authorize
 auth.inTheseScopes=in these scopes
+
+user.activities=User Activities
+user.activity.list=User Activities
+user.activity.time=Time
+user.activity.log=Log

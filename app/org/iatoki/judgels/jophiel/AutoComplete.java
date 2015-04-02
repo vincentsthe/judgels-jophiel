@@ -1,6 +1,6 @@
 package org.iatoki.judgels.jophiel;
 
-public final class UserAutoComplete {
+public final class AutoComplete {
 
     private String id;
 
@@ -8,7 +8,7 @@ public final class UserAutoComplete {
 
     private String label;
 
-    public UserAutoComplete(String id, String value, String label) {
+    public AutoComplete(String id, String value, String label) {
         this.id = id;
         this.value = value;
         this.label = label;

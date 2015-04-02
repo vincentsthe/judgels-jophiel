@@ -3,11 +3,11 @@ package org.iatoki.judgels.jophiel.controllers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
-import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
-import org.iatoki.judgels.commons.views.html.layouts.*;
+import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
+import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientCreateForm;
 import org.iatoki.judgels.jophiel.ClientService;
@@ -16,17 +16,16 @@ import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.Authorized;
 import org.iatoki.judgels.jophiel.controllers.security.HasRole;
 import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
-import org.iatoki.judgels.jophiel.views.html.client.createView;
-import org.iatoki.judgels.jophiel.views.html.client.listView;
-import org.iatoki.judgels.jophiel.views.html.client.updateView;
-import org.iatoki.judgels.jophiel.views.html.client.viewView;
+import org.iatoki.judgels.jophiel.views.html.client.createClientView;
+import org.iatoki.judgels.jophiel.views.html.client.listClientsView;
+import org.iatoki.judgels.jophiel.views.html.client.updateClientView;
+import org.iatoki.judgels.jophiel.views.html.client.viewClientView;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.filters.csrf.AddCSRFToken;
 import play.filters.csrf.RequireCSRFCheck;
 import play.i18n.Messages;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.Arrays;
@@ -44,23 +43,23 @@ public final class ClientController extends Controller {
 
     @Transactional
     public Result index() {
-        return list(0, "id", "asc", "");
+        return listClients(0, "id", "asc", "");
     }
 
     @AddCSRFToken
-    public Result create() {
+    public Result createClient() {
         Form<ClientCreateForm> form = Form.form(ClientCreateForm.class);
 
-        return showCreate(form);
+        return showCreateClient(form);
     }
 
     @RequireCSRFCheck
     @Transactional
-    public Result postCreate() {
+    public Result postCreateClient() {
         Form<ClientCreateForm> form = Form.form(ClientCreateForm.class).bindFromRequest();
 
         if (form.hasErrors() || form.hasGlobalErrors()) {
-            return showCreate(form);
+            return showCreateClient(form);
         } else {
             ClientCreateForm clientCreateForm = form.get();
             clientService.createClient(clientCreateForm.name, clientCreateForm.applicationType, clientCreateForm.scopes, Arrays.asList(clientCreateForm.redirectURIs.split(",")));
@@ -70,22 +69,37 @@ public final class ClientController extends Controller {
     }
 
     @Transactional
-    public Result view(long clientId) {
+    public Result viewClient(long clientId) {
         Client client = clientService.findClientById(clientId);
-        LazyHtml content = new LazyHtml(viewView.render(client));
-        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.client") + " #" + clientId + ": " + client.getName(), new InternalLink(Messages.get("commons.update"), routes.ClientController.update(clientId)), c));
+        LazyHtml content = new LazyHtml(viewClientView.render(client));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.client") + " #" + clientId + ": " + client.getName(), new InternalLink(Messages.get("commons.update"), routes.ClientController.updateClient(clientId)), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
-                new InternalLink(Messages.get("client.view"), routes.ClientController.view(clientId))
+                new InternalLink(Messages.get("client.view"), routes.ClientController.viewClient(clientId))
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Client - View");
         return ControllerUtils.getInstance().lazyOk(content);
     }
 
+    @Transactional
+    public Result listClients(long page, String orderBy, String orderDir, String filterString) {
+        Page<Client> currentPage = clientService.pageClients(page, PAGE_SIZE, orderBy, orderDir, filterString);
+
+        LazyHtml content = new LazyHtml(listClientsView.render(currentPage, orderBy, orderDir, filterString));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.list"), new InternalLink(Messages.get("commons.create"), routes.ClientController.createClient()), c));
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
+              new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Clients");
+
+        return ControllerUtils.getInstance().lazyOk(content);
+    }
+
     @AddCSRFToken
     @Transactional
-    public Result update(long clientId) {
+    public Result updateClient(long clientId) {
         Client client = clientService.findClientById(clientId);
         ClientUpdateForm clientUpdateForm = new ClientUpdateForm();
 
@@ -95,16 +109,16 @@ public final class ClientController extends Controller {
 
         Form<ClientUpdateForm> form = Form.form(ClientUpdateForm.class).fill(clientUpdateForm);
 
-        return showUpdate(form, clientId, client.getName());
+        return showUpdateClient(form, clientId, client.getName());
     }
 
     @Transactional
-    public Result postUpdate(long clientId) {
+    public Result postUpdateClient(long clientId) {
         Client client = clientService.findClientById(clientId);
         Form<ClientUpdateForm> form = Form.form(ClientUpdateForm.class).bindFromRequest();
 
         if (form.hasErrors()) {
-            return showUpdate(form, clientId, client.getName());
+            return showUpdateClient(form, clientId, client.getName());
         } else {
             ClientUpdateForm clientUpdateForm = form.get();
 
@@ -115,60 +129,33 @@ public final class ClientController extends Controller {
     }
 
     @Transactional
-    public Result delete(long clientId) {
+    public Result deleteClient(long clientId) {
         clientService.deleteClient(clientId);
 
         return redirect(routes.ClientController.index());
     }
 
-    @Transactional
-    public Result list(long page, String orderBy, String orderDir, String filterString) {
-        Page<Client> currentPage = clientService.pageClients(page, PAGE_SIZE, orderBy, orderDir, filterString);
-
-        LazyHtml content = new LazyHtml(listView.render(currentPage, orderBy, orderDir, filterString));
-        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.list"), new InternalLink(Messages.get("commons.create"), routes.ClientController.create()), c));
-        ControllerUtils.getInstance().appendSidebarLayout(content);
-        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
-        ));
-        ControllerUtils.getInstance().appendTemplateLayout(content, "Clients");
-
-        return ControllerUtils.getInstance().lazyOk(content);
-    }
-
-    private Result showCreate(Form<ClientCreateForm> form) {
-        LazyHtml content = new LazyHtml(createView.render(form));
+    private Result showCreateClient(Form<ClientCreateForm> form) {
+        LazyHtml content = new LazyHtml(createClientView.render(form));
         content.appendLayout(c -> headingLayout.render(Messages.get("client.create"), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
-                new InternalLink(Messages.get("client.create"), routes.ClientController.create())
+              new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
+              new InternalLink(Messages.get("client.create"), routes.ClientController.createClient())
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Client - Create");
         return ControllerUtils.getInstance().lazyOk(content);
     }
 
-    private Result showUpdate(Form<ClientUpdateForm> form, long clientId, String clientName) {
-        LazyHtml content = new LazyHtml(updateView.render(form, clientId));
+    private Result showUpdateClient(Form<ClientUpdateForm> form, long clientId, String clientName) {
+        LazyHtml content = new LazyHtml(updateClientView.render(form, clientId));
         content.appendLayout(c -> headingLayout.render(Messages.get("client.client") + " #" + clientId + ": " + clientName, c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
-                new InternalLink(Messages.get("client.update"), routes.ClientController.update(clientId))
+              new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
+              new InternalLink(Messages.get("client.update"), routes.ClientController.updateClient(clientId))
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Client - Update");
         return ControllerUtils.getInstance().lazyOk(content);
     }
-
-    private Result getResult(LazyHtml content, int statusCode) {
-        switch (statusCode) {
-            case Http.Status.OK:
-                return ok(content.render(0));
-            case Http.Status.NOT_FOUND:
-                return notFound(content.render(0));
-            default:
-                return badRequest(content.render(0));
-        }
-    }
-
 }

@@ -2,7 +2,10 @@ package org.iatoki.judgels.jophiel;
 
 import org.iatoki.judgels.jophiel.controllers.ClientController;
 import org.iatoki.judgels.jophiel.controllers.OpenIdConnectController;
+import org.iatoki.judgels.jophiel.controllers.UserActivityController;
 import org.iatoki.judgels.jophiel.controllers.UserController;
+import org.iatoki.judgels.jophiel.controllers.apis.ClientAPIController;
+import org.iatoki.judgels.jophiel.controllers.apis.UserAPIController;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.AccessTokenHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.AuthorizationCodeHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.ClientHibernateDao;
@@ -11,6 +14,7 @@ import org.iatoki.judgels.jophiel.models.daos.hibernate.ForgotPasswordHibernateD
 import org.iatoki.judgels.jophiel.models.daos.hibernate.IdTokenHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.RedirectURIHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.RefreshTokenHibernateDao;
+import org.iatoki.judgels.jophiel.models.daos.hibernate.UserActivityHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.UserHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AccessTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.AuthorizationCodeDao;
@@ -20,6 +24,7 @@ import org.iatoki.judgels.jophiel.models.daos.interfaces.ForgotPasswordDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.IdTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RedirectURIDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.RefreshTokenDao;
+import org.iatoki.judgels.jophiel.models.daos.interfaces.UserActivityDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import play.Application;
 import play.mvc.Controller;
@@ -47,6 +52,12 @@ public final class Global extends org.iatoki.judgels.commons.Global {
 
                 UserController userController = new UserController(userService, clientService);
                 cache.put(UserController.class, userController);
+            } else if (controllerClass.equals(UserActivityController.class)) {
+                UserService userService = createUserService();
+                ClientService clientService = createClientService();
+
+                UserActivityController userActivityController = new UserActivityController(userService, clientService);
+                cache.put(UserActivityController.class, userActivityController);
             } else if (controllerClass.equals(ClientController.class)) {
                 ClientService clientService = createClientService();
 
@@ -58,6 +69,17 @@ public final class Global extends org.iatoki.judgels.commons.Global {
 
                 OpenIdConnectController openIdConnectController = new OpenIdConnectController(userService, clientService);
                 cache.put(OpenIdConnectController.class, openIdConnectController);
+            } else if (controllerClass.equals(ClientAPIController.class)) {
+                UserService userService = createUserService();
+                ClientService clientService = createClientService();
+
+                ClientAPIController clientAPIController = new ClientAPIController(clientService, userService);
+                cache.put(ClientAPIController.class, clientAPIController);
+            } else if (controllerClass.equals(UserAPIController.class)) {
+                UserService userService = createUserService();
+
+                UserAPIController userAPIController = new UserAPIController(userService);
+                cache.put(UserAPIController.class, userAPIController);
             }
         }
         return controllerClass.cast(cache.get(controllerClass));
@@ -67,8 +89,10 @@ public final class Global extends org.iatoki.judgels.commons.Global {
         UserDao userDao = new UserHibernateDao();
         EmailDao emailDao = new EmailHibernateDao();
         ForgotPasswordDao forgotPasswordDao = new ForgotPasswordHibernateDao();
+        UserActivityDao userActivityDao = new UserActivityHibernateDao();
+        ClientDao clientDao = new ClientHibernateDao();
 
-        UserService userService = new UserServiceImpl(userDao, emailDao, forgotPasswordDao);
+        UserService userService = new UserServiceImpl(userDao, emailDao, forgotPasswordDao, userActivityDao, clientDao);
 
         return userService;
     }

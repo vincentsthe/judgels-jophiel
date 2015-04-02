@@ -19,7 +19,7 @@ import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
-import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
+import org.iatoki.judgels.commons.views.html.layouts.centerLayout;
 import org.iatoki.judgels.jophiel.AccessToken;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
@@ -28,7 +28,7 @@ import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RefreshToken;
 import org.iatoki.judgels.jophiel.User;
-import org.iatoki.judgels.jophiel.UserAutoComplete;
+import org.iatoki.judgels.jophiel.AutoComplete;
 import org.iatoki.judgels.jophiel.UserProfileForm;
 import org.iatoki.judgels.jophiel.UserProfilePictureForm;
 import org.iatoki.judgels.jophiel.UserService;
@@ -37,7 +37,7 @@ import org.iatoki.judgels.jophiel.controllers.security.HasRole;
 import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import org.iatoki.judgels.jophiel.views.html.authView;
 import org.iatoki.judgels.jophiel.views.html.serviceLoginView;
-import org.iatoki.judgels.jophiel.views.html.serviceProfileView;
+import org.iatoki.judgels.jophiel.views.html.serviceEditProfileView;
 import play.Logger;
 import play.cache.Cache;
 import play.data.DynamicForm;
@@ -74,7 +74,7 @@ public final class OpenIdConnectController extends Controller {
     @AddCSRFToken
     @Transactional
     public Result login(String continueUrl) {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<LoginForm> form = Form.form(LoginForm.class);
             return showLogin(form, continueUrl);
         } else {
@@ -85,7 +85,7 @@ public final class OpenIdConnectController extends Controller {
     @RequireCSRFCheck
     @Transactional
     public Result postLogin(String continueUrl) {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
             if (form.hasErrors()) {
                 Logger.error(form.errors().toString());
@@ -107,7 +107,7 @@ public final class OpenIdConnectController extends Controller {
     @Transactional
     public Result authRequest() {
         String redirectURI = request().uri().substring(request().uri().indexOf("?") + 1);
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             return redirect((routes.OpenIdConnectController.login("http://" + request().host() + request().uri())));
         } else {
             try {
@@ -119,11 +119,11 @@ public final class OpenIdConnectController extends Controller {
                 Client client = clientService.findClientByJid(clientID.toString());
 
                 List<String> scopes = req.getScope().toStringList();
-                if (clientService.checkIsClientAuthorized(clientID.toString(), scopes)) {
+                if (clientService.isClientAuthorized(clientID.toString(), scopes)) {
                     return postAuthRequest(randomHash);
                 } else {
                     LazyHtml content = new LazyHtml(authView.render(randomHash, client, scopes));
-                    content.appendLayout(c -> noSidebarLayout.render(c));
+                    content.appendLayout(c -> centerLayout.render(c));
                     ControllerUtils.getInstance().appendTemplateLayout(content, "Auth");
                     return ControllerUtils.getInstance().lazyOk(content);
                 }
@@ -198,9 +198,9 @@ public final class OpenIdConnectController extends Controller {
             token = form.get("token");
         }
 
-        if (clientService.checkIsAccessTokenExist(token)) {
+        if (clientService.isAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
-            User user = userService.findUserByJid(accessToken.getUserJid());
+            User user = userService.findUserByUserJid(accessToken.getUserJid());
             ObjectNode result = Json.newObject();
             result.put("sub", user.getJid());
             result.put("name", user.getName());
@@ -227,15 +227,15 @@ public final class OpenIdConnectController extends Controller {
             token = form.get("token");
         }
 
-        if (clientService.checkIsAccessTokenExist(token)) {
+        if (clientService.isAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
-            User user = userService.findUserByJid(accessToken.getUserJid());
+            User user = userService.findUserByUserJid(accessToken.getUserJid());
             String term = form.get("term");
-            List<User> users = userService.findAllUser(term);
-            ImmutableList.Builder<UserAutoComplete> responseBuilder = ImmutableList.builder();
+            List<User> users = userService.findAllUserByTerm(term);
+            ImmutableList.Builder<AutoComplete> responseBuilder = ImmutableList.builder();
 
             for (User user1 : users) {
-                responseBuilder.add(new UserAutoComplete(user1.getJid(), user1.getUsername(), user1.getUsername() + " (" + user1.getName() + ")"));
+                responseBuilder.add(new AutoComplete(user1.getJid(), user1.getUsername(), user1.getUsername() + " (" + user1.getName() + ")"));
             }
             return ok(Json.toJson(responseBuilder.build()));
         } else {
@@ -263,9 +263,9 @@ public final class OpenIdConnectController extends Controller {
             token = form.get("token");
         }
 
-        if (clientService.checkIsAccessTokenExist(token)) {
+        if (clientService.isAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
-            User user = userService.findUserByJid(accessToken.getUserJid());
+            User user = userService.findUserByUserJid(accessToken.getUserJid());
             String username = form.get("username");
 
             if (userService.existByUsername(username)) {
@@ -300,11 +300,11 @@ public final class OpenIdConnectController extends Controller {
             token = form.get("token");
         }
 
-        if (clientService.checkIsAccessTokenExist(token)) {
+        if (clientService.isAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
-            User user = userService.findUserByJid(accessToken.getUserJid());
+            User user = userService.findUserByUserJid(accessToken.getUserJid());
             String userJid = form.get("userJid");
-            User response = userService.findUserByJid(userJid);
+            User response = userService.findUserByUserJid(userJid);
 
             return ok(Json.toJson(response));
         } else {
@@ -319,7 +319,7 @@ public final class OpenIdConnectController extends Controller {
     public Result profile(String continueUrl) {
         Form<UserProfileForm> form = Form.form(UserProfileForm.class);
         Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
-        User user = userService.findUserByJid(IdentityUtils.getUserJid());
+        User user = userService.findUserByUserJid(IdentityUtils.getUserJid());
         form = form.fill(new UserProfileForm(user));
 
         return showProfile(form, form2, continueUrl);
@@ -372,7 +372,7 @@ public final class OpenIdConnectController extends Controller {
             } else {
                 URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
                 session("avatar", profilePictureUrl.toString());
-                return redirect(org.iatoki.judgels.jophiel.controllers.routes.OpenIdConnectController.profile(continueUrl));
+                return redirect(routes.OpenIdConnectController.profile(continueUrl));
             }
         } else {
             Form<UserProfileForm> form = Form.form(UserProfileForm.class);
@@ -414,7 +414,7 @@ public final class OpenIdConnectController extends Controller {
             internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
         }
 
-        LazyHtml content = new LazyHtml(serviceProfileView.render(form, form2, continueUrl));
+        LazyHtml content = new LazyHtml(serviceEditProfileView.render(form, form2, continueUrl));
         content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
@@ -426,7 +426,7 @@ public final class OpenIdConnectController extends Controller {
 
     private Result showLogin(Form<LoginForm> form, String continueUrl) {
         LazyHtml content = new LazyHtml(serviceLoginView.render(form, continueUrl));
-        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> centerLayout.render(c));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Login");
         return ControllerUtils.getInstance().lazyOk(content);
     }

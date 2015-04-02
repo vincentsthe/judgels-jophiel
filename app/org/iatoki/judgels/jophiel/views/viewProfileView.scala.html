@@ -1,0 +1,19 @@
+@(user: org.iatoki.judgels.jophiel.User)
+
+@import play.i18n.Messages
+
+<img class="avatar-picture center-block" src="@user.getProfilePictureUrl.toString" alt="profilePicture"/>
+<br />
+<br />
+<div class="form-group row">
+    <label class="control-label col-md-3">@Messages.get("user.username")</label>
+    <div class="col-md-9">@user.getUsername</div>
+</div>
+<div class="form-group row">
+    <label class="control-label col-md-3">@Messages.get("user.name")</label>
+    <div class="col-md-9">@user.getName</div>
+</div>
+<div class="form-group row">
+    <label class="control-label col-md-3">@Messages.get("user.email")</label>
+    <div class="col-md-9">@user.getEmail</div>
+</div>

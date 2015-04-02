@@ -20,6 +20,7 @@ public final class ControllerUtils extends AbstractControllerUtils {
         internalLinkBuilder.add(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()));
         if (JophielUtils.hasRole("admin")) {
             internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
+            internalLinkBuilder.add(new InternalLink(Messages.get("user.activities"), routes.UserActivityController.index()));
             internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
         }
         content.appendLayout(c -> sidebarLayout.render(

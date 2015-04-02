@@ -9,11 +9,15 @@ public interface ClientService {
 
     List<Client> findAll();
 
-    boolean checkIsClientAuthorized(String clientJid, List<String> scopes);
+    List<Client> findAllClientByTerm(String term);
 
-    boolean checkIsAccessTokenExist(String token);
+    boolean isClientAuthorized(String clientJid, List<String> scopes);
 
-    boolean checkIsClientExist(String clientJid);
+    boolean isAccessTokenExist(String token);
+
+    boolean existByJid(String clientJid);
+
+    boolean existByName(String clientName);
 
     Client findClientById(long clientId);
 

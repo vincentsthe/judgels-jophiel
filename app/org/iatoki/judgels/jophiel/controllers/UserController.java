@@ -7,11 +7,12 @@ import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
+import org.iatoki.judgels.commons.views.html.layouts.centerLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
 import org.iatoki.judgels.commons.views.html.layouts.messageView;
-import org.iatoki.judgels.commons.views.html.layouts.noSidebarLayout;
+import org.iatoki.judgels.commons.views.html.layouts.tabLayout;
 import org.iatoki.judgels.jophiel.ChangePasswordForm;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
@@ -27,16 +28,17 @@ import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.Authorized;
 import org.iatoki.judgels.jophiel.controllers.security.HasRole;
 import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
+import org.iatoki.judgels.jophiel.views.html.activationView;
+import org.iatoki.judgels.jophiel.views.html.changePasswordView;
+import org.iatoki.judgels.jophiel.views.html.forgotPasswordView;
 import org.iatoki.judgels.jophiel.views.html.loginView;
 import org.iatoki.judgels.jophiel.views.html.registerView;
-import org.iatoki.judgels.jophiel.views.html.activationView;
-import org.iatoki.judgels.jophiel.views.html.forgotPasswordView;
-import org.iatoki.judgels.jophiel.views.html.changePasswordView;
-import org.iatoki.judgels.jophiel.views.html.user.createView;
-import org.iatoki.judgels.jophiel.views.html.user.listView;
-import org.iatoki.judgels.jophiel.views.html.user.editProfileView;
-import org.iatoki.judgels.jophiel.views.html.user.updateView;
-import org.iatoki.judgels.jophiel.views.html.user.viewView;
+import org.iatoki.judgels.jophiel.views.html.editProfileView;
+import org.iatoki.judgels.jophiel.views.html.viewProfileView;
+import org.iatoki.judgels.jophiel.views.html.user.createUserView;
+import org.iatoki.judgels.jophiel.views.html.user.listUsersView;
+import org.iatoki.judgels.jophiel.views.html.user.updateUserView;
+import org.iatoki.judgels.jophiel.views.html.user.viewUserView;
 import play.Logger;
 import play.Play;
 import play.data.Form;
@@ -79,25 +81,25 @@ public final class UserController extends Controller {
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
     public Result index() {
-        return list(0, "id", "asc", "");
+        return listUsers(0, "id", "asc", "");
     }
 
     @AddCSRFToken
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result create() {
+    public Result createUser() {
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class);
 
-        return showCreate(form);
+        return showCreateUser(form);
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result postCreate() {
+    public Result postCreateUser() {
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).bindFromRequest();
 
         if (form.hasErrors() || form.hasGlobalErrors()) {
-            return showCreate(form);
+            return showCreateUser(form);
         } else {
             UserUpsertForm userUpsertForm = form.get();
             userService.createUser(userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password, Arrays.asList(userUpsertForm.roles.split(",")));
@@ -107,14 +109,30 @@ public final class UserController extends Controller {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result view(long userId) {
+    public Result listUsers(long page, String orderBy, String orderDir, String filterString) {
+        Page<User> currentPage = userService.pageUsers(page, PAGE_SIZE, orderBy, orderDir, filterString);
+
+        LazyHtml content = new LazyHtml(listUsersView.render(currentPage, orderBy, orderDir, filterString));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("commons.create"), routes.UserController.createUser()), c));
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
+              new InternalLink(Messages.get("user.users"), routes.UserController.index())
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Users");
+
+        return ControllerUtils.getInstance().lazyOk(content);
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
+    public Result viewUser(long userId) {
         User user = userService.findUserById(userId);
-        LazyHtml content = new LazyHtml(viewView.render(user));
-        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.user") + " #" + userId + ": " + user.getName(), new InternalLink(Messages.get("commons.update"), routes.UserController.update(userId)), c));
+        LazyHtml content = new LazyHtml(viewUserView.render(user));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.user") + " #" + userId + ": " + user.getName(), new InternalLink(Messages.get("commons.update"), routes.UserController.updateUser(userId)), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.view"), routes.UserController.view(userId))
+                new InternalLink(Messages.get("user.view"), routes.UserController.viewUser(userId))
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "User - View");
         return ControllerUtils.getInstance().lazyOk(content);
@@ -123,23 +141,23 @@ public final class UserController extends Controller {
     @AddCSRFToken
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result update(long userId) {
+    public Result updateUser(long userId) {
         User user = userService.findUserById(userId);
         UserUpsertForm userUpsertForm = new UserUpsertForm(user);
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).fill(userUpsertForm);
 
-        return showUpdate(form, user);
+        return showUpdateUser(form, user);
     }
 
     @RequireCSRFCheck
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result postUpdate(long userId) {
+    public Result postUpdateUser(long userId) {
         User user = userService.findUserById(userId);
         Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).bindFromRequest();
 
         if (form.hasErrors() || form.hasGlobalErrors()) {
-            return showUpdate(form, user);
+            return showUpdateUser(form, user);
         } else {
             UserUpsertForm userUpsertForm = form.get();
             userService.updateUser(userId, userUpsertForm.username, userUpsertForm.name, userUpsertForm.email, userUpsertForm.password, Arrays.asList(userUpsertForm.roles.split(",")));
@@ -149,31 +167,15 @@ public final class UserController extends Controller {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result delete(long userId) {
+    public Result deleteUser(long userId) {
         userService.deleteUser(userId);
 
         return redirect(routes.UserController.index());
     }
 
-    @Authenticated(value = {LoggedIn.class, HasRole.class})
-    @Authorized(value = {"admin"})
-    public Result list(long page, String orderBy, String orderDir, String filterString) {
-        Page<User> currentPage = userService.pageUsers(page, PAGE_SIZE, orderBy, orderDir, filterString);
-
-        LazyHtml content = new LazyHtml(listView.render(currentPage, orderBy, orderDir, filterString));
-        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("commons.create"), routes.UserController.create()), c));
-        ControllerUtils.getInstance().appendSidebarLayout(content);
-        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                new InternalLink(Messages.get("user.users"), routes.UserController.index())
-        ));
-        ControllerUtils.getInstance().appendTemplateLayout(content, "Users");
-
-        return ControllerUtils.getInstance().lazyOk(content);
-    }
-
     @AddCSRFToken
     public Result register() {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<RegisterForm> form = Form.form(RegisterForm.class);
             return showRegister(form);
         } else {
@@ -183,7 +185,7 @@ public final class UserController extends Controller {
 
     @RequireCSRFCheck
     public Result postRegister() {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<RegisterForm> form = Form.form(RegisterForm.class).bindFromRequest();
 
             if (form.hasErrors()) {
@@ -212,7 +214,7 @@ public final class UserController extends Controller {
                         LazyHtml content = new LazyHtml(messageView.render(Messages.get("register.activationEmailSentTo") + " " + registerData.email + "."));
                         content.appendLayout(c -> headingLayout.render(Messages.get("register.successful"), c));
                         content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
-                        content.appendLayout(c -> noSidebarLayout.render(c));
+                        content.appendLayout(c -> centerLayout.render(c));
                         content.appendLayout(c -> headerFooterLayout.render(c));
                         ControllerUtils.getInstance().appendTemplateLayout(content, "After Register");
                         return ControllerUtils.getInstance().lazyOk(content);
@@ -229,7 +231,7 @@ public final class UserController extends Controller {
 
     @AddCSRFToken
     public Result forgotPassword() {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<ForgotPasswordForm> form = Form.form(ForgotPasswordForm.class);
             return showForgotPassword(form);
         } else {
@@ -239,7 +241,7 @@ public final class UserController extends Controller {
 
     @RequireCSRFCheck
     public Result postForgotPassword() {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<ForgotPasswordForm> form = Form.form(ForgotPasswordForm.class).bindFromRequest();
 
             if (form.hasErrors()) {
@@ -267,7 +269,7 @@ public final class UserController extends Controller {
                     LazyHtml content = new LazyHtml(messageView.render(Messages.get("forgotPasswordEmail.changePasswordRequestSentTo") + " " + forgotData.email + "."));
                     content.appendLayout(c -> headingLayout.render(Messages.get("forgotPassword.successful"), c));
                     content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
-                    content.appendLayout(c -> noSidebarLayout.render(c));
+                    content.appendLayout(c -> centerLayout.render(c));
                     content.appendLayout(c -> headerFooterLayout.render(c));
                     ControllerUtils.getInstance().appendTemplateLayout(content, "After Forgot Password");
                     return ControllerUtils.getInstance().lazyOk(content);
@@ -280,7 +282,7 @@ public final class UserController extends Controller {
 
     @AddCSRFToken
     public Result changePassword(String code) {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             if (userService.existForgotPassByCode(code)) {
                 Form<ChangePasswordForm> form = Form.form(ChangePasswordForm.class);
                 return showChangePassword(form, code);
@@ -294,7 +296,7 @@ public final class UserController extends Controller {
 
     @RequireCSRFCheck
     public Result postChangePassword(String code) {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<ChangePasswordForm> form = Form.form(ChangePasswordForm.class).bindFromRequest();
             if (userService.existForgotPassByCode(code)) {
                 if (form.hasErrors()) {
@@ -309,7 +311,7 @@ public final class UserController extends Controller {
 
                         LazyHtml content = new LazyHtml(messageView.render(Messages.get("changePassword.success") + "."));
                         content.appendLayout(c -> headingLayout.render(Messages.get("changePassword.successful"), c));
-                        content.appendLayout(c -> noSidebarLayout.render(c));
+                        content.appendLayout(c -> centerLayout.render(c));
                         content.appendLayout(c -> headerFooterLayout.render(c));
                         ControllerUtils.getInstance().appendTemplateLayout(content, "After Change Password");
                         return ControllerUtils.getInstance().lazyOk(content);
@@ -325,7 +327,7 @@ public final class UserController extends Controller {
 
     @AddCSRFToken
     public Result login() {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<LoginForm> form = Form.form(LoginForm.class);
             return showLogin(form);
         } else {
@@ -335,7 +337,7 @@ public final class UserController extends Controller {
 
     @RequireCSRFCheck
     public Result postLogin() {
-        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByJid(IdentityUtils.getUserJid()))) {
+        if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
             Form<LoginForm> form = Form.form(LoginForm.class).bindFromRequest();
             if (form.hasErrors()) {
                 Logger.error(form.errors().toString());
@@ -357,7 +359,7 @@ public final class UserController extends Controller {
     public Result verifyEmail(String emailCode) {
         if (userService.activateEmail(emailCode)) {
             LazyHtml content = new LazyHtml(activationView.render());
-            content.appendLayout(c -> noSidebarLayout.render(c));
+            content.appendLayout(c -> centerLayout.render(c));
             ControllerUtils.getInstance().appendTemplateLayout(content, "Verify Email");
             return ControllerUtils.getInstance().lazyOk(content);
         } else {
@@ -369,7 +371,7 @@ public final class UserController extends Controller {
     public Result profile() {
         Form<UserProfileForm> form = Form.form(UserProfileForm.class);
         Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
-        User user = userService.findUserByJid(IdentityUtils.getUserJid());
+        User user = userService.findUserByUserJid(IdentityUtils.getUserJid());
         form = form.fill(new UserProfileForm(user));
 
         return showProfile(form, form2);
@@ -397,6 +399,32 @@ public final class UserController extends Controller {
                 Logger.error("Password do not match.");
                 return showProfile(form, form2);
             }
+        }
+    }
+
+    @Authenticated({LoggedIn.class, HasRole.class})
+    @Authorized("admin")
+    public Result viewProfile(String username) {
+        if (userService.existByUsername(username)) {
+            User user = userService.findUserByUsername(username);
+
+            LazyHtml content = new LazyHtml(viewProfileView.render(user));
+            if (IdentityUtils.getUserJid() != null) {
+                content.appendLayout(c -> tabLayout.render(ImmutableList.of(new InternalLink(Messages.get("profile.profile"), routes.UserController.viewProfile(username)), new InternalLink(Messages.get("profile.activities"), routes.UserActivityController.viewUserActivities(username))), c));
+                content.appendLayout(c -> headingLayout.render(user.getUsername(), c));
+                ControllerUtils.getInstance().appendSidebarLayout(content);
+                ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
+                      new InternalLink(Messages.get("profile.profile"), routes.UserController.viewProfile(username))
+                ));
+            } else {
+                content.appendLayout(c -> headingLayout.render(user.getUsername(), c));
+                content.appendLayout(c -> centerLayout.render(c));
+            }
+            ControllerUtils.getInstance().appendTemplateLayout(content, "Profile");
+
+            return ControllerUtils.getInstance().lazyOk(content);
+        } else {
+            return notFound();
         }
     }
 
@@ -496,44 +524,25 @@ public final class UserController extends Controller {
         }
     }
 
-    private Result showLogin(Form<LoginForm> form) {
-        LazyHtml content = new LazyHtml(loginView.render(form));
-        content.appendLayout(c -> noSidebarLayout.render(c));
-        ControllerUtils.getInstance().appendTemplateLayout(content, "Login");
-        return ControllerUtils.getInstance().lazyOk(content);
-    }
-
-    private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2) {
-
-        LazyHtml content = new LazyHtml(editProfileView.render(form, form2));
-        content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
-        ControllerUtils.getInstance().appendSidebarLayout(content);
-        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                new InternalLink(Messages.get("profile.profile"), routes.UserController.profile())
-        ));
-        ControllerUtils.getInstance().appendTemplateLayout(content, "Profile");
-        return ControllerUtils.getInstance().lazyOk(content);
-    }
-
-    private Result showCreate(Form<UserUpsertForm> form) {
-        LazyHtml content = new LazyHtml(createView.render(form));
+    private Result showCreateUser(Form<UserUpsertForm> form) {
+        LazyHtml content = new LazyHtml(createUserView.render(form));
         content.appendLayout(c -> headingLayout.render(Messages.get("user.create"), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
                 new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.create"), routes.UserController.create())
+                new InternalLink(Messages.get("user.create"), routes.UserController.createUser())
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Change Password");
         return ControllerUtils.getInstance().lazyOk(content);
     }
 
-    private Result showUpdate(Form<UserUpsertForm> form, User user) {
-        LazyHtml content = new LazyHtml(updateView.render(form, user.getId()));
+    private Result showUpdateUser(Form<UserUpsertForm> form, User user) {
+        LazyHtml content = new LazyHtml(updateUserView.render(form, user.getId()));
         content.appendLayout(c -> headingLayout.render(Messages.get("user.user") + " #" + user.getId() + ": " + user.getUsername(), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                new InternalLink(Messages.get("user.users"), routes.UserController.index()),
-                new InternalLink(Messages.get("user.update"), routes.UserController.update(user.getId()))
+              new InternalLink(Messages.get("user.users"), routes.UserController.index()),
+              new InternalLink(Messages.get("user.update"), routes.UserController.updateUser(user.getId()))
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "User - Update");
         return ControllerUtils.getInstance().lazyOk(content);
@@ -541,7 +550,7 @@ public final class UserController extends Controller {
 
     private Result showRegister(Form<RegisterForm> form) {
         LazyHtml content = new LazyHtml(registerView.render(form));
-        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> centerLayout.render(c));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Register");
 
         return ControllerUtils.getInstance().lazyOk(content);
@@ -549,7 +558,7 @@ public final class UserController extends Controller {
 
     private Result showForgotPassword(Form<ForgotPasswordForm> form) {
         LazyHtml content = new LazyHtml(forgotPasswordView.render(form));
-        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> centerLayout.render(c));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Forgot Password");
 
         return ControllerUtils.getInstance().lazyOk(content);
@@ -557,21 +566,28 @@ public final class UserController extends Controller {
 
     private Result showChangePassword(Form<ChangePasswordForm> form, String code) {
         LazyHtml content = new LazyHtml(changePasswordView.render(form, code));
-        content.appendLayout(c -> noSidebarLayout.render(c));
+        content.appendLayout(c -> centerLayout.render(c));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Change Password");
 
         return ControllerUtils.getInstance().lazyOk(content);
     }
 
-    private Result getResult(LazyHtml content, int statusCode) {
-        switch (statusCode) {
-            case Http.Status.OK:
-                return ok(content.render(0));
-            case Http.Status.NOT_FOUND:
-                return notFound(content.render(0));
-            default:
-                return badRequest(content.render(0));
-        }
+    private Result showLogin(Form<LoginForm> form) {
+        LazyHtml content = new LazyHtml(loginView.render(form));
+        content.appendLayout(c -> centerLayout.render(c));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Login");
+        return ControllerUtils.getInstance().lazyOk(content);
     }
 
+    private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2) {
+        LazyHtml content = new LazyHtml(editProfileView.render(form, form2));
+        content.appendLayout(c -> tabLayout.render(ImmutableList.of(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()), new InternalLink(Messages.get("profile.activities"), routes.UserActivityController.viewOwnActivities())), c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
+              new InternalLink(Messages.get("profile.profile"), routes.UserController.profile())
+        ));
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Profile");
+        return ControllerUtils.getInstance().lazyOk(content);
+    }
 }

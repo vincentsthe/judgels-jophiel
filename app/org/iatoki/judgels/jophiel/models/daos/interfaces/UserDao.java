@@ -10,13 +10,13 @@ public interface UserDao extends JudgelsDao<UserModel> {
 
     boolean existByUsername(String username);
 
-    List<UserModel> findAll(String filterString);
+    List<String> findUserJidsByUsernames(Collection<String> usernames);
 
-    List<String> findUserJidByFilter(String filterString);
+    List<String> findUserJidsByFilter(String filterString);
 
-    List<String> sortUserJid(Collection<String> userJids, String sortBy, String order);
+    List<String> sortUserJids(Collection<String> userJids, String sortBy, String order);
 
-    List<UserModel> findBySetOfUserJid(Collection<String> userJids, long first, long max);
+    List<UserModel> findBySetOfUserJids(Collection<String> userJids, long first, long max);
 
     UserModel findByUsername(String username);
 

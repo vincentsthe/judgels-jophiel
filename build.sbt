@@ -28,28 +28,9 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.module" % "jackson-module-scala" % "2.0.2",
   "com.google.guava" % "guava" % "r05",
   "mysql" % "mysql-connector-java" % "5.1.26",
-  "org.jsoup" % "jsoup" % "1.7.2",
-  "org.apache.poi" % "poi" % "3.10-FINAL",
-  "org.eclipse.jgit" % "org.eclipse.jgit" % "3.4.1.201406201815-r",
-  "org.webjars" % "angularjs" % "1.3.1",
-  "org.webjars" % "angular-loading-bar" % "0.6.0",
-  "org.webjars" % "bootstrap" % "3.0.2",
   "org.webjars" % "ckeditor" % "4.4.1",
-  "org.webjars" % "coffee-script" % "1.8.0",
-  "org.webjars" % "highcharts" % "4.0.4",
-  "org.webjars" % "html5-desktop-notifications" % "1.0.1",
-  "org.webjars" % "jquery-history" % "0.1-1",
-  "org.webjars" % "jquery-placeholder" % "2.0.7",
-  "org.webjars" % "jquery" % "2.1.1",
-  "org.webjars" % "jquery-ui" % "1.11.1",
-  "org.webjars" % "jshint" % "12",
-  "org.webjars" % "less" % "1.7.5",
-  "org.webjars" % "prettify" % "4-Mar-2013",
-  "org.webjars" % "requirejs" % "2.1.15",
-  "com.puppycrawl.tools" % "checkstyle" % "6.1",
-  "com.nimbusds" % "c2id-server-sdk" % "2.0",
   "com.typesafe.play" %% "play-mailer" % "2.4.0",
-  "com.amazonaws" % "aws-java-sdk" % "1.0.002"
+  "org.webjars" % "jquery-textcomplete" % "0.3.7"
 )
 
 TestNGPlugin.testNGSettings

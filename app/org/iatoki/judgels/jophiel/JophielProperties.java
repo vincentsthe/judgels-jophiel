@@ -43,13 +43,14 @@ public final class JophielProperties {
             } catch (IOException e) {
                 throw new RuntimeException("Cannot create folder inside " + baseDir.getAbsolutePath());
             }
+
         }
         return INSTANCE;
     }
 
     private static void verifyConfiguration(Configuration configuration) {
         List<String> requiredKeys = ImmutableList.of(
-                "jophiel.baseDataDir"
+              "jophiel.baseDataDir"
         );
 
         for (String key : requiredKeys) {

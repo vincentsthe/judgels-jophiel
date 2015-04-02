@@ -68,20 +68,36 @@ public final class ClientServiceImpl implements ClientService {
     @Override
     public List<Client> findAll() {
         List<ClientModel> clientModels = clientDao.findAll();
-        ImmutableList.Builder<Client> clients = ImmutableList.builder();
+        ImmutableList.Builder<Client> clientBuilder = ImmutableList.builder();
         for (ClientModel clientModel : clientModels) {
             Set<String> scopeString = ImmutableSet.copyOf(clientModel.scopes.split(","));
             List<RedirectURIModel> redirectURIModels = redirectURIDao.findByClientJid(clientModel.jid);
             List<String> redirectURIs = redirectURIModels.stream().map(r -> r.redirectURI).collect(Collectors.toList());
 
-            clients.add(createClientFromModel(clientModel, scopeString, redirectURIs));
+            clientBuilder.add(createClientFromModel(clientModel, scopeString, redirectURIs));
         }
 
-        return clients.build();
+        return clientBuilder.build();
     }
 
     @Override
-    public boolean checkIsClientAuthorized(String clientJid, List<String> scopes) {
+    public List<Client> findAllClientByTerm(String term) {
+        List<ClientModel> clientModels = clientDao.findSortedByFilters("id", "asc", term, ImmutableMap.of(), 0, -1);
+        ImmutableList.Builder<Client> clientBuilder = ImmutableList.builder();
+
+        for (ClientModel clientModel : clientModels) {
+            Set<String> scopeString = ImmutableSet.copyOf(clientModel.scopes.split(","));
+            List<RedirectURIModel> redirectURIModels = redirectURIDao.findByClientJid(clientModel.jid);
+            List<String> redirectURIs = redirectURIModels.stream().map(r -> r.redirectURI).collect(Collectors.toList());
+
+            clientBuilder.add(createClientFromModel(clientModel, scopeString, redirectURIs));
+        }
+
+        return clientBuilder.build();
+    }
+
+    @Override
+    public boolean isClientAuthorized(String clientJid, List<String> scopes) {
         String userJid = IdentityUtils.getUserJid();
         Collections.sort(scopes);
 
@@ -89,13 +105,18 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public boolean checkIsAccessTokenExist(String token) {
+    public boolean isAccessTokenExist(String token) {
         return accessTokenDao.existsByToken(token);
     }
 
     @Override
-    public boolean checkIsClientExist(String clientJid) {
+    public boolean existByJid(String clientJid) {
         return clientDao.existsByJid(clientJid);
+    }
+
+    @Override
+    public boolean existByName(String clientName) {
+        return clientDao.existByName(clientName);
     }
 
     @Override

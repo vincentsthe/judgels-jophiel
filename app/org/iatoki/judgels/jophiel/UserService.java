@@ -5,16 +5,17 @@ import org.iatoki.judgels.commons.Page;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
+import java.util.Set;
 
 public interface UserService {
 
-    List<User> findAllUser(String filterString);
+    List<User> findAllUserByTerm(String term);
 
     boolean isEmailOwnedByUser(String email, String username);
 
     User findUserById(long userId);
 
-    User findUserByJid(String userJid);
+    User findUserByUserJid(String userJid);
 
     User findUserByUsername(String username);
 
@@ -22,7 +23,7 @@ public interface UserService {
 
     boolean existByEmail(String email);
 
-    boolean existsByJid(String userJid);
+    boolean existsByUserJid(String userJid);
 
     String registerUser(String username, String name, String email, String password) throws IllegalStateException;
 
@@ -33,6 +34,12 @@ public interface UserService {
     void deleteUser(long userId);
 
     Page<User> pageUsers(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString);
+
+    Page<UserActivity> pageUserActivities(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString, Set<String> clientsNames, String username);
+
+    Page<UserActivity> pageUsersActivities(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString);
+
+    Page<UserActivity> pageUsersActivities(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString, Set<String> clientsNames, Set<String> usernames);
 
     boolean login(String usernameOrEmail, String password);
 
