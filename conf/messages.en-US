@@ -13,6 +13,7 @@ user.password=Password
 user.confirmPassword=Confirm Password
 user.username=Username
 user.usernameOrEmail=Username or Email
+user.roles=Roles
 
 profile.profile=Profile
 profile.avatar=Avatar

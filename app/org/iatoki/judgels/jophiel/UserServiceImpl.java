@@ -136,8 +136,6 @@ public final class UserServiceImpl implements UserService {
 
     @Override
     public void createUser(String username, String name, String email, String password, List<String> roles) {
-        roles.add("user");
-
         UserModel userModel = new UserModel();
         userModel.username = username;
         userModel.name = name;

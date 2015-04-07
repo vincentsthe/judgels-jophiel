@@ -35,5 +35,4 @@ public final class UserUpsertForm {
 
     @Constraints.Required
     public String roles;
-
 }

@@ -88,7 +88,9 @@ public final class UserController extends Controller {
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
     public Result createUser() {
-        Form<UserUpsertForm> form = Form.form(UserUpsertForm.class);
+        UserUpsertForm data = new UserUpsertForm();
+        data.roles = "user";
+        Form<UserUpsertForm> form = Form.form(UserUpsertForm.class).fill(data);
 
         return showCreateUser(form);
     }
