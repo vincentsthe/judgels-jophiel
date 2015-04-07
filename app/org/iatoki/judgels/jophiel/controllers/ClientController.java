@@ -12,6 +12,7 @@ import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientCreateForm;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.ClientUpdateForm;
+import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.Authorized;
 import org.iatoki.judgels.jophiel.controllers.security.HasRole;
@@ -26,6 +27,7 @@ import play.filters.csrf.AddCSRFToken;
 import play.filters.csrf.RequireCSRFCheck;
 import play.i18n.Messages;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.Arrays;
@@ -36,9 +38,11 @@ public final class ClientController extends Controller {
 
     private static final long PAGE_SIZE = 20;
     private final ClientService clientService;
+    private final UserService userService;
 
-    public ClientController(ClientService clientService) {
+    public ClientController(ClientService clientService, UserService userService) {
         this.clientService = clientService;
+        this.userService = userService;
     }
 
     @Transactional
@@ -49,6 +53,8 @@ public final class ClientController extends Controller {
     @AddCSRFToken
     public Result createClient() {
         Form<ClientCreateForm> form = Form.form(ClientCreateForm.class);
+
+        ControllerUtils.getInstance().addActivityLog(userService, "Try to create client <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return showCreateClient(form);
     }
@@ -64,6 +70,8 @@ public final class ClientController extends Controller {
             ClientCreateForm clientCreateForm = form.get();
             clientService.createClient(clientCreateForm.name, clientCreateForm.applicationType, clientCreateForm.scopes, Arrays.asList(clientCreateForm.redirectURIs.split(",")));
 
+            ControllerUtils.getInstance().addActivityLog(userService, "Create client " + clientCreateForm.name + ".");
+
             return redirect(routes.ClientController.index());
         }
     }
@@ -75,10 +83,13 @@ public final class ClientController extends Controller {
         content.appendLayout(c -> headingWithActionLayout.render(Messages.get("client.client") + " #" + clientId + ": " + client.getName(), new InternalLink(Messages.get("commons.update"), routes.ClientController.updateClient(clientId)), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
-                new InternalLink(Messages.get("client.view"), routes.ClientController.viewClient(clientId))
+              new InternalLink(Messages.get("client.clients"), routes.ClientController.index()),
+              new InternalLink(Messages.get("client.view"), routes.ClientController.viewClient(clientId))
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Client - View");
+
+        ControllerUtils.getInstance().addActivityLog(userService, "View client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+
         return ControllerUtils.getInstance().lazyOk(content);
     }
 
@@ -93,6 +104,8 @@ public final class ClientController extends Controller {
               new InternalLink(Messages.get("client.clients"), routes.ClientController.index())
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Clients");
+
+        ControllerUtils.getInstance().addActivityLog(userService, "Open all clients <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return ControllerUtils.getInstance().lazyOk(content);
     }
@@ -109,6 +122,8 @@ public final class ClientController extends Controller {
 
         Form<ClientUpdateForm> form = Form.form(ClientUpdateForm.class).fill(clientUpdateForm);
 
+        ControllerUtils.getInstance().addActivityLog(userService, "Try to update client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+
         return showUpdateClient(form, clientId, client.getName());
     }
 
@@ -118,11 +133,12 @@ public final class ClientController extends Controller {
         Form<ClientUpdateForm> form = Form.form(ClientUpdateForm.class).bindFromRequest();
 
         if (form.hasErrors()) {
-            return showUpdateClient(form, clientId, client.getName());
+            return showUpdateClient(form, client.getId(), client.getName());
         } else {
             ClientUpdateForm clientUpdateForm = form.get();
+            clientService.updateClient(client.getId(), clientUpdateForm.name, clientUpdateForm.scopes, Arrays.asList(clientUpdateForm.redirectURIs.split(",")));
 
-            clientService.updateClient(clientId, clientUpdateForm.name, clientUpdateForm.scopes, Arrays.asList(clientUpdateForm.redirectURIs.split(",")));
+            ControllerUtils.getInstance().addActivityLog(userService, "Update client " + client.getName() + ".");
 
             return redirect(routes.ClientController.index());
         }
@@ -130,7 +146,10 @@ public final class ClientController extends Controller {
 
     @Transactional
     public Result deleteClient(long clientId) {
-        clientService.deleteClient(clientId);
+        Client client = clientService.findClientById(clientId);
+        clientService.deleteClient(client.getId());
+
+        ControllerUtils.getInstance().addActivityLog(userService, "Delete client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return redirect(routes.ClientController.index());
     }

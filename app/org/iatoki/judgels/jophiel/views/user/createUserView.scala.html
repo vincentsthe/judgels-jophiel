@@ -1,7 +1,6 @@
-@(form: Form[org.iatoki.judgels.jophiel.UserUpsertForm])
+@(form: Form[org.iatoki.judgels.jophiel.UserCreateForm])
 
 @import play.i18n.Messages
-@import org.iatoki.judgels.jophiel.views.html.user.upsertUserView
 @import org.iatoki.judgels.commons.views.html.formErrorView
 
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
@@ -10,7 +9,13 @@
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postCreateUser()) {
 
-    @upsertUserView(form)
+    @helper.CSRF.formField
+
+    @b3.text(form("username"), '_label -> Messages.get("user.username"))
+    @b3.text(form("name"), '_label -> Messages.get("user.name"))
+    @b3.email(form("email"), '_label -> Messages.get("user.email"))
+    @b3.password(form("password"), '_label -> Messages.get("user.password"))
+    @b3.text(form("roles"), '_label -> Messages.get("user.roles"))
 
     @b3.submit('class -> "btn btn-primary") { @Messages.get("commons.create") }
 }

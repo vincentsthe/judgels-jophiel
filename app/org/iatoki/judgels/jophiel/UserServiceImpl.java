@@ -3,16 +3,19 @@ package org.iatoki.judgels.jophiel;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.Page;
+import org.iatoki.judgels.jophiel.commons.UserActivity;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.ClientDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.ForgotPasswordDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserActivityDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
+import org.iatoki.judgels.jophiel.models.domains.ClientModel;
 import org.iatoki.judgels.jophiel.models.domains.EmailModel;
 import org.iatoki.judgels.jophiel.models.domains.ForgotPasswordModel;
 import org.iatoki.judgels.jophiel.models.domains.UserActivityModel;
@@ -30,9 +33,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public final class UserServiceImpl implements UserService {
 
@@ -85,6 +88,13 @@ public final class UserServiceImpl implements UserService {
         EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
 
         return createUserFromModels(userModel, emailModel);
+    }
+
+    @Override
+    public User findPublicUserByUserJid(String userJid) {
+        UserModel userModel = userDao.findByJid(userJid);
+
+        return createPublicUserFromModels(userModel);
     }
 
     @Override
@@ -152,6 +162,22 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void updateUser(long userId, String username, String name, String email, List<String> roles) {
+        UserModel userModel = userDao.findById(userId);
+        EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
+
+        userModel.username = username;
+        userModel.name = name;
+        userModel.roles = StringUtils.join(roles, ",");
+
+        userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+
+        emailModel.email = email;
+
+        emailDao.edit(emailModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+    }
+
+    @Override
     public void updateUser(long userId, String username, String name, String email, String password, List<String> roles) {
         UserModel userModel = userDao.findById(userId);
         EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
@@ -216,20 +242,68 @@ public final class UserServiceImpl implements UserService {
         List<String> clientJids = clientDao.findClientJidsByNames(clientsNames);
         String userJid = userDao.findByUsername(username).jid;
 
-        long totalRow = userActivityDao.countByFilters(filterString, ImmutableMap.of(UserModel_.userCreate, userJid), ImmutableMap.<SingularAttribute<? super UserActivityModel, String>, List<String>>of(UserActivityModel_.clientJid, clientJids));
-        List<UserActivityModel> userActivityModels = userActivityDao.findSortedByFilters(orderBy, orderDir, filterString, ImmutableMap.of(UserModel_.userCreate, userJid), ImmutableMap.<SingularAttribute<? super UserActivityModel, String>, List<String>>of(UserActivityModel_.clientJid, clientJids), pageIndex * pageSize, pageSize);
-        List<UserActivity> userActivities = userActivityModels.stream().map(m -> createUserActivityFromModel(m)).collect(Collectors.toList());
+        ImmutableMap.Builder<SingularAttribute<? super UserActivityModel, String>, List<String>> inBuilder = ImmutableMap.builder();
+        if (!clientJids.isEmpty()) {
+            inBuilder.put(UserActivityModel_.clientJid, clientJids);
+        }
 
-        return new Page<>(userActivities, totalRow, pageIndex, pageSize);
+        long totalRow = userActivityDao.countByFilters(filterString, ImmutableMap.of(UserModel_.userCreate, userJid), inBuilder.build());
+        List<UserActivityModel> userActivityModels = userActivityDao.findSortedByFilters(orderBy, orderDir, filterString, ImmutableMap.of(UserModel_.userCreate, userJid), inBuilder.build(), pageIndex * pageSize, pageSize);
+
+        Map<String, String> clientNameMap = Maps.newHashMap();
+
+        ImmutableList.Builder<UserActivity> userActivityBuilder = ImmutableList.builder();
+        for (UserActivityModel userActivityModel : userActivityModels) {
+            if (!clientNameMap.containsKey(userActivityModel.clientJid)) {
+                if (userDao.existsByJid(userActivityModel.clientJid)) {
+                    ClientModel clientModel = clientDao.findByJid(userActivityModel.clientJid);
+                    clientNameMap.put(clientModel.jid, clientModel.name);
+                } else {
+                    clientNameMap.put(userActivityModel.clientJid, userActivityModel.clientJid);
+                }
+            }
+            String clientName = clientNameMap.get(userActivityModel.clientJid);
+
+            userActivityBuilder.add(createUserActivityFromModel(userActivityModel, username, clientName));
+        }
+
+        return new Page<>(userActivityBuilder.build(), totalRow, pageIndex, pageSize);
     }
 
     @Override
     public Page<UserActivity> pageUsersActivities(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString) {
         long totalRow = userActivityDao.countByFilters(filterString);
         List<UserActivityModel> userActivityModels = userActivityDao.findSortedByFilters(orderBy, orderDir, filterString, pageIndex * pageSize, pageSize);
-        List<UserActivity> userActivities = userActivityModels.stream().map(m -> createUserActivityFromModel(m)).collect(Collectors.toList());
 
-        return new Page<>(userActivities, totalRow, pageIndex, pageSize);
+        Map<String, String> usernameMap = Maps.newHashMap();
+        Map<String, String> clientNameMap = Maps.newHashMap();
+
+        ImmutableList.Builder<UserActivity> userActivityBuilder = ImmutableList.builder();
+        for (UserActivityModel userActivityModel : userActivityModels) {
+            if (!usernameMap.containsKey(userActivityModel.userCreate)) {
+                if (userDao.existsByJid(userActivityModel.userCreate)) {
+                    UserModel userModel = userDao.findByJid(userActivityModel.userCreate);
+                    usernameMap.put(userModel.jid, userModel.username);
+                } else {
+                    usernameMap.put(userActivityModel.userCreate, userActivityModel.userCreate);
+                }
+            }
+            String username = usernameMap.get(userActivityModel.userCreate);
+
+            if (!clientNameMap.containsKey(userActivityModel.clientJid)) {
+                if (userDao.existsByJid(userActivityModel.clientJid)) {
+                    ClientModel clientModel = clientDao.findByJid(userActivityModel.clientJid);
+                    clientNameMap.put(clientModel.jid, clientModel.name);
+                } else {
+                    clientNameMap.put(userActivityModel.clientJid, userActivityModel.clientJid);
+                }
+            }
+            String clientName = clientNameMap.get(userActivityModel.clientJid);
+
+            userActivityBuilder.add(createUserActivityFromModel(userActivityModel, username, clientName));
+        }
+
+        return new Page<>(userActivityBuilder.build(), totalRow, pageIndex, pageSize);
     }
 
     @Override
@@ -237,11 +311,56 @@ public final class UserServiceImpl implements UserService {
         List<String> clientJids = clientDao.findClientJidsByNames(clientsNames);
         List<String> userJids = userDao.findUserJidsByUsernames(usernames);
 
-        long totalRow = userActivityDao.countByFilters(filterString, ImmutableMap.of(), ImmutableMap.<SingularAttribute<? super UserActivityModel, String>, List<String>>of(UserActivityModel_.clientJid, clientJids, UserActivityModel_.userCreate, userJids));
-        List<UserActivityModel> userActivityModels = userActivityDao.findSortedByFilters(orderBy, orderDir, filterString, ImmutableMap.of(), ImmutableMap.<SingularAttribute<? super UserActivityModel, String>, List<String>>of(UserActivityModel_.clientJid, clientJids, UserActivityModel_.userCreate, userJids), pageIndex * pageSize, pageSize);
-        List<UserActivity> userActivities = userActivityModels.stream().map(m -> createUserActivityFromModel(m)).collect(Collectors.toList());
+        ImmutableMap.Builder<SingularAttribute<? super UserActivityModel, String>, List<String>> inBuilder = ImmutableMap.builder();
+        if (!clientJids.isEmpty()) {
+            inBuilder.put(UserActivityModel_.clientJid, clientJids);
+        }
+        if (!userJids.isEmpty()) {
+            inBuilder.put(UserActivityModel_.userCreate, userJids);
+        }
 
-        return new Page<>(userActivities, totalRow, pageIndex, pageSize);
+        long totalRow = userActivityDao.countByFilters(filterString, ImmutableMap.of(), inBuilder.build());
+        List<UserActivityModel> userActivityModels = userActivityDao.findSortedByFilters(orderBy, orderDir, filterString, ImmutableMap.of(), inBuilder.build(), pageIndex * pageSize, pageSize);
+
+        Map<String, String> usernameMap = Maps.newHashMap();
+        Map<String, String> clientNameMap = Maps.newHashMap();
+
+        ImmutableList.Builder<UserActivity> userActivityBuilder = ImmutableList.builder();
+        for (UserActivityModel userActivityModel : userActivityModels) {
+            if (!usernameMap.containsKey(userActivityModel.userCreate)) {
+                if (userDao.existsByJid(userActivityModel.userCreate)) {
+                    UserModel userModel = userDao.findByJid(userActivityModel.userCreate);
+                    usernameMap.put(userModel.jid, userModel.username);
+                } else {
+                    usernameMap.put(userActivityModel.userCreate, userActivityModel.userCreate);
+                }
+            }
+            String username = usernameMap.get(userActivityModel.userCreate);
+
+            if (!clientNameMap.containsKey(userActivityModel.clientJid)) {
+                if (userDao.existsByJid(userActivityModel.clientJid)) {
+                    ClientModel clientModel = clientDao.findByJid(userActivityModel.clientJid);
+                    clientNameMap.put(clientModel.jid, clientModel.name);
+                } else {
+                    clientNameMap.put(userActivityModel.clientJid, userActivityModel.clientJid);
+                }
+            }
+            String clientName = clientNameMap.get(userActivityModel.clientJid);
+
+            userActivityBuilder.add(createUserActivityFromModel(userActivityModel, username, clientName));
+        }
+
+        return new Page<>(userActivityBuilder.build(), totalRow, pageIndex, pageSize);
+    }
+
+    @Override
+    public void createUserActivity(String clientJid, String userJid, long time, String log, String ipAddress) {
+        UserActivityModel userActivityModel = new UserActivityModel();
+        userActivityModel.clientJid = clientJid;
+        userActivityModel.time = time;
+        userActivityModel.log = log;
+
+        userActivityDao.persist(userActivityModel, userJid, ipAddress);
     }
 
     @Override
@@ -363,12 +482,16 @@ public final class UserServiceImpl implements UserService {
         return FileUtils.getFile(JophielProperties.getInstance().getAvatarDir(), imageName);
     }
 
+    private User createPublicUserFromModels(UserModel userModel) {
+        return new User(userModel.jid, userModel.username, userModel.name, getAvatarImageUrl(userModel.profilePictureImageName));
+    }
+
     private User createUserFromModels(UserModel userModel, EmailModel emailModel) {
         return new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email, getAvatarImageUrl(userModel.profilePictureImageName), Arrays.asList(userModel.roles.split(",")));
     }
 
-    private UserActivity createUserActivityFromModel(UserActivityModel userActivityModel) {
-        return new UserActivity(userActivityModel.id, userActivityModel.time, userActivityModel.userCreate, userActivityModel.clientJid, userActivityModel.log);
+    private UserActivity createUserActivityFromModel(UserActivityModel userActivityModel, String username, String clientName) {
+        return new UserActivity(userActivityModel.id, userActivityModel.time, userActivityModel.userCreate, username, userActivityModel.clientJid, clientName, userActivityModel.log, userActivityModel.ipCreate);
     }
 
     private URL getAvatarImageUrl(String imageName) {

@@ -19,6 +19,13 @@ public final class User {
 
     private List<String> roles;
 
+    public User(String jid, String username, String name, URL profilePictureUrl) {
+        this.jid = jid;
+        this.username = username;
+        this.name = name;
+        this.profilePictureUrl = profilePictureUrl;
+    }
+
     public User(long id, String jid, String username, String name, String email, URL profilePictureUrl, List<String> roles) {
         this.id = id;
         this.jid = jid;

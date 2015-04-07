@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.models.domains;
 import org.iatoki.judgels.commons.models.domains.AbstractModel;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -11,6 +12,7 @@ import javax.persistence.Table;
 public final class UserActivityModel extends AbstractModel {
 
     @Id
+    @GeneratedValue
     public long id;
 
     public String clientJid;

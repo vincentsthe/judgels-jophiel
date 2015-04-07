@@ -1,6 +1,7 @@
 package org.iatoki.judgels.jophiel;
 
 import org.iatoki.judgels.commons.Page;
+import org.iatoki.judgels.jophiel.commons.UserActivity;
 
 import java.io.File;
 import java.net.URL;
@@ -17,6 +18,8 @@ public interface UserService {
 
     User findUserByUserJid(String userJid);
 
+    User findPublicUserByUserJid(String userJid);
+
     User findUserByUsername(String username);
 
     boolean existByUsername(String username);
@@ -29,6 +32,8 @@ public interface UserService {
 
     void createUser(String username, String name, String email, String password, List<String> roles);
 
+    void updateUser(long userId, String username, String name, String email, List<String> roles);
+
     void updateUser(long userId, String username, String name, String email, String password, List<String> roles);
 
     void deleteUser(long userId);
@@ -40,6 +45,8 @@ public interface UserService {
     Page<UserActivity> pageUsersActivities(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString);
 
     Page<UserActivity> pageUsersActivities(long pageIndex, long pageSize, String orderBy, String orderDir, String filterString, Set<String> clientsNames, Set<String> usernames);
+
+    void createUserActivity(String clientJid, String userJid, long time, String log, String ipAddress);
 
     boolean login(String usernameOrEmail, String password);
 

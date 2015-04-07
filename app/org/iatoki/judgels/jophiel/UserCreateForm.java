@@ -3,13 +3,13 @@ package org.iatoki.judgels.jophiel;
 import org.apache.commons.lang3.StringUtils;
 import play.data.validation.Constraints;
 
-public final class UserUpsertForm {
+public final class UserCreateForm {
 
-    public UserUpsertForm() {
+    public UserCreateForm() {
 
     }
 
-    public UserUpsertForm(User user) {
+    public UserCreateForm(User user) {
         this.username = user.getUsername();
         this.name = user.getName();
         this.email = user.getEmail();
@@ -29,9 +29,6 @@ public final class UserUpsertForm {
 
     @Constraints.Required
     public String password;
-
-    @Constraints.Required
-    public String confirmPassword;
 
     @Constraints.Required
     public String roles;

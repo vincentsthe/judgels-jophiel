@@ -10,7 +10,7 @@ import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.tabLayout;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.User;
-import org.iatoki.judgels.jophiel.UserActivity;
+import org.iatoki.judgels.jophiel.commons.UserActivity;
 import org.iatoki.judgels.jophiel.UserActivityFilterForm;
 import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
@@ -24,18 +24,19 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.i18n.Messages;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 @Transactional
 public final class UserActivityController extends Controller {
 
     private static final long PAGE_SIZE = 20;
-    private final UserService userService;
     private final ClientService clientService;
+    private final UserService userService;
 
-    public UserActivityController(UserService userService, ClientService clientService) {
-        this.userService = userService;
+    public UserActivityController(ClientService clientService, UserService userService) {
         this.clientService = clientService;
+        this.userService = userService;
     }
 
     @Authenticated({LoggedIn.class, HasRole.class})
@@ -80,6 +81,8 @@ public final class UserActivityController extends Controller {
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "User - Activities");
 
+        ControllerUtils.getInstance().addActivityLog(userService, "Open all user activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+
         return ControllerUtils.getInstance().lazyOk(content);
     }
 
@@ -119,6 +122,8 @@ public final class UserActivityController extends Controller {
               new InternalLink(Messages.get("user.activities"), routes.UserActivityController.viewOwnActivities())
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "User - Activities");
+
+        ControllerUtils.getInstance().addActivityLog(userService, "Open own activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return ControllerUtils.getInstance().lazyOk(content);
     }
@@ -162,6 +167,8 @@ public final class UserActivityController extends Controller {
                   new InternalLink(Messages.get("user.activities"), routes.UserActivityController.viewUserActivities(username))
             ));
             ControllerUtils.getInstance().appendTemplateLayout(content, "User - Activities");
+
+            ControllerUtils.getInstance().addActivityLog(userService, "Open user " + user.getUsername() + " activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
             return ControllerUtils.getInstance().lazyOk(content);
         } else {

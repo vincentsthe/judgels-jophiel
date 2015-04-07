@@ -1,11 +1,11 @@
 package org.iatoki.judgels.jophiel;
 
 import org.iatoki.judgels.jophiel.controllers.ClientController;
-import org.iatoki.judgels.jophiel.controllers.OpenIdConnectController;
 import org.iatoki.judgels.jophiel.controllers.UserActivityController;
 import org.iatoki.judgels.jophiel.controllers.UserController;
 import org.iatoki.judgels.jophiel.controllers.apis.ClientAPIController;
 import org.iatoki.judgels.jophiel.controllers.apis.UserAPIController;
+import org.iatoki.judgels.jophiel.controllers.apis.UserActivityAPIController;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.AccessTokenHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.AuthorizationCodeHibernateDao;
 import org.iatoki.judgels.jophiel.models.daos.hibernate.ClientHibernateDao;
@@ -50,25 +50,20 @@ public final class Global extends org.iatoki.judgels.commons.Global {
                 UserService userService = createUserService();
                 ClientService clientService = createClientService();
 
-                UserController userController = new UserController(userService, clientService);
+                UserController userController = new UserController(clientService, userService);
                 cache.put(UserController.class, userController);
             } else if (controllerClass.equals(UserActivityController.class)) {
                 UserService userService = createUserService();
                 ClientService clientService = createClientService();
 
-                UserActivityController userActivityController = new UserActivityController(userService, clientService);
+                UserActivityController userActivityController = new UserActivityController(clientService, userService);
                 cache.put(UserActivityController.class, userActivityController);
             } else if (controllerClass.equals(ClientController.class)) {
-                ClientService clientService = createClientService();
-
-                ClientController clientController = new ClientController(clientService);
-                cache.put(ClientController.class, clientController);
-            } else if (controllerClass.equals(OpenIdConnectController.class)) {
                 UserService userService = createUserService();
                 ClientService clientService = createClientService();
 
-                OpenIdConnectController openIdConnectController = new OpenIdConnectController(userService, clientService);
-                cache.put(OpenIdConnectController.class, openIdConnectController);
+                ClientController clientController = new ClientController(clientService, userService);
+                cache.put(ClientController.class, clientController);
             } else if (controllerClass.equals(ClientAPIController.class)) {
                 UserService userService = createUserService();
                 ClientService clientService = createClientService();
@@ -76,10 +71,17 @@ public final class Global extends org.iatoki.judgels.commons.Global {
                 ClientAPIController clientAPIController = new ClientAPIController(clientService, userService);
                 cache.put(ClientAPIController.class, clientAPIController);
             } else if (controllerClass.equals(UserAPIController.class)) {
+                ClientService clientService = createClientService();
                 UserService userService = createUserService();
 
-                UserAPIController userAPIController = new UserAPIController(userService);
+                UserAPIController userAPIController = new UserAPIController(clientService, userService);
                 cache.put(UserAPIController.class, userAPIController);
+            } else if (controllerClass.equals(UserActivityAPIController.class)) {
+                ClientService clientService = createClientService();
+                UserService userService = createUserService();
+
+                UserActivityAPIController userActivityAPIController = new UserActivityAPIController(clientService, userService);
+                cache.put(UserActivityAPIController.class, userActivityAPIController);
             }
         }
         return controllerClass.cast(cache.get(controllerClass));

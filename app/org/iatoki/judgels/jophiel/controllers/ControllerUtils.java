@@ -7,6 +7,7 @@ import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.controllers.AbstractControllerUtils;
 import org.iatoki.judgels.commons.views.html.layouts.sidebarLayout;
 import org.iatoki.judgels.jophiel.JophielUtils;
+import org.iatoki.judgels.jophiel.UserService;
 import play.i18n.Messages;
 import play.mvc.Http;
 
@@ -30,6 +31,10 @@ public final class ControllerUtils extends AbstractControllerUtils {
             org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(Http.Context.current().request()),
             internalLinkBuilder.build(), c)
         );
+    }
+
+    public void addActivityLog(UserService userService, String log) {
+        userService.createUserActivity("localhost", IdentityUtils.getUserJid(), System.currentTimeMillis(), log, IdentityUtils.getIpAddress());
     }
 
     static ControllerUtils getInstance() {

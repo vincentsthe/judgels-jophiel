@@ -1,11 +1,11 @@
-@(page: org.iatoki.judgels.commons.Page[org.iatoki.judgels.jophiel.UserActivity], orderBy: String, orderDir: String, filterString: String, form: Form[org.iatoki.judgels.jophiel.UserActivityFilterForm])
+@(page: org.iatoki.judgels.commons.Page[org.iatoki.judgels.jophiel.commons.UserActivity], orderBy: String, orderDir: String, filterString: String, form: Form[org.iatoki.judgels.jophiel.UserActivityFilterForm])
 
 @import org.iatoki.judgels.jophiel.controllers.routes
 
 @import play.i18n.Messages
 @import org.iatoki.judgels.commons.views.html.table.tableView
 @import org.iatoki.judgels.commons.views.html.table.tableHeadersView
-@import org.iatoki.judgels.commons.views.html.table.searchView
+@import org.iatoki.judgels.commons.JudgelsUtils
 @import org.iatoki.judgels.commons.views.html.table.paginationView
 @import org.iatoki.judgels.commons.views.html.formErrorView
 
@@ -15,6 +15,8 @@
 
 @b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserActivityController.listUsersActivities(page.getPageIndex, orderBy, orderDir, filterString), 'class -> "form form-inline pull-right") {
 
+    <input type="hidden" name="orderBy" value="@orderBy"/>
+    <input type="hidden" name="orderDir" value="@orderDir"/>
     @b3.text(form("clients"), '_label -> Messages.get("client.clients"), 'class -> "form-control client_multicomplete")
     @b3.text(form("users"), '_label -> Messages.get("user.users"), 'class -> "form-control user_multicomplete")
     @b3.text(form("filterString"), '_label -> Messages.get("commons.search"))
@@ -37,9 +39,9 @@
     <tbody>
         @for(userActivity <- page.getData) {
             <tr>
-                <td>@userActivity.getTime</td>
-                <td>@userActivity.getUserJid</td>
-                <td>@userActivity.getClientJid</td>
+                <td>@JudgelsUtils.formatDetailedDate(userActivity.getTime)</td>
+                <td>@userActivity.getUsername</td>
+                <td>@userActivity.getClientName</td>
                 <td>@Html(userActivity.getLog)</td>
                 <td class="text-center">
                 </td>

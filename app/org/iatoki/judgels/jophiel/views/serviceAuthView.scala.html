@@ -1,0 +1,18 @@
+@(hash: String, client: org.iatoki.judgels.jophiel.Client, scopes: java.util.List[String])
+
+@import play.i18n.Messages
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
+
+<h2>@Messages.get("auth.authorization")</h2>
+<p>@Messages.get("auth.wantToAuthorize")  @client.getName @Messages.get("auth.inTheseScopes")?</p>
+@b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postServiceAuthRequest(hash)) {
+
+    @helper.CSRF.formField
+
+    @for(scope <- scopes) {
+        @b3.static(Messages.get("client.scopes")) {@scope}
+    }
+
+    @b3.submit('class -> "btn btn-primary") { @Messages.get("auth.authorize") }
+}
