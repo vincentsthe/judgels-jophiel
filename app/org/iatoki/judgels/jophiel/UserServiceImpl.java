@@ -255,7 +255,7 @@ public final class UserServiceImpl implements UserService {
         ImmutableList.Builder<UserActivity> userActivityBuilder = ImmutableList.builder();
         for (UserActivityModel userActivityModel : userActivityModels) {
             if (!clientNameMap.containsKey(userActivityModel.clientJid)) {
-                if (userDao.existsByJid(userActivityModel.clientJid)) {
+                if (clientDao.existsByJid(userActivityModel.clientJid)) {
                     ClientModel clientModel = clientDao.findByJid(userActivityModel.clientJid);
                     clientNameMap.put(clientModel.jid, clientModel.name);
                 } else {
@@ -291,7 +291,7 @@ public final class UserServiceImpl implements UserService {
             String username = usernameMap.get(userActivityModel.userCreate);
 
             if (!clientNameMap.containsKey(userActivityModel.clientJid)) {
-                if (userDao.existsByJid(userActivityModel.clientJid)) {
+                if (clientDao.existsByJid(userActivityModel.clientJid)) {
                     ClientModel clientModel = clientDao.findByJid(userActivityModel.clientJid);
                     clientNameMap.put(clientModel.jid, clientModel.name);
                 } else {
@@ -338,7 +338,7 @@ public final class UserServiceImpl implements UserService {
             String username = usernameMap.get(userActivityModel.userCreate);
 
             if (!clientNameMap.containsKey(userActivityModel.clientJid)) {
-                if (userDao.existsByJid(userActivityModel.clientJid)) {
+                if (clientDao.existsByJid(userActivityModel.clientJid)) {
                     ClientModel clientModel = clientDao.findByJid(userActivityModel.clientJid);
                     clientNameMap.put(clientModel.jid, clientModel.name);
                 } else {

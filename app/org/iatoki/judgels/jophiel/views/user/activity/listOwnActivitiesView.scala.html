@@ -17,7 +17,7 @@
 
     <input type="hidden" name="orderBy" value="@orderBy"/>
     <input type="hidden" name="orderDir" value="@orderDir"/>
-    @b3.text(form("clients"), '_label -> Messages.get("client.clients"), 'class -> "form-control client_multicomplete")
+    @b3.text(form("clients"), '_label -> Messages.get("client.clients"), 'class -> "form-control client_multicomplete", 'autocomplete -> "off")
     @b3.text(form("filterString"), '_label -> Messages.get("commons.search"))
 
     @b3.submit('class -> "btn btn-primary") { @Messages.get("commons.filter") }
