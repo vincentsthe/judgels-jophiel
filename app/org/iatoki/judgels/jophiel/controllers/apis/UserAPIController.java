@@ -4,17 +4,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.jophiel.AccessToken;
+import org.iatoki.judgels.jophiel.AutoComplete;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.IdToken;
 import org.iatoki.judgels.jophiel.RefreshToken;
 import org.iatoki.judgels.jophiel.User;
-import org.iatoki.judgels.jophiel.AutoComplete;
 import org.iatoki.judgels.jophiel.UserService;
-import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
-import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import play.data.DynamicForm;
 import play.db.jpa.Transactional;
 import play.libs.Json;
@@ -44,13 +41,13 @@ public final class UserAPIController extends Controller {
         return ok();
     }
 
-    @Authenticated(LoggedIn.class)
+//    @Authenticated(LoggedIn.class)
     @Transactional
     public Result userAutoCompleteList() {
         response().setHeader("Access-Control-Allow-Origin", "*");
 
         DynamicForm form = DynamicForm.form().bindFromRequest();
-        User user = userService.findUserByUserJid(IdentityUtils.getUserJid());
+//        User user = userService.findUserByUserJid(IdentityUtils.getUserJid());
         String term = form.get("term");
         List<User> users = userService.findAllUserByTerm(term);
         ImmutableList.Builder<AutoComplete> responseBuilder = ImmutableList.builder();
