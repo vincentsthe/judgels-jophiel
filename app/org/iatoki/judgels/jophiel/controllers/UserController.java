@@ -573,33 +573,13 @@ public final class UserController extends Controller {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     public Result serviceLogout(String returnUri) {
-        try {
-            List<Client> clients = clientService.findAll();
-            for (Client client : clients) {
-                for (String uRI : client.getRedirectURIs()) {
-                    URI uri = new URI(uRI);
-                    String[] domainParts = uri.getHost().split("\\.");
-                    String mainDomain;
-                    if (domainParts.length >= 2) {
-                        mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
-                    } else {
-                        mainDomain = null;
-                    }
-                    response().setCookie("JOID-" + client.getJid(), "EXPIRED", 0, "/", mainDomain, false, true);
-                }
-            }
+        ControllerUtils.getInstance().addActivityLog(userService, "Logout <a href=\"\" + \"http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
-            ControllerUtils.getInstance().addActivityLog(userService, "Logout <a href=\"\" + \"http://\" + Http.Context.current().request().host() + Http.Context.current().request().uri() + \"\">link</a>.");
-
-            session().clear();
-            if (returnUri == null) {
-                return redirect(routes.UserController.login());
-            } else {
-                return redirect(returnUri);
-            }
-        } catch (URISyntaxException e) {
-            // TODO make sure URI is URI at
-            throw new RuntimeException(e);
+        session().clear();
+        if (returnUri == null) {
+            return redirect(routes.UserController.login());
+        } else {
+            return redirect(returnUri);
         }
     }
 
@@ -713,7 +693,6 @@ public final class UserController extends Controller {
 
                 ControllerUtils.getInstance().addActivityLog(userService, "Authorize client " + client.getName() + ".");
 
-                response().setCookie("JOID-" + client.getJid(), clientService.findIdTokenByCode(code.getValue()).getToken(), (int) (TimeUnit.SECONDS.convert(14, TimeUnit.DAYS)), "/", mainDomain, false, true);
                 return redirect(result.toString());
             } catch (com.nimbusds.oauth2.sdk.ParseException | SerializeException e) {
                 Logger.error("Exception when parsing authentication request.", e);
