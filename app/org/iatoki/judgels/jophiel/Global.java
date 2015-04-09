@@ -1,7 +1,7 @@
 package org.iatoki.judgels.jophiel;
 
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.iatoki.judgels.commons.AWSFileSystemProvider;
 import org.iatoki.judgels.commons.FileSystemProvider;
 import org.iatoki.judgels.jophiel.controllers.ClientController;
@@ -100,7 +100,7 @@ public final class Global extends org.iatoki.judgels.commons.Global {
         ClientDao clientDao = new ClientHibernateDao();
         FileSystemProvider avatarProvider;
         if (Play.isProd()) {
-            avatarProvider = new AWSFileSystemProvider(new InstanceProfileCredentialsProvider(), JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+            avatarProvider = new AWSFileSystemProvider(new DefaultAWSCredentialsProviderChain(), JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
         } else {
             avatarProvider = new AWSFileSystemProvider(new BasicAWSCredentials(JophielProperties.getInstance().getaWSAccessKey(), JophielProperties.getInstance().getaWSSecretKey()), JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
         }
