@@ -4,8 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.iatoki.judgels.commons.FileSystemProvider;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.Page;
@@ -28,7 +29,9 @@ import javax.persistence.NoResultException;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.validation.ConstraintViolationException;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -44,13 +47,15 @@ public final class UserServiceImpl implements UserService {
     private ForgotPasswordDao forgotPasswordDao;
     private UserActivityDao userActivityDao;
     private ClientDao clientDao;
+    private FileSystemProvider avatarFileProvider;
 
-    public UserServiceImpl(UserDao userDao, EmailDao emailDao, ForgotPasswordDao forgotPasswordDao, UserActivityDao userActivityDao, ClientDao clientDao) {
+    public UserServiceImpl(UserDao userDao, EmailDao emailDao, ForgotPasswordDao forgotPasswordDao, UserActivityDao userActivityDao, ClientDao clientDao, FileSystemProvider avatarFileProvider) {
         this.userDao = userDao;
         this.emailDao = emailDao;
         this.forgotPasswordDao = forgotPasswordDao;
         this.userActivityDao = userActivityDao;
         this.clientDao = clientDao;
+        this.avatarFileProvider = avatarFileProvider;
     }
 
     @Override
@@ -413,19 +418,17 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public URL updateProfilePicture(String userJid, File imageFile, String extension) {
-        try {
-            String newImageName = IdentityUtils.getUserJid() + "-" + JudgelsUtils.hashMD5(UUID.randomUUID().toString()) + "." + extension;
-            FileUtils.copyFile(imageFile, new File(JophielProperties.getInstance().getAvatarDir(), newImageName));
+    public String updateProfilePicture(String userJid, File imageFile, String extension) {
+        String newImageName = IdentityUtils.getUserJid() + "-" + JudgelsUtils.hashMD5(UUID.randomUUID().toString()) + "." + extension;
+        List<String> filePath = ImmutableList.of(newImageName);
+        avatarFileProvider.uploadFile(ImmutableList.of(), imageFile, newImageName);
+        avatarFileProvider.makeFilePublic(filePath);
 
-            UserModel userModel = userDao.findByJid(userJid);
-            userModel.profilePictureImageName = newImageName;
+        UserModel userModel = userDao.findByJid(userJid);
+        userModel.profilePictureImageName = newImageName;
 
-            userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
-            return getAvatarImageUrl(newImageName);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+        return newImageName;
     }
 
     @Override
@@ -478,8 +481,8 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public File getAvatarImageFile(String imageName) {
-        return FileUtils.getFile(JophielProperties.getInstance().getAvatarDir(), imageName);
+    public String getAvatarImageUrlString(String imageName) {
+        return avatarFileProvider.getURL(ImmutableList.of(imageName));
     }
 
     private User createPublicUserFromModels(UserModel userModel) {

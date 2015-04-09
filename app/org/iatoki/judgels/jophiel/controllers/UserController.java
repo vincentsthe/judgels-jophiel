@@ -71,6 +71,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -541,8 +542,14 @@ public final class UserController extends Controller {
                 form2.reject("profile.error.overSizeLimit");
                 return showProfile(form, form2, continueUrl);
             } else {
-                URL profilePictureUrl = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
-                session("avatar", profilePictureUrl.toString());
+                String profilePictureName = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
+                String profilePictureUrl = userService.getAvatarImageUrlString(profilePictureName);
+                try {
+                    new URL(profilePictureUrl);
+                    session("avatar", profilePictureUrl.toString());
+                } catch (MalformedURLException e) {
+                    session("avatar", routes.UserController.renderAvatarImage(profilePictureName).absoluteURL(request()));
+                }
 
                 ControllerUtils.getInstance().addActivityLog(userService, "Update avatar.");
 
@@ -597,43 +604,49 @@ public final class UserController extends Controller {
     }
 
     public Result renderAvatarImage(String imageName) {
-        File image = userService.getAvatarImageFile(imageName);
-        if (!image.exists()) {
-            return notFound();
-        }
+        String avatarURL = userService.getAvatarImageUrlString(imageName);
+        try {
+            new URL(avatarURL);
+            return redirect(avatarURL);
+        } catch (MalformedURLException e) {
+            File avatarFile = new File(avatarURL);
+            if (avatarFile.exists()) {
+                SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+                response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
+                response().setHeader("Last-Modified", sdf.format(new Date(avatarFile.lastModified())));
 
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
-        response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
-        response().setHeader("Last-Modified", sdf.format(new Date(image.lastModified())));
+                if (request().hasHeader("If-Modified-Since")) {
+                    try {
+                        Date lastUpdate = sdf.parse(request().getHeader("If-Modified-Since"));
+                        if (avatarFile.lastModified() > lastUpdate.getTime()) {
+                            BufferedImage in = ImageIO.read(avatarFile);
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        if (request().hasHeader("If-Modified-Since")) {
-            try {
-                Date lastUpdate = sdf.parse(request().getHeader("If-Modified-Since"));
-                if (image.lastModified() > lastUpdate.getTime()) {
-                    BufferedImage in = ImageIO.read(image);
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            String type = FilenameUtils.getExtension(avatarFile.getAbsolutePath());
 
-                    String type = FilenameUtils.getExtension(image.getAbsolutePath());
-
-                    ImageIO.write(in, type, baos);
-                    return ok(baos.toByteArray()).as("image/" + type);
+                            ImageIO.write(in, type, baos);
+                            return ok(baos.toByteArray()).as("image/" + type);
+                        } else {
+                            return status(304);
+                        }
+                    } catch (ParseException | IOException e2) {
+                        throw new RuntimeException(e2);
+                    }
                 } else {
-                    return status(304);
+                    try {
+                        BufferedImage in = ImageIO.read(avatarFile);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                        String type = FilenameUtils.getExtension(avatarFile.getAbsolutePath());
+
+                        ImageIO.write(in, type, baos);
+                        return ok(baos.toByteArray()).as("image/" + type);
+                    } catch (IOException e2) {
+                        return internalServerError();
+                    }
                 }
-            } catch (ParseException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            try {
-                BufferedImage in = ImageIO.read(image);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                String type = FilenameUtils.getExtension(image.getAbsolutePath());
-
-                ImageIO.write(in, type, baos);
-                return ok(baos.toByteArray()).as("image/" + type);
-            } catch (IOException e) {
-                return internalServerError();
+            } else {
+                return notFound();
             }
         }
     }

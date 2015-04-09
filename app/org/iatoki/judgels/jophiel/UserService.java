@@ -4,7 +4,6 @@ import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.jophiel.commons.UserActivity;
 
 import java.io.File;
-import java.net.URL;
 import java.util.List;
 import java.util.Set;
 
@@ -54,7 +53,7 @@ public interface UserService {
 
     void updateProfile(String userJid, String name, String password);
 
-    URL updateProfilePicture(String userJid, File imageFile, String imageType);
+    String updateProfilePicture(String userJid, File imageFile, String imageType);
 
     boolean activateEmail(String emailCode);
 
@@ -64,5 +63,5 @@ public interface UserService {
 
     void changePassword(String code, String password);
 
-    File getAvatarImageFile(String imageName);
+    String getAvatarImageUrlString(String imageName);
 }

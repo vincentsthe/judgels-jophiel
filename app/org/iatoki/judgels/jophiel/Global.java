@@ -1,5 +1,9 @@
 package org.iatoki.judgels.jophiel;
 
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import org.iatoki.judgels.commons.AWSFileSystemProvider;
+import org.iatoki.judgels.commons.FileSystemProvider;
 import org.iatoki.judgels.jophiel.controllers.ClientController;
 import org.iatoki.judgels.jophiel.controllers.UserActivityController;
 import org.iatoki.judgels.jophiel.controllers.UserController;
@@ -27,6 +31,7 @@ import org.iatoki.judgels.jophiel.models.daos.interfaces.RefreshTokenDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserActivityDao;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import play.Application;
+import play.Play;
 import play.mvc.Controller;
 
 import java.util.HashMap;
@@ -93,8 +98,14 @@ public final class Global extends org.iatoki.judgels.commons.Global {
         ForgotPasswordDao forgotPasswordDao = new ForgotPasswordHibernateDao();
         UserActivityDao userActivityDao = new UserActivityHibernateDao();
         ClientDao clientDao = new ClientHibernateDao();
+        FileSystemProvider avatarProvider;
+        if (Play.isProd()) {
+            avatarProvider = new AWSFileSystemProvider(new InstanceProfileCredentialsProvider(), JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+        } else {
+            avatarProvider = new AWSFileSystemProvider(new BasicAWSCredentials(JophielProperties.getInstance().getaWSAccessKey(), JophielProperties.getInstance().getaWSSecretKey()), JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+        }
 
-        UserService userService = new UserServiceImpl(userDao, emailDao, forgotPasswordDao, userActivityDao, clientDao);
+        UserService userService = new UserServiceImpl(userDao, emailDao, forgotPasswordDao, userActivityDao, clientDao, avatarProvider);
 
         return userService;
     }
