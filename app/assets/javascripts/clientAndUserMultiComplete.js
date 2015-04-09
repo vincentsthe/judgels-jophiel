@@ -40,7 +40,7 @@ require(["jquery", "jquery-textcomplete"], function( __tes__ ) {
                 $.ajax({
                     url: userAutoCompleteUrl + "?term=" + term,
                     type: 'GET',
-                    dataType: "json",
+                    dataType: "jsonp",
                     success: function( data ) {
                         var processed = [];
                         for (var i=0;i<data.length;++i) {
