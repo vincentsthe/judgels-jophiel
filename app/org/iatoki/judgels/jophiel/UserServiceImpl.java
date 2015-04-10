@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.FileSystemProvider;
 import org.iatoki.judgels.commons.IdentityUtils;
@@ -29,9 +28,6 @@ import javax.persistence.NoResultException;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.validation.ConstraintViolationException;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -499,7 +495,7 @@ public final class UserServiceImpl implements UserService {
 
     private URL getAvatarImageUrl(String imageName) {
         try {
-            return new URL(org.iatoki.judgels.jophiel.controllers.routes.UserController.renderAvatarImage(imageName).absoluteURL(Http.Context.current().request()));
+            return new URL(org.iatoki.judgels.jophiel.controllers.routes.UserController.renderAvatarImage(imageName).absoluteURL(Http.Context.current().request(), Http.Context.current().request().secure()));
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
