@@ -34,6 +34,8 @@ registrationEmail.userRegistration=User Registration
 registrationEmail.thankYou=Thank you for registering in
 registrationEmail.pleaseActivate=Please activate your account
 
+forgotPasswordEmail.forgotPassword=Change Password Request
+
 activation.successful=Activation Successful
 activation.canNowLogin=You can now log in.
 
@@ -64,7 +66,7 @@ forgotPassword.forgotPassword=Forgot Password
 forgotPassword.successful=Change Password Request
 forgot_pass.error.emailIsNotOwnedByUser=Email is not owned by username
 forgotPasswordEmail.changePasswordRequestSentTo=Change password request has been sent to
-forgotPasswordEmail.request=A request to change password has been requested for your account on
+forgotPasswordEmail.request=A request to change password has been made for your account on
 forgotPasswordEmail.changePassword=To change your password please click
 forgotPassword.changePassword=Change Password
 changePassword.successful= Change Password Successful

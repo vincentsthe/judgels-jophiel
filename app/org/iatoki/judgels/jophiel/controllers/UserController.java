@@ -254,9 +254,7 @@ public final class UserController extends Controller {
 
                         LazyHtml content = new LazyHtml(messageView.render(Messages.get("register.activationEmailSentTo") + " " + registerData.email + "."));
                         content.appendLayout(c -> headingLayout.render(Messages.get("register.successful"), c));
-                        content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
                         content.appendLayout(c -> centerLayout.render(c));
-                        content.appendLayout(c -> headerFooterLayout.render(c));
                         ControllerUtils.getInstance().appendTemplateLayout(content, "After Register");
                         return ControllerUtils.getInstance().lazyOk(content);
                     } catch (IllegalStateException e){
@@ -309,9 +307,7 @@ public final class UserController extends Controller {
 
                     LazyHtml content = new LazyHtml(messageView.render(Messages.get("forgotPasswordEmail.changePasswordRequestSentTo") + " " + forgotData.email + "."));
                     content.appendLayout(c -> headingLayout.render(Messages.get("forgotPassword.successful"), c));
-                    content.appendLayout(c -> breadcrumbsLayout.render(ImmutableList.of(), c));
                     content.appendLayout(c -> centerLayout.render(c));
-                    content.appendLayout(c -> headerFooterLayout.render(c));
                     ControllerUtils.getInstance().appendTemplateLayout(content, "After Forgot Password");
                     return ControllerUtils.getInstance().lazyOk(content);
                 }
@@ -353,7 +349,6 @@ public final class UserController extends Controller {
                         LazyHtml content = new LazyHtml(messageView.render(Messages.get("changePassword.success") + "."));
                         content.appendLayout(c -> headingLayout.render(Messages.get("changePassword.successful"), c));
                         content.appendLayout(c -> centerLayout.render(c));
-                        content.appendLayout(c -> headerFooterLayout.render(c));
                         ControllerUtils.getInstance().appendTemplateLayout(content, "After Change Password");
                         return ControllerUtils.getInstance().lazyOk(content);
                     }
