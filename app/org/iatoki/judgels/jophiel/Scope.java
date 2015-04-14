@@ -7,6 +7,6 @@ public enum Scope {
     PROFILE,
     ADDRESS,
     PHONE,
-    OFFLINE_ACCESS;
+    OFFLINE_ACCESS
 
 }

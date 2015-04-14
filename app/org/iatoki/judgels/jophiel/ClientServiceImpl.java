@@ -49,12 +49,12 @@ import java.util.stream.Collectors;
 
 public final class ClientServiceImpl implements ClientService {
 
-    private ClientDao clientDao;
-    private RedirectURIDao redirectURIDao;
-    private AuthorizationCodeDao authorizationCodeDao;
-    private AccessTokenDao accessTokenDao;
-    private RefreshTokenDao refreshTokenDao;
-    private IdTokenDao idTokenDao;
+    private final ClientDao clientDao;
+    private final RedirectURIDao redirectURIDao;
+    private final AuthorizationCodeDao authorizationCodeDao;
+    private final AccessTokenDao accessTokenDao;
+    private final RefreshTokenDao refreshTokenDao;
+    private final IdTokenDao idTokenDao;
 
     public ClientServiceImpl(ClientDao clientDao, RedirectURIDao redirectURIDao, AuthorizationCodeDao authorizationCodeDao, AccessTokenDao accessTokenDao, RefreshTokenDao refreshTokenDao, IdTokenDao idTokenDao) {
         this.clientDao = clientDao;

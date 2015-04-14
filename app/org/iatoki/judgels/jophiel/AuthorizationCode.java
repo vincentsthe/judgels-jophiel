@@ -5,19 +5,19 @@ import org.iatoki.judgels.jophiel.models.domains.AuthorizationCodeModel;
 
 public final class AuthorizationCode extends AbstractModel {
 
-    private long id;
+    private final long id;
 
-    private String userJid;
+    private final String userJid;
 
-    private String clientJid;
+    private final String clientJid;
 
-    private String code;
+    private final String code;
 
-    private String redirectURI;
+    private final String redirectURI;
 
-    private long expireTime;
+    private final long expireTime;
 
-    private String scopes;
+    private final String scopes;
 
     public AuthorizationCode(AuthorizationCodeModel authorizationCodeModel) {
         this.id = authorizationCodeModel.id;

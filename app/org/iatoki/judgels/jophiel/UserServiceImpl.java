@@ -39,12 +39,12 @@ import java.util.UUID;
 
 public final class UserServiceImpl implements UserService {
 
-    private UserDao userDao;
-    private EmailDao emailDao;
-    private ForgotPasswordDao forgotPasswordDao;
-    private UserActivityDao userActivityDao;
-    private ClientDao clientDao;
-    private FileSystemProvider avatarFileProvider;
+    private final UserDao userDao;
+    private final EmailDao emailDao;
+    private final ForgotPasswordDao forgotPasswordDao;
+    private final UserActivityDao userActivityDao;
+    private final ClientDao clientDao;
+    private final FileSystemProvider avatarFileProvider;
 
     public UserServiceImpl(UserDao userDao, EmailDao emailDao, ForgotPasswordDao forgotPasswordDao, UserActivityDao userActivityDao, ClientDao clientDao, FileSystemProvider avatarFileProvider) {
         this.userDao = userDao;

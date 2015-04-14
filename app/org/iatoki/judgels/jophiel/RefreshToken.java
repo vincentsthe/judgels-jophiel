@@ -4,19 +4,19 @@ import org.iatoki.judgels.jophiel.models.domains.RefreshTokenModel;
 
 public final class RefreshToken {
 
-    private long id;
+    private final long id;
 
-    private String code;
+    private final String code;
 
-    private String userJid;
+    private final String userJid;
 
-    private String clientJid;
+    private final String clientJid;
 
-    private String token;
+    private final String token;
 
-    private String scopes;
+    private final String scopes;
 
-    private boolean redeemed;
+    private final boolean redeemed;
 
     public RefreshToken(RefreshTokenModel refreshTokenModel) {
         this.id = refreshTokenModel.id;

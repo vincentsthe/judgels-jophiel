@@ -39,12 +39,14 @@ import java.util.Map;
 
 public final class Global extends org.iatoki.judgels.commons.Global {
 
-    private Map<Class, Controller> cache;
+    private final Map<Class, Controller> cache;
+
+    public Global() {
+        cache = new HashMap<>();
+    }
 
     @Override
     public void onStart(Application application) {
-        cache = new HashMap<>();
-
         super.onStart(application);
     }
 

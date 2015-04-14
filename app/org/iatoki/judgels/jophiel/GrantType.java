@@ -8,6 +8,6 @@ public enum GrantType {
     PASSWORD,
     CLIENT_CREDENTIALS,
     JWT_BEARER,
-    SAML2_BEARER;
+    SAML2_BEARER
 
 }

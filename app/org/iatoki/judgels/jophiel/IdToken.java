@@ -4,17 +4,17 @@ import org.iatoki.judgels.jophiel.models.domains.IdTokenModel;
 
 public final class IdToken {
 
-    private long id;
+    private final long id;
 
-    private String code;
+    private final String code;
 
-    private String userJid;
+    private final String userJid;
 
-    private String clientJid;
+    private final String clientJid;
 
-    private String token;
+    private final String token;
 
-    private boolean redeemed;
+    private final boolean redeemed;
 
     public IdToken(IdTokenModel idTokenModel) {
         this.id = idTokenModel.id;

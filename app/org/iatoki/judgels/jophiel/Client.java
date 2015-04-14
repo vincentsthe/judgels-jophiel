@@ -5,19 +5,19 @@ import java.util.Set;
 
 public final class Client {
 
-    private long id;
+    private final long id;
 
-    private String jid;
+    private final String jid;
 
-    private String name;
+    private final String name;
 
-    private String secret;
+    private final String secret;
 
-    private String applicationType;
+    private final String applicationType;
 
-    private Set<String> scopes;
+    private final Set<String> scopes;
 
-    private List<String> redirectURIs;
+    private final List<String> redirectURIs;
 
     public Client(long id, String jid, String name, String secret, String applicationType, Set<String> scopes, List<String> redirectURIs) {
         this.id = id;

@@ -2,11 +2,11 @@ package org.iatoki.judgels.jophiel;
 
 public final class AutoComplete {
 
-    private String id;
+    private final String id;
 
-    private String value;
+    private final String value;
 
-    private String label;
+    private final String label;
 
     public AutoComplete(String id, String value, String label) {
         this.id = id;
