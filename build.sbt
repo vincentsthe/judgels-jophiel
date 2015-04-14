@@ -4,7 +4,7 @@ import de.johoop.jacoco4sbt.JacocoPlugin.jacoco
 
 name := """jophiel"""
 
-version := "0.2.0"
+version := "0.2.1"
 
 lazy val jophiel = (project in file("."))
                   .enablePlugins(PlayJava)
