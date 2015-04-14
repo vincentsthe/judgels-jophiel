@@ -22,6 +22,7 @@ import org.iatoki.judgels.jophiel.models.domains.UserActivityModel;
 import org.iatoki.judgels.jophiel.models.domains.UserActivityModel_;
 import org.iatoki.judgels.jophiel.models.domains.UserModel;
 import org.iatoki.judgels.jophiel.models.domains.UserModel_;
+import play.api.Play;
 import play.mvc.Http;
 
 import javax.persistence.NoResultException;
@@ -52,6 +53,9 @@ public final class UserServiceImpl implements UserService {
         this.userActivityDao = userActivityDao;
         this.clientDao = clientDao;
         this.avatarFileProvider = avatarFileProvider;
+        if (!avatarFileProvider.fileExists(ImmutableList.of("avatar-default.png"))) {
+            avatarFileProvider.uploadFile(ImmutableList.of(), Play.getFile("default assets/avatar-default.png", Play.current()),"avatar-default.png");
+        }
     }
 
     @Override
