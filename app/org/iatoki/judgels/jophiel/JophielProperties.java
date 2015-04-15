@@ -18,7 +18,7 @@ public final class JophielProperties {
     private String aWSSecretKey;
     private String aWSAvatarBucketName;
     private Region aWSAvatarBucketRegion;
-    private String awsAvatarCloudFrontURL;
+    private String aWSAvatarCloudFrontURL;
     private boolean useAWS;
 
     private JophielProperties() {
@@ -30,31 +30,43 @@ public final class JophielProperties {
     }
 
     public String getaWSAccessKey() {
-        if (Play.isDev()) {
+        if ((useAWS) && (Play.isDev())) {
             return aWSAccessKey;
         } else {
-            throw new RuntimeException();
+            throw new UnsupportedOperationException();
         }
     }
 
     public String getaWSSecretKey() {
-        if (Play.isDev()) {
+        if ((useAWS) && (Play.isDev())) {
             return aWSSecretKey;
         } else {
-            throw new RuntimeException();
+            throw new UnsupportedOperationException();
         }
     }
 
     public String getaWSAvatarBucketName() {
-        return aWSAvatarBucketName;
+        if (useAWS) {
+            return aWSAvatarBucketName;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public Region getaWSAvatarBucketRegion() {
-        return aWSAvatarBucketRegion;
+        if (useAWS) {
+            return aWSAvatarBucketRegion;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
-    public String getAwsAvatarCloudFrontURL() {
-        return awsAvatarCloudFrontURL;
+    public String getaWSAvatarCloudFrontURL() {
+        if (useAWS) {
+            return aWSAvatarCloudFrontURL;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public boolean isUseAWS() {
@@ -72,7 +84,7 @@ public final class JophielProperties {
             } else if (Play.isDev()) {
                 verifyConfigurationDev(conf);
 
-                if (INSTANCE.useAWS) {
+                if (INSTANCE.isUseAWS()) {
                     INSTANCE.aWSAccessKey = conf.getString("aws.access.key");
                     INSTANCE.aWSSecretKey = conf.getString("aws.secret.key");
                 }
@@ -80,10 +92,10 @@ public final class JophielProperties {
 
             String baseDirName = conf.getString("jophiel.baseDataDir");
 
-            if (INSTANCE.useAWS) {
+            if (INSTANCE.isUseAWS()) {
                 INSTANCE.aWSAvatarBucketName = conf.getString("aws.avatar.bucket.name");
                 INSTANCE.aWSAvatarBucketRegion = Region.fromValue(conf.getString("aws.avatar.bucket.region.id"));
-                INSTANCE.awsAvatarCloudFrontURL = conf.getString("aws.avatar.cloudFront.url");
+                INSTANCE.aWSAvatarCloudFrontURL = conf.getString("aws.avatar.cloudFront.url");
             }
 
             File baseDir = new File(baseDirName);

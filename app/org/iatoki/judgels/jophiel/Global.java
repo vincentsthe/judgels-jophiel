@@ -109,11 +109,7 @@ public final class Global extends org.iatoki.judgels.commons.Global {
             } else {
                 s3Client = new AmazonS3Client(new BasicAWSCredentials(JophielProperties.getInstance().getaWSAccessKey(), JophielProperties.getInstance().getaWSSecretKey()));
             }
-            if (JophielProperties.getInstance().getAwsAvatarCloudFrontURL() != null) {
-                avatarProvider = new AWSFileSystemProvider(s3Client, JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getAwsAvatarCloudFrontURL(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
-            } else {
-                avatarProvider = new AWSFileSystemProvider(s3Client, JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
-            }
+            avatarProvider = new AWSFileSystemProvider(s3Client, JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarCloudFrontURL(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
         } else {
             avatarProvider = new LocalFileSystemProvider(JophielProperties.getInstance().getAvatarDir());
         }
