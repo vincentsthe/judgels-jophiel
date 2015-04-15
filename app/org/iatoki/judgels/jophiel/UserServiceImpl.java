@@ -55,6 +55,7 @@ public final class UserServiceImpl implements UserService {
         this.avatarFileProvider = avatarFileProvider;
         if (!avatarFileProvider.fileExists(ImmutableList.of("avatar-default.png"))) {
             avatarFileProvider.uploadFile(ImmutableList.of(), Play.getFile("default assets/avatar-default.png", Play.current()),"avatar-default.png");
+            avatarFileProvider.makeFilePublic(ImmutableList.of("avatar-default.png"));
         }
     }
 

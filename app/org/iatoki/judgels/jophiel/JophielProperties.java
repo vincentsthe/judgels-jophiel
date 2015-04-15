@@ -1,7 +1,7 @@
 package org.iatoki.judgels.jophiel;
 
 import com.amazonaws.services.s3.model.Region;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import play.Configuration;
 import play.Play;
@@ -18,6 +18,8 @@ public final class JophielProperties {
     private String aWSSecretKey;
     private String aWSAvatarBucketName;
     private Region aWSAvatarBucketRegion;
+    private String awsAvatarCloudFrontURL;
+    private boolean useAWS;
 
     private JophielProperties() {
 
@@ -51,6 +53,14 @@ public final class JophielProperties {
         return aWSAvatarBucketRegion;
     }
 
+    public String getAwsAvatarCloudFrontURL() {
+        return awsAvatarCloudFrontURL;
+    }
+
+    public boolean isUseAWS() {
+        return useAWS;
+    }
+
     public static JophielProperties getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new JophielProperties();
@@ -62,14 +72,19 @@ public final class JophielProperties {
             } else if (Play.isDev()) {
                 verifyConfigurationDev(conf);
 
-                INSTANCE.aWSAccessKey = conf.getString("aws.access.key");
-                INSTANCE.aWSSecretKey = conf.getString("aws.secret.key");
+                if (INSTANCE.useAWS) {
+                    INSTANCE.aWSAccessKey = conf.getString("aws.access.key");
+                    INSTANCE.aWSSecretKey = conf.getString("aws.secret.key");
+                }
             }
 
             String baseDirName = conf.getString("jophiel.baseDataDir");
 
-            INSTANCE.aWSAvatarBucketName = conf.getString("aws.avatar.bucket.name");
-            INSTANCE.aWSAvatarBucketRegion = Region.fromValue(conf.getString("aws.avatar.bucket.region.id"));
+            if (INSTANCE.useAWS) {
+                INSTANCE.aWSAvatarBucketName = conf.getString("aws.avatar.bucket.name");
+                INSTANCE.aWSAvatarBucketRegion = Region.fromValue(conf.getString("aws.avatar.bucket.region.id"));
+                INSTANCE.awsAvatarCloudFrontURL = conf.getString("aws.avatar.cloudFront.url");
+            }
 
             File baseDir = new File(baseDirName);
             if (!baseDir.isDirectory()) {
@@ -88,13 +103,19 @@ public final class JophielProperties {
     }
 
     private static void verifyConfigurationDev(Configuration configuration) {
-        List<String> requiredKeys = ImmutableList.of(
+        List<String> requiredKeys =  Lists.newArrayList(
               "jophiel.baseDataDir",
-              "aws.access.key",
-              "aws.secret.key",
-              "aws.avatar.bucket.region.id",
-              "aws.avatar.bucket.name"
+              "aws.use"
         );
+
+        INSTANCE.useAWS = false;
+        if ((configuration.getBoolean("aws.use") != null) && (configuration.getBoolean("aws.use"))) {
+            INSTANCE.useAWS = true;
+            requiredKeys.add("aws.access.key");
+            requiredKeys.add("aws.secret.key");
+            requiredKeys.add("aws.avatar.bucket.name");
+            requiredKeys.add("aws.avatar.bucket.region.id");
+        }
 
         for (String key : requiredKeys) {
             if (configuration.getString(key) == null) {
@@ -104,11 +125,16 @@ public final class JophielProperties {
     }
 
     private static void verifyConfigurationProd(Configuration configuration) {
-        List<String> requiredKeys = ImmutableList.of(
+        List<String> requiredKeys = Lists.newArrayList(
               "jophiel.baseDataDir",
-              "aws.avatar.bucket.region.id",
-              "aws.avatar.bucket.name"
+              "aws.use"
         );
+
+        if ((configuration.getBoolean("aws.use") != null) && (configuration.getBoolean("aws.use"))) {
+            INSTANCE.useAWS = true;
+            requiredKeys.add("aws.avatar.bucket.name");
+            requiredKeys.add("aws.avatar.bucket.region.id");
+        }
 
         for (String key : requiredKeys) {
             if (configuration.getString(key) == null) {

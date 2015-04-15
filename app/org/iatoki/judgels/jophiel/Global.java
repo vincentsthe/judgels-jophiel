@@ -4,6 +4,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import org.iatoki.judgels.commons.AWSFileSystemProvider;
 import org.iatoki.judgels.commons.FileSystemProvider;
+import org.iatoki.judgels.commons.LocalFileSystemProvider;
 import org.iatoki.judgels.jophiel.controllers.ClientController;
 import org.iatoki.judgels.jophiel.controllers.UserActivityController;
 import org.iatoki.judgels.jophiel.controllers.UserController;
@@ -101,10 +102,20 @@ public final class Global extends org.iatoki.judgels.commons.Global {
         UserActivityDao userActivityDao = new UserActivityHibernateDao();
         ClientDao clientDao = new ClientHibernateDao();
         FileSystemProvider avatarProvider;
-        if (Play.isProd()) {
-            avatarProvider = new AWSFileSystemProvider(new AmazonS3Client(), JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+        if (JophielProperties.getInstance().isUseAWS()) {
+            AmazonS3Client s3Client;
+            if (Play.isProd()) {
+                s3Client = new AmazonS3Client();
+            } else {
+                s3Client = new AmazonS3Client(new BasicAWSCredentials(JophielProperties.getInstance().getaWSAccessKey(), JophielProperties.getInstance().getaWSSecretKey()));
+            }
+            if (JophielProperties.getInstance().getAwsAvatarCloudFrontURL() != null) {
+                avatarProvider = new AWSFileSystemProvider(s3Client, JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getAwsAvatarCloudFrontURL(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+            } else {
+                avatarProvider = new AWSFileSystemProvider(s3Client, JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+            }
         } else {
-            avatarProvider = new AWSFileSystemProvider(new AmazonS3Client(new BasicAWSCredentials(JophielProperties.getInstance().getaWSAccessKey(), JophielProperties.getInstance().getaWSSecretKey())), JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+            avatarProvider = new LocalFileSystemProvider(JophielProperties.getInstance().getAvatarDir());
         }
 
         UserService userService = new UserServiceImpl(userDao, emailDao, forgotPasswordDao, userActivityDao, clientDao, avatarProvider);
