@@ -34,6 +34,7 @@ import java.util.Arrays;
 
 @Authenticated(value = {LoggedIn.class, HasRole.class})
 @Authorized(value = {"admin"})
+@Transactional
 public final class ClientController extends Controller {
 
     private static final long PAGE_SIZE = 20;
@@ -45,7 +46,6 @@ public final class ClientController extends Controller {
         this.userService = userService;
     }
 
-    @Transactional
     public Result index() {
         return listClients(0, "id", "asc", "");
     }
@@ -60,7 +60,6 @@ public final class ClientController extends Controller {
     }
 
     @RequireCSRFCheck
-    @Transactional
     public Result postCreateClient() {
         Form<ClientCreateForm> form = Form.form(ClientCreateForm.class).bindFromRequest();
 
@@ -76,7 +75,6 @@ public final class ClientController extends Controller {
         }
     }
 
-    @Transactional
     public Result viewClient(long clientId) {
         Client client = clientService.findClientById(clientId);
         LazyHtml content = new LazyHtml(viewClientView.render(client));
@@ -93,7 +91,6 @@ public final class ClientController extends Controller {
         return ControllerUtils.getInstance().lazyOk(content);
     }
 
-    @Transactional
     public Result listClients(long page, String orderBy, String orderDir, String filterString) {
         Page<Client> currentPage = clientService.pageClients(page, PAGE_SIZE, orderBy, orderDir, filterString);
 
@@ -111,7 +108,6 @@ public final class ClientController extends Controller {
     }
 
     @AddCSRFToken
-    @Transactional
     public Result updateClient(long clientId) {
         Client client = clientService.findClientById(clientId);
         ClientUpdateForm clientUpdateForm = new ClientUpdateForm();
@@ -127,7 +123,6 @@ public final class ClientController extends Controller {
         return showUpdateClient(form, clientId, client.getName());
     }
 
-    @Transactional
     public Result postUpdateClient(long clientId) {
         Client client = clientService.findClientById(clientId);
         Form<ClientUpdateForm> form = Form.form(ClientUpdateForm.class).bindFromRequest();
@@ -144,7 +139,6 @@ public final class ClientController extends Controller {
         }
     }
 
-    @Transactional
     public Result deleteClient(long clientId) {
         Client client = clientService.findClientById(clientId);
         clientService.deleteClient(client.getId());
