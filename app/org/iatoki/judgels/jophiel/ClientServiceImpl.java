@@ -172,11 +172,10 @@ public final class ClientServiceImpl implements ClientService {
 
                 return authorizationCode;
             } else {
-                return null;
+                throw new RuntimeException();
             }
         } catch (NoResultException e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException(e);
         }
     }
 
@@ -251,7 +250,7 @@ public final class ClientServiceImpl implements ClientService {
             idTokenDao.persist(idTokenModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | JOSEException | UnsupportedEncodingException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

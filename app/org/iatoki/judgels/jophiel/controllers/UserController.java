@@ -630,7 +630,7 @@ public final class UserController extends Controller {
     public Result serviceAuthRequest() {
         String redirectURI = request().uri().substring(request().uri().indexOf("?") + 1);
         if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
-            return redirect((routes.UserController.serviceLogin("http://" + request().host() + request().uri())));
+            return redirect((routes.UserController.serviceLogin("http" + (request().secure() ? "s" : "") + "://" + request().host() + request().uri())));
         } else {
             try {
                 String randomHash = JudgelsUtils.hashMD5(UUID.randomUUID().toString());
@@ -648,7 +648,7 @@ public final class UserController extends Controller {
                     content.appendLayout(c -> centerLayout.render(c));
                     ControllerUtils.getInstance().appendTemplateLayout(content, "Auth");
 
-                    ControllerUtils.getInstance().addActivityLog(userService, "Try authorize client " + client.getName() + " <a href=\"\" + \"http://\" + Http.Context.current().request().host() + Http.Context.current().request().uri() + \"\">link</a>.");
+                    ControllerUtils.getInstance().addActivityLog(userService, "Try authorize client " + client.getName() + " <a href=\"\" + \"http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
                     return ControllerUtils.getInstance().lazyOk(content);
                 }
