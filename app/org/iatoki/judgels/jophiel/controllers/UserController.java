@@ -579,15 +579,16 @@ public final class UserController extends Controller {
     }
 
     public Result renderAvatarImage(String imageName) {
+        response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
+
         String avatarURL = userService.getAvatarImageUrlString(imageName);
         try {
             new URL(avatarURL);
-            return redirect(avatarURL);
+            return temporaryRedirect(avatarURL);
         } catch (MalformedURLException e) {
             File avatarFile = new File(avatarURL);
             if (avatarFile.exists()) {
                 SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
-                response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
                 response().setHeader("Last-Modified", sdf.format(new Date(avatarFile.lastModified())));
 
                 if (request().hasHeader("If-Modified-Since")) {
