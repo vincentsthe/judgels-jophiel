@@ -19,11 +19,11 @@ POST           /users/:uId/update                         @org.iatoki.judgels.jo
 GET            /users/:uId/delete                         @org.iatoki.judgels.jophiel.controllers.UserController.deleteUser(uId: Long)
 
 GET            /activities                                @org.iatoki.judgels.jophiel.controllers.UserActivityController.viewOwnActivities()
-GET            /activities/                               @org.iatoki.judgels.jophiel.controllers.UserActivityController.listOwnActivities(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "")
+GET            /activities/                               @org.iatoki.judgels.jophiel.controllers.UserActivityController.listOwnActivities(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "", clientNames ?= "")
 GET            /users/activities                          @org.iatoki.judgels.jophiel.controllers.UserActivityController.index()
-GET            /users/activities/                         @org.iatoki.judgels.jophiel.controllers.UserActivityController.listUsersActivities(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "")
+GET            /users/activities/                         @org.iatoki.judgels.jophiel.controllers.UserActivityController.listUsersActivities(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "", clientNames ?= "", usernames ?= "")
 GET            /users/activities/:username                @org.iatoki.judgels.jophiel.controllers.UserActivityController.viewUserActivities(username)
-GET            /users/activities/:username/               @org.iatoki.judgels.jophiel.controllers.UserActivityController.listUserActivities(username, pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "")
+GET            /users/activities/:username/               @org.iatoki.judgels.jophiel.controllers.UserActivityController.listUserActivities(username, pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "", clientNames ?= "")
 
 GET            /clients                                   @org.iatoki.judgels.jophiel.controllers.ClientController.index()
 GET            /clients/                                  @org.iatoki.judgels.jophiel.controllers.ClientController.listClients(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "")
