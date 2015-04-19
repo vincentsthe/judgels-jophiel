@@ -633,8 +633,7 @@ public final class UserController extends Controller {
             return redirect((routes.UserController.serviceLogin("http" + (request().secure() ? "s" : "") + "://" + request().host() + request().uri())));
         } else {
             try {
-                String randomHash = JudgelsUtils.hashMD5(UUID.randomUUID().toString());
-                Cache.set(randomHash, request().uri().substring(request().uri().indexOf("?") + 1));
+                String path = request().uri().substring(request().uri().indexOf("?") + 1);
 
                 AuthenticationRequest req = AuthenticationRequest.parse(redirectURI);
                 ClientID clientID = req.getClientID();
@@ -642,9 +641,9 @@ public final class UserController extends Controller {
 
                 List<String> scopes = req.getScope().toStringList();
                 if (clientService.isClientAuthorized(clientID.toString(), scopes)) {
-                    return postServiceAuthRequest(randomHash);
+                    return postServiceAuthRequest(path);
                 } else {
-                    LazyHtml content = new LazyHtml(serviceAuthView.render(randomHash, client, scopes));
+                    LazyHtml content = new LazyHtml(serviceAuthView.render(path, client, scopes));
                     content.appendLayout(c -> centerLayout.render(c));
                     ControllerUtils.getInstance().appendTemplateLayout(content, "Auth");
 
@@ -660,42 +659,37 @@ public final class UserController extends Controller {
     }
 
     @Transactional
-    public Result postServiceAuthRequest(String hash) {
-        Object path = Cache.get(hash);
-        if (path != null) {
-            try {
-                AuthenticationRequest req = AuthenticationRequest.parse(path.toString());
-                ClientID clientID = req.getClientID();
-                Client client = clientService.findClientByJid(clientID.toString());
-                URI redirectURI = req.getRedirectionURI();
-                ResponseType responseType = req.getResponseType();
-                State state = req.getState();
-                Scope scope = req.getScope();
-                String nonce = (req.getNonce() != null) ? req.getNonce().toString() : "";
+    public Result postServiceAuthRequest(String path) {
+        try {
+            AuthenticationRequest req = AuthenticationRequest.parse(path);
+            ClientID clientID = req.getClientID();
+            Client client = clientService.findClientByJid(clientID.toString());
+            URI redirectURI = req.getRedirectionURI();
+            ResponseType responseType = req.getResponseType();
+            State state = req.getState();
+            Scope scope = req.getScope();
+            String nonce = (req.getNonce() != null) ? req.getNonce().toString() : "";
 
-                AuthorizationCode code = clientService.generateAuthorizationCode(client.getJid(), redirectURI.toString(), responseType.toString(), scope.toStringList());
-                String accessToken = clientService.generateAccessToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
-                clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
-                clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
-                URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
+            AuthorizationCode code = clientService.generateAuthorizationCode(client.getJid(), redirectURI.toString(), responseType.toString(), scope.toStringList());
+            String accessToken = clientService.generateAccessToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
+            clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
+            clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
+            URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-                String[] domainParts = result.getHost().split("\\.");
-                String mainDomain;
-                if (domainParts.length >= 2) {
-                    mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
-                } else {
-                    mainDomain = null;
-                }
-
-                ControllerUtils.getInstance().addActivityLog(userService, "Authorize client " + client.getName() + ".");
-
-                return redirect(result.toString());
-            } catch (com.nimbusds.oauth2.sdk.ParseException | SerializeException e) {
-                Logger.error("Exception when parsing authentication request.", e);
-                return redirect(path + "?error=invalid_request");
+            String[] domainParts = result.getHost().split("\\.");
+            String mainDomain;
+            if (domainParts.length >= 2) {
+                mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+            } else {
+                mainDomain = null;
             }
-        } else {
-            throw new RuntimeException("This exception should never happened.");
+
+            ControllerUtils.getInstance().addActivityLog(userService, "Authorize client " + client.getName() + ".");
+
+            return redirect(result.toString());
+        } catch (com.nimbusds.oauth2.sdk.ParseException | SerializeException e) {
+            Logger.error("Exception when parsing authentication request.", e);
+            return redirect(path + "?error=invalid_request");
         }
     }
 

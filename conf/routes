@@ -41,7 +41,7 @@ POST           /serviceProfile/:continueUrl               @org.iatoki.judgels.jo
 POST           /serviceProfile/avatar/:continueUrl        @org.iatoki.judgels.jophiel.controllers.UserController.postServiceAvatar(continueUrl: String)
 GET            /serviceLogout/:continueUrl                @org.iatoki.judgels.jophiel.controllers.UserController.serviceLogout(continueUrl: String)
 GET            /auth                                      @org.iatoki.judgels.jophiel.controllers.UserController.serviceAuthRequest()
-POST           /auth                                      @org.iatoki.judgels.jophiel.controllers.UserController.postServiceAuthRequest(hash: String)
+POST           /auth                                      @org.iatoki.judgels.jophiel.controllers.UserController.postServiceAuthRequest(path: String)
 
 GET            /                                          @org.iatoki.judgels.jophiel.controllers.ApplicationController.index()
 GET            /login                                     @org.iatoki.judgels.jophiel.controllers.UserController.login()
