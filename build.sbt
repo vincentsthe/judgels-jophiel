@@ -1,5 +1,6 @@
 import de.johoop.testngplugin.TestNGPlugin
 import de.johoop.jacoco4sbt.JacocoPlugin.jacoco
+import sbtbuildinfo.Plugin._
 
 lazy val jophiel = (project in file("."))
     .enablePlugins(PlayJava, SbtWeb)
@@ -29,6 +30,12 @@ lazy val jophiel = (project in file("."))
         LessKeys.compress := true,
         LessKeys.optimization := 3,
         LessKeys.verbose := true
+    )
+    .settings(buildInfoSettings: _*)
+    .settings(
+        sourceGenerators in Compile <+= buildInfo,
+        buildInfoKeys := Seq[BuildInfoKey](name, version),
+        buildInfoPackage := "org.iatoki.judgels.jophiel"
     )
 
 lazy val playcommons = RootProject(file("../judgels-play-commons"))
