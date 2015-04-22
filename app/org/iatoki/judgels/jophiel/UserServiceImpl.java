@@ -29,6 +29,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.validation.ConstraintViolationException;
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -54,8 +55,12 @@ public final class UserServiceImpl implements UserService {
         this.clientDao = clientDao;
         this.avatarFileProvider = avatarFileProvider;
         if (!avatarFileProvider.fileExists(ImmutableList.of("avatar-default.png"))) {
-            avatarFileProvider.uploadFile(ImmutableList.of(), Play.getFile("default assets/avatar-default.png", Play.current()),"avatar-default.png");
-            avatarFileProvider.makeFilePublic(ImmutableList.of("avatar-default.png"));
+            try {
+                avatarFileProvider.uploadFile(ImmutableList.of(), Play.getFile("default assets/avatar-default.png", Play.current()), "avatar-default.png");
+                avatarFileProvider.makeFilePublic(ImmutableList.of("avatar-default.png"));
+            } catch (IOException e) {
+                throw new IllegalStateException("Cannot create default avatar.");
+            }
         }
     }
 
@@ -419,7 +424,7 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String updateProfilePicture(String userJid, File imageFile, String extension) {
+    public String updateProfilePicture(String userJid, File imageFile, String extension) throws IOException {
         String newImageName = IdentityUtils.getUserJid() + "-" + JudgelsUtils.hashMD5(UUID.randomUUID().toString()) + "." + extension;
         List<String> filePath = ImmutableList.of(newImageName);
         avatarFileProvider.uploadFile(ImmutableList.of(), imageFile, newImageName);

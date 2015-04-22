@@ -12,12 +12,9 @@ import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import org.apache.commons.io.FilenameUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
-import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
-import org.iatoki.judgels.commons.views.html.layouts.breadcrumbsLayout;
 import org.iatoki.judgels.commons.views.html.layouts.centerLayout;
-import org.iatoki.judgels.commons.views.html.layouts.headerFooterLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
 import org.iatoki.judgels.commons.views.html.layouts.messageView;
@@ -54,7 +51,6 @@ import org.iatoki.judgels.jophiel.views.html.user.viewUserView;
 import org.iatoki.judgels.jophiel.views.html.viewProfileView;
 import play.Logger;
 import play.Play;
-import play.cache.Cache;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.filters.csrf.AddCSRFToken;
@@ -62,6 +58,7 @@ import play.filters.csrf.RequireCSRFCheck;
 import play.i18n.Messages;
 import play.libs.mailer.Email;
 import play.libs.mailer.MailerPlugin;
+import play.mvc.BodyParser;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -73,15 +70,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Transactional
 public final class UserController extends Controller {
@@ -520,44 +514,55 @@ public final class UserController extends Controller {
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @BodyParser.Of(value = BodyParser.MultipartFormData.class, maxLength = (2 << 20))
     public Result postServiceAvatar(String continueUrl) {
-        Http.MultipartFormData body = request().body().asMultipartFormData();
-        Http.MultipartFormData.FilePart avatar = body.getFile("avatar");
-
-        if (avatar != null) {
-            String contentType = avatar.getContentType();
-            if (!((contentType.equals("image/png")) || (contentType.equals("image/jpg")) || (contentType.equals("image/jpeg")))) {
-                Form<UserProfileForm> form = Form.form(UserProfileForm.class);
-                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
-                form2.reject("error.profile.not_picture");
-                return showProfile(form, form2, continueUrl);
-            } else if (avatar.getFile().length() > (2 << 20)) {
-                Form<UserProfileForm> form = Form.form(UserProfileForm.class);
-                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
-                form2.reject("profile.error.overSizeLimit");
-                return showProfile(form, form2, continueUrl);
-            } else {
-                String profilePictureName = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
-                String profilePictureUrl = userService.getAvatarImageUrlString(profilePictureName);
-                try {
-                    new URL(profilePictureUrl);
-                    session("avatar", profilePictureUrl.toString());
-                } catch (MalformedURLException e) {
-                    session("avatar", routes.UserController.renderAvatarImage(profilePictureName).absoluteURL(request()));
-                }
-
-                ControllerUtils.getInstance().addActivityLog(userService, "Update avatar.");
-
-                if (continueUrl == null) {
-                    return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.profile());
-                } else {
-                    return redirect(routes.UserController.serviceProfile(continueUrl));
-                }
-            }
-        } else {
+        if (request().body().isMaxSizeExceeded()) {
             Form<UserProfileForm> form = Form.form(UserProfileForm.class);
             Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+            form2.reject("profile.error.overSizeLimit");
             return showProfile(form, form2, continueUrl);
+        } else {
+            Http.MultipartFormData body = request().body().asMultipartFormData();
+            Http.MultipartFormData.FilePart avatar = body.getFile("avatar");
+
+            if (avatar != null) {
+                String contentType = avatar.getContentType();
+                if (!((contentType.equals("image/png")) || (contentType.equals("image/jpg")) || (contentType.equals("image/jpeg")))) {
+                    Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+                    Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                    form2.reject("error.profile.not_picture");
+                    return showProfile(form, form2, continueUrl);
+                } else {
+                    try {
+                        String profilePictureName = userService.updateProfilePicture(IdentityUtils.getUserJid(), avatar.getFile(), FilenameUtils.getExtension(avatar.getFilename()));
+                        String profilePictureUrl = userService.getAvatarImageUrlString(profilePictureName);
+                        try {
+                            new URL(profilePictureUrl);
+                            session("avatar", profilePictureUrl.toString());
+                        } catch (MalformedURLException e) {
+                            session("avatar", routes.UserController.renderAvatarImage(profilePictureName).absoluteURL(request()));
+                        }
+
+                        ControllerUtils.getInstance().addActivityLog(userService, "Update avatar.");
+
+                        if (continueUrl == null) {
+                            return redirect(org.iatoki.judgels.jophiel.controllers.routes.UserController.profile());
+                        } else {
+                            return redirect(routes.UserController.serviceProfile(continueUrl));
+                        }
+                    } catch (IOException e) {
+                        Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+                        Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                        form2.reject("profile.error.cantUpload");
+                        return showProfile(form, form2, continueUrl);
+                    }
+                }
+            } else {
+                Form<UserProfileForm> form = Form.form(UserProfileForm.class);
+                Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                form2.reject("profile.error.not_picture");
+                return showProfile(form, form2, continueUrl);
+            }
         }
     }
 

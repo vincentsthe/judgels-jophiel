@@ -4,6 +4,7 @@ import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.jophiel.commons.UserActivity;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -53,7 +54,7 @@ public interface UserService {
 
     void updateProfile(String userJid, String name, String password);
 
-    String updateProfilePicture(String userJid, File imageFile, String imageType);
+    String updateProfilePicture(String userJid, File imageFile, String imageType) throws IOException;
 
     boolean activateEmail(String emailCode);
 
