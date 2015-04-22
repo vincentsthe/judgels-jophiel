@@ -13,7 +13,7 @@ public interface ClientService {
 
     boolean isClientAuthorized(String clientJid, List<String> scopes);
 
-    boolean isAccessTokenExist(String token);
+    boolean isValidAccessTokenExist(String token);
 
     boolean existByJid(String clientJid);
 
@@ -23,17 +23,17 @@ public interface ClientService {
 
     Client findClientByJid(String clientJid);
 
-    AuthorizationCode generateAuthorizationCode(String clientJid, String URI, String responseType, List<String> scopes);
+    AuthorizationCode generateAuthorizationCode(String clientJid, String URI, String responseType, List<String> scopes, long expireTime);
 
-    String generateAccessToken(String code, String userId, String clientId, List<String> scopes);
+    String generateAccessToken(String code, String userId, String clientId, List<String> scopes, long expireTime);
 
     void generateRefreshToken(String code, String userId, String clientId, List<String> scopes);
 
-    void generateIdToken(String code, String userId, String clientId, String nonce, long authTime, String accessToken);
+    void generateIdToken(String code, String userId, String clientId, String nonce, long authTime, String accessToken, long expireTime);
 
     org.iatoki.judgels.jophiel.AuthorizationCode findAuthorizationCodeByCode(String code);
 
-    AccessToken regenerateAccessToken(String code, String userId, String clientId, List<String> scopes);
+    AccessToken regenerateAccessToken(String code, String userId, String clientId, List<String> scopes, long expireTime);
 
     AccessToken findAccessTokenByAccessToken(String token);
 

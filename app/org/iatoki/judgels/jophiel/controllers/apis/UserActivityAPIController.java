@@ -34,7 +34,7 @@ public final class UserActivityAPIController extends Controller {
             token = form.get("token");
         }
 
-        if (clientService.isAccessTokenExist(token)) {
+        if (clientService.isValidAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
             User user = userService.findUserByUserJid(accessToken.getUserJid());
 

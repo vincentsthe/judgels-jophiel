@@ -375,7 +375,7 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean login(String usernameOrEmail, String password) {
+    public User login(String usernameOrEmail, String password) {
         try {
             UserModel userModel;
             EmailModel emailModel;
@@ -386,21 +386,16 @@ public final class UserServiceImpl implements UserService {
                 emailModel = emailDao.findByEmail(usernameOrEmail);
                 userModel = userDao.findByJid(emailModel.userJid);
             } else {
-                return false;
+                return null;
             }
 
             if ((userModel != null) && (userModel.password.equals(JudgelsUtils.hashSHA256(password))) && (emailModel.emailVerified)) {
-                Http.Context.current().session().put("userJid", userModel.jid);
-                Http.Context.current().session().put("username", userModel.username);
-                Http.Context.current().session().put("name", userModel.name);
-                Http.Context.current().session().put("avatar", getAvatarImageUrl(userModel.profilePictureImageName).toString());
-                Http.Context.current().session().put("role", userModel.roles);
-                return true;
+                return createUserFromModels(userModel, emailModel);
             } else {
-                return false;
+                return null;
             }
         } catch (NoResultException e) {
-            return false;
+            return null;
         }
     }
 
@@ -505,7 +500,7 @@ public final class UserServiceImpl implements UserService {
 
     private URL getAvatarImageUrl(String imageName) {
         try {
-            return new URL(org.iatoki.judgels.jophiel.controllers.routes.UserController.renderAvatarImage(imageName).absoluteURL(Http.Context.current().request(), Http.Context.current().request().secure()));
+            return new URL(org.iatoki.judgels.jophiel.controllers.apis.routes.UserAPIController.renderAvatarImage(imageName).absoluteURL(Http.Context.current().request(), Http.Context.current().request().secure()));
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }

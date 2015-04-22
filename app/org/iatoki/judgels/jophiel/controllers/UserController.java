@@ -10,6 +10,7 @@ import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
@@ -76,6 +77,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Transactional
 public final class UserController extends Controller {
@@ -389,7 +391,14 @@ public final class UserController extends Controller {
                 return showLogin(form, continueUrl);
             } else {
                 LoginForm loginData = form.get();
-                if (userService.login(loginData.usernameOrEmail, loginData.password)) {
+                User user = userService.login(loginData.usernameOrEmail, loginData.password);
+                if (user != null) {
+                    // TODO add expiry time and remember me options
+                    session("userJid", user.getJid());
+                    session("username", user.getUsername());
+                    session("name", user.getName());
+                    session("avatar", user.getProfilePictureUrl().toString());
+                    session("role", StringUtils.join(user.getRoles(), ","));
                     ControllerUtils.getInstance().addActivityLog(userService, "Logged In.");
                     if (continueUrl == null) {
                         return redirect(routes.UserController.profile());
@@ -540,7 +549,7 @@ public final class UserController extends Controller {
                             new URL(profilePictureUrl);
                             session("avatar", profilePictureUrl.toString());
                         } catch (MalformedURLException e) {
-                            session("avatar", routes.UserController.renderAvatarImage(profilePictureName).absoluteURL(request()));
+                            session("avatar", org.iatoki.judgels.jophiel.controllers.apis.routes.UserAPIController.renderAvatarImage(profilePictureName).absoluteURL(request()));
                         }
 
                         ControllerUtils.getInstance().addActivityLog(userService, "Update avatar.");
@@ -583,55 +592,6 @@ public final class UserController extends Controller {
         }
     }
 
-    public Result renderAvatarImage(String imageName) {
-        response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
-
-        String avatarURL = userService.getAvatarImageUrlString(imageName);
-        try {
-            new URL(avatarURL);
-            return temporaryRedirect(avatarURL);
-        } catch (MalformedURLException e) {
-            File avatarFile = new File(avatarURL);
-            if (avatarFile.exists()) {
-                SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
-                response().setHeader("Last-Modified", sdf.format(new Date(avatarFile.lastModified())));
-
-                if (request().hasHeader("If-Modified-Since")) {
-                    try {
-                        Date lastUpdate = sdf.parse(request().getHeader("If-Modified-Since"));
-                        if (avatarFile.lastModified() > lastUpdate.getTime()) {
-                            BufferedImage in = ImageIO.read(avatarFile);
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                            String type = FilenameUtils.getExtension(avatarFile.getAbsolutePath());
-
-                            ImageIO.write(in, type, baos);
-                            return ok(baos.toByteArray()).as("image/" + type);
-                        } else {
-                            return status(304);
-                        }
-                    } catch (ParseException | IOException e2) {
-                        throw new RuntimeException(e2);
-                    }
-                } else {
-                    try {
-                        BufferedImage in = ImageIO.read(avatarFile);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                        String type = FilenameUtils.getExtension(avatarFile.getAbsolutePath());
-
-                        ImageIO.write(in, type, baos);
-                        return ok(baos.toByteArray()).as("image/" + type);
-                    } catch (IOException e2) {
-                        return internalServerError();
-                    }
-                }
-            } else {
-                return notFound();
-            }
-        }
-    }
-
     public Result serviceAuthRequest() {
         String redirectURI = request().uri().substring(request().uri().indexOf("?") + 1);
         if ((IdentityUtils.getUserJid() == null) || (!userService.existsByUserJid(IdentityUtils.getUserJid()))) {
@@ -668,30 +628,26 @@ public final class UserController extends Controller {
         try {
             AuthenticationRequest req = AuthenticationRequest.parse(path);
             ClientID clientID = req.getClientID();
-            Client client = clientService.findClientByJid(clientID.toString());
-            URI redirectURI = req.getRedirectionURI();
-            ResponseType responseType = req.getResponseType();
-            State state = req.getState();
-            Scope scope = req.getScope();
-            String nonce = (req.getNonce() != null) ? req.getNonce().toString() : "";
+            if (clientService.existByJid(clientID.toString())) {
+                Client client = clientService.findClientByJid(clientID.toString());
+                URI redirectURI = req.getRedirectionURI();
+                ResponseType responseType = req.getResponseType();
+                State state = req.getState();
+                Scope scope = req.getScope();
+                String nonce = (req.getNonce() != null) ? req.getNonce().toString() : "";
 
-            AuthorizationCode code = clientService.generateAuthorizationCode(client.getJid(), redirectURI.toString(), responseType.toString(), scope.toStringList());
-            String accessToken = clientService.generateAccessToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
-            clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
-            clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken);
-            URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
+                AuthorizationCode code = clientService.generateAuthorizationCode(client.getJid(), redirectURI.toString(), responseType.toString(), scope.toStringList(), System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES));
+                String accessToken = clientService.generateAccessToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList(), System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
+                clientService.generateRefreshToken(code.getValue(), IdentityUtils.getUserJid(), clientID.toString(), scope.toStringList());
+                clientService.generateIdToken(code.getValue(), IdentityUtils.getUserJid(), client.getJid(), nonce, System.currentTimeMillis(), accessToken, System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES));
+                URI result = new AuthenticationSuccessResponse(redirectURI, code, null, null, state).toURI();
 
-            String[] domainParts = result.getHost().split("\\.");
-            String mainDomain;
-            if (domainParts.length >= 2) {
-                mainDomain = "." + domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+                ControllerUtils.getInstance().addActivityLog(userService, "Authorize client " + client.getName() + ".");
+
+                return redirect(result.toString());
             } else {
-                mainDomain = null;
+                return redirect(path + "?error=invalid_request");
             }
-
-            ControllerUtils.getInstance().addActivityLog(userService, "Authorize client " + client.getName() + ".");
-
-            return redirect(result.toString());
         } catch (com.nimbusds.oauth2.sdk.ParseException | SerializeException e) {
             Logger.error("Exception when parsing authentication request.", e);
             return redirect(path + "?error=invalid_request");

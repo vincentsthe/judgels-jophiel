@@ -3,6 +3,7 @@ package org.iatoki.judgels.jophiel.controllers.apis;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.jophiel.AccessToken;
@@ -21,9 +22,20 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public final class UserAPIController extends Controller {
@@ -90,7 +102,7 @@ public final class UserAPIController extends Controller {
             token = form.get("token");
         }
 
-        if (clientService.isAccessTokenExist(token)) {
+        if (clientService.isValidAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
             User user = userService.findUserByUserJid(accessToken.getUserJid());
             ObjectNode result = Json.newObject();
@@ -203,7 +215,8 @@ public final class UserAPIController extends Controller {
                 clientSecret = form.get("client_secret");
             }
 
-            if (clientId != null) {
+            if ((clientId != null) && (clientService.existByJid(clientId))) {
+                // TODO check if auth code is expired
                 Client client = clientService.findClientByJid(clientId);
                 if ((client.getSecret().equals(clientSecret)) && (authorizationCode.getClientJid().equals(client.getJid()))) {
                     Set<String> addedSet = Arrays.asList(scope.split(" ")).stream()
@@ -270,12 +283,12 @@ public final class UserAPIController extends Controller {
                 clientSecret = form.get("client_secret");
             }
 
-            if (clientId != null) {
+            if ((clientId != null) && (clientService.existByJid(clientId))) {
                 Client client = clientService.findClientByJid(clientId);
                 if ((client.getSecret().equals(clientSecret)) && (refreshToken1.getClientJid().equals(client.getJid()))) {
                     ObjectNode result = Json.newObject();
                     if (refreshToken1.isRedeemed()) {
-                        AccessToken accessToken = clientService.regenerateAccessToken(refreshToken1.getCode(), refreshToken1.getUserJid(), refreshToken1.getClientJid(), Arrays.asList(refreshToken1.getScopes().split(",")));
+                        AccessToken accessToken = clientService.regenerateAccessToken(refreshToken1.getCode(), refreshToken1.getUserJid(), refreshToken1.getClientJid(), Arrays.asList(refreshToken1.getScopes().split(",")), System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES));
                         result.put("access_token", accessToken.getToken());
                         if (client.getScopes().contains("OPENID")) {
                             IdToken idToken = clientService.findIdTokenByCode(refreshToken1.getCode());
@@ -304,6 +317,55 @@ public final class UserAPIController extends Controller {
             ObjectNode node = Json.newObject();
             node.put("error", "invalid_request");
             return badRequest(node);
+        }
+    }
+
+    public Result renderAvatarImage(String imageName) {
+        response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
+
+        String avatarURL = userService.getAvatarImageUrlString(imageName);
+        try {
+            new URL(avatarURL);
+            return temporaryRedirect(avatarURL);
+        } catch (MalformedURLException e) {
+            File avatarFile = new File(avatarURL);
+            if (avatarFile.exists()) {
+                SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+                response().setHeader("Last-Modified", sdf.format(new Date(avatarFile.lastModified())));
+
+                if (request().hasHeader("If-Modified-Since")) {
+                    try {
+                        Date lastUpdate = sdf.parse(request().getHeader("If-Modified-Since"));
+                        if (avatarFile.lastModified() > lastUpdate.getTime()) {
+                            BufferedImage in = ImageIO.read(avatarFile);
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                            String type = FilenameUtils.getExtension(avatarFile.getAbsolutePath());
+
+                            ImageIO.write(in, type, baos);
+                            return ok(baos.toByteArray()).as("image/" + type);
+                        } else {
+                            return status(304);
+                        }
+                    } catch (ParseException | IOException e2) {
+                        throw new RuntimeException(e2);
+                    }
+                } else {
+                    try {
+                        BufferedImage in = ImageIO.read(avatarFile);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                        String type = FilenameUtils.getExtension(avatarFile.getAbsolutePath());
+
+                        ImageIO.write(in, type, baos);
+                        return ok(baos.toByteArray()).as("image/" + type);
+                    } catch (IOException e2) {
+                        return internalServerError();
+                    }
+                }
+            } else {
+                return notFound();
+            }
         }
     }
 }

@@ -48,7 +48,7 @@ public interface UserService {
 
     void createUserActivity(String clientJid, String userJid, long time, String log, String ipAddress);
 
-    boolean login(String usernameOrEmail, String password);
+    User login(String usernameOrEmail, String password);
 
     void updateProfile(String userJid, String name);
 

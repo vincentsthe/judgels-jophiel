@@ -14,6 +14,8 @@ public final class JophielProperties {
     private static JophielProperties INSTANCE;
 
     private File avatarDir;
+    private String baseURL;
+    private String idTokenPrivateKey;
     private String aWSAccessKey;
     private String aWSSecretKey;
     private String aWSAvatarBucketName;
@@ -27,6 +29,14 @@ public final class JophielProperties {
 
     public File getAvatarDir() {
         return avatarDir;
+    }
+
+    public String getBaseURL() {
+        return baseURL;
+    }
+
+    public String getIdTokenPrivateKey() {
+        return idTokenPrivateKey;
     }
 
     public String getaWSAccessKey() {
@@ -98,6 +108,9 @@ public final class JophielProperties {
                 INSTANCE.aWSAvatarCloudFrontURL = conf.getString("aws.avatar.cloudFront.url");
             }
 
+            INSTANCE.baseURL = conf.getString("jophiel.baseUrl");
+            INSTANCE.idTokenPrivateKey = conf.getString("jophiel.idToken.key.private");
+
             File baseDir = new File(baseDirName);
             if (!baseDir.isDirectory()) {
                 throw new RuntimeException("jophiel.baseDataDir: " + baseDirName + " does not exist");
@@ -117,6 +130,8 @@ public final class JophielProperties {
     private static void verifyConfigurationDev(Configuration configuration) {
         List<String> requiredKeys =  Lists.newArrayList(
               "jophiel.baseDataDir",
+              "jophiel.baseUrl",
+              "jophiel.idToken.key.private",
               "aws.use"
         );
 
@@ -139,6 +154,8 @@ public final class JophielProperties {
     private static void verifyConfigurationProd(Configuration configuration) {
         List<String> requiredKeys = Lists.newArrayList(
               "jophiel.baseDataDir",
+              "jophiel.baseUrl",
+              "jophiel.idToken.key.private",
               "aws.use"
         );
 

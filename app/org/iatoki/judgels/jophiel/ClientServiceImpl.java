@@ -31,7 +31,6 @@ import org.iatoki.judgels.jophiel.models.domains.IdTokenModel;
 import org.iatoki.judgels.jophiel.models.domains.RedirectURIModel;
 import org.iatoki.judgels.jophiel.models.domains.RefreshTokenModel;
 
-import javax.persistence.NoResultException;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -39,9 +38,8 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.GregorianCalendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -105,7 +103,8 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public boolean isAccessTokenExist(String token) {
+    public boolean isValidAccessTokenExist(String token) {
+        // TODO check for access token expiry
         return accessTokenDao.existsByToken(token);
     }
 
@@ -141,46 +140,42 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public AuthorizationCode generateAuthorizationCode(String clientJid, String redirectURI, String responseType, List<String> scopes) {
-        try {
-            Collections.sort(scopes);
-            ClientModel clientModel = clientDao.findByJid(clientJid);
-            List<RedirectURIModel> redirectURIs = redirectURIDao.findByClientJid(clientJid);
+    public AuthorizationCode generateAuthorizationCode(String clientJid, String redirectURI, String responseType, List<String> scopes, long expireTime) {
+        Collections.sort(scopes);
+        ClientModel clientModel = clientDao.findByJid(clientJid);
+        List<RedirectURIModel> redirectURIs = redirectURIDao.findByClientJid(clientJid);
 
-            List<String> enabledScopes = Arrays.asList(clientModel.scopes.split(","));
-            int i = 0;
-            boolean check = true;
-            while ((check) && (i < scopes.size())) {
-                if (!enabledScopes.contains(scopes.get(i).toUpperCase())) {
-                    check = false;
-                } else {
-                    ++i;
-                }
-            }
-
-            if ((responseType.equals("code")) && (redirectURIs.stream().filter(r -> r.redirectURI.equals(redirectURI)).count() >= 1) && (check)) {
-                AuthorizationCode authorizationCode = new AuthorizationCode();
-
-                AuthorizationCodeModel authorizationCodeModel = new AuthorizationCodeModel();
-                authorizationCodeModel.clientJid = clientJid;
-                authorizationCodeModel.userJid = IdentityUtils.getUserJid();
-                authorizationCodeModel.code = authorizationCode.toString();
-                authorizationCodeModel.expireTime = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(2);
-                authorizationCodeModel.redirectURI = redirectURI;
-                authorizationCodeModel.scopes = StringUtils.join(scopes, ",");
-                authorizationCodeDao.persist(authorizationCodeModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
-
-                return authorizationCode;
+        List<String> enabledScopes = Arrays.asList(clientModel.scopes.split(","));
+        int i = 0;
+        boolean check = true;
+        while ((check) && (i < scopes.size())) {
+            if (!enabledScopes.contains(scopes.get(i).toUpperCase())) {
+                check = false;
             } else {
-                throw new RuntimeException();
+                ++i;
             }
-        } catch (NoResultException e) {
-            throw new RuntimeException(e);
+        }
+
+        if ((responseType.equals("code")) && (redirectURIs.stream().filter(r -> r.redirectURI.equals(redirectURI)).count() >= 1) && (check)) {
+            AuthorizationCode authorizationCode = new AuthorizationCode();
+
+            AuthorizationCodeModel authorizationCodeModel = new AuthorizationCodeModel();
+            authorizationCodeModel.clientJid = clientJid;
+            authorizationCodeModel.userJid = IdentityUtils.getUserJid();
+            authorizationCodeModel.code = authorizationCode.toString();
+            authorizationCodeModel.expireTime = expireTime;
+            authorizationCodeModel.redirectURI = redirectURI;
+            authorizationCodeModel.scopes = StringUtils.join(scopes, ",");
+            authorizationCodeDao.persist(authorizationCodeModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+
+            return authorizationCode;
+        } else {
+            throw new IllegalStateException("Response type, redirect URI, or scope is invalid");
         }
     }
 
     @Override
-    public String generateAccessToken(String code, String userId, String clientId, List<String> scopes) {
+    public String generateAccessToken(String code, String userId, String clientId, List<String> scopes, long expireTime) {
         com.nimbusds.oauth2.sdk.token.AccessToken accessToken = new BearerAccessToken();
         Collections.sort(scopes);
 
@@ -189,7 +184,7 @@ public final class ClientServiceImpl implements ClientService {
         accessTokenModel1.clientJid = clientId;
         accessTokenModel1.userJid = userId;
         accessTokenModel1.redeemed = false;
-        accessTokenModel1.expireTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
+        accessTokenModel1.expireTime = expireTime;
         accessTokenModel1.scopes = StringUtils.join(scopes, ",");
         accessTokenModel1.token = accessToken.getValue();
 
@@ -215,25 +210,21 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public void generateIdToken(String code, String userId, String clientId, String nonce, long authTime, String accessToken) {
+    public void generateIdToken(String code, String userId, String clientId, String nonce, long authTime, String accessToken, long expireTime) {
         try {
-            byte[] encoded = Base64.decodeBase64("MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDCdoHMwrsIiggV6hp7Yf4FZaKqkAeHuk5WAbBzuIDB40gQKKimwfKk+yaR6UKOOduGM3k4eDbaZy3n8NCkWnAvVIwt4rus7LhDhVUNrJGQU9BdK59x+wvhUtMcE2eP0V3hjeJmqzhoJxqLIAcnksU2Z3mmAkgbXecV16fCgo8G1Ny+Ai+FY2ZefRK+LF0u9rGQx5tA6XuQOUWvPJb45YlzmEDLwEMw7nOqwnnN6mSj9cKVfDX33ayvZY0aenEn7SMtrAkia5gBKGKDfN2KECX6OD9joatmNW0b+z9RtAXJvrWtkXhGaZR9+YBLBITllAtgkWMLWCCnDDOM4lNLoj9XAgMBAAECggEACPCz1Psa6DCYYJGLuCJwMEVU7iyC/B13noKjXx6bZM6TMJL99fSyuB0Hz+t+cNV+HzRcnVkBhJb7yE8M+JFj2Pk1HKLw5+lWK1yE5YUKiC0iRjZMNUxKZoiNRhwqRbVlcIo6X2f9xuQNV1oYmhwoTvEA6b3vHLr7dcidYNbpxnGMQZs035um6zShIFNqrmM4poQZZE9NbltOX1k/qxD0+OAAuemU3Y7WzH1XvTwXy7qU8O0PCktTe+QBSJZUPxy1nZwKbF1vdad39KfCjvxemkdUdzuPvlMfi+dsDXjAz71ukUO0r1+4n+l9DYOI8Pq6oI5ZGcwmz5B/Fd8RpPb2gQKBgQDy1o9HCnkL4rw3Wg6hkM46dlPPT7Mm5p+GrNbRxd6bX0wRpXivcasT60u4UZnG7gVVjpqour6tbyRaVNr5F6Cxg6YXDnZKwa8Jz64oUduQqMw7FvGtBG8+NR/26wI53Xoe1nq50ugkq3V3l9TtW9p0ccrsELP7Nu6Fmd4aa9AMFwKBgQDNALqptObo+2jODiuU4+w4wt/hUZa0BbmhjkhJNVpczZvUlXkLtMCq1ESxH4wWzRpBvIlcWpKnSyxzuFD5rtjqHh1kqVbFjQ2k0hRGs5S2vT+aC5oTH4M92nRPCZbWq+26jSVcvAgFj+S6MSOofMDYVOfM3dEKhzNKVsChjGsuwQKBgBCccrKWWc9hVCSpKWUN5b2ECJmexw97KSBqREuXMHIKY8a1PfsqWFyFdOmH03ATKhQ/K/8svwxYFPGE6nGtlxVtfvgGyjq04wdVyIEDkHRlx4qnOCLwsbdcpPIcA0v4BXmEjGKXtb+EZwWmQi92YAwlGI9rWRRvHoPPEa1XAKVDAoGALWgf8D71dl1ZVWqmFJB3Xgsr84hSzQUHnNUbBbwfi7au8WM6MHGUy0HBBUpriRFc43qTIjWdjhiEfA0zQlqMCS8qa4VmhtM7VmqBuzdDlUZNtB0lv16XfzfH00nYcywZt9xTjjrHvBOnIeaIc2VOgZwsy5/GEYLoxWp5uE6V3wECgYALHhV4lk4bH1Gm2S7Od8yPix62dbwoFMjfFiI4Y3dCu7Um93MS34OSWo2pixb9w+1Y/ZNNfrq+tEhUSsJKd3MvE8oskUR4bo4yMQJZC1+FSNUpehjz1Z9XiqJMpsl9GGYXo+nzU27PwlZdorgd8uiH30sNLcm9VG3e72hbQ0EpmQ==".getBytes("utf-8"));
+            byte[] encoded = Base64.decodeBase64(JophielProperties.getInstance().getIdTokenPrivateKey().getBytes("utf-8"));
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
             KeyFactory kf = KeyFactory.getInstance("RSA");
             RSAPrivateKey privateKey = (RSAPrivateKey) kf.generatePrivate(keySpec);
 
             JWSSigner signer = new RSASSASigner(privateKey);
 
-            Calendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-
             JWTClaimsSet claimsSet = new JWTClaimsSet();
             claimsSet.setSubject(userId);
             claimsSet.setAudience(clientId);
-            claimsSet.setIssuer("http://jophiel.judgels.org");
-            claimsSet.setIssueTime(calendar.getTime());
-            calendar.add(Calendar.WEEK_OF_MONTH, 2);
-            claimsSet.setExpirationTime(calendar.getTime());
+            claimsSet.setIssuer(JophielProperties.getInstance().getBaseURL());
+            claimsSet.setIssueTime(new Date(System.currentTimeMillis()));
+            claimsSet.setExpirationTime(new Date(expireTime));
             claimsSet.setClaim("auth_time", authTime);
             claimsSet.setClaim("at_hash", JudgelsUtils.hashMD5(accessToken).substring(accessToken.length() / 2));
 
@@ -262,7 +253,7 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public AccessToken regenerateAccessToken(String code, String userId, String clientId, List<String> scopes) {
+    public AccessToken regenerateAccessToken(String code, String userId, String clientId, List<String> scopes, long expireTime) {
         com.nimbusds.oauth2.sdk.token.AccessToken accessToken = new BearerAccessToken();
         Collections.sort(scopes);
 
@@ -271,7 +262,7 @@ public final class ClientServiceImpl implements ClientService {
         accessTokenModel1.clientJid = clientId;
         accessTokenModel1.userJid = userId;
         accessTokenModel1.redeemed = false;
-        accessTokenModel1.expireTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
+        accessTokenModel1.expireTime = expireTime;
         accessTokenModel1.scopes = StringUtils.join(scopes, ",");
         accessTokenModel1.token = accessToken.getValue();
 
@@ -322,11 +313,10 @@ public final class ClientServiceImpl implements ClientService {
             throw new RuntimeException();
         }
         accessTokenModel.redeemed = true;
-        accessTokenModel.expireTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(14);
 
         accessTokenDao.edit(accessTokenModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
-        return TimeUnit.DAYS.toMillis(14);
+        return TimeUnit.SECONDS.convert((accessTokenModel.expireTime - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
     }
 
     @Override
