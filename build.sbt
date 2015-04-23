@@ -9,7 +9,7 @@ lazy val jophiel = (project in file("."))
     .aggregate(playcommons)
     .settings(
         name := "jophiel",
-        version := IO.read(file("version.properties")),
+        version := IO.read(file("version.properties")).trim,
         scalaVersion := "2.11.1",
         libraryDependencies ++= Seq(
             "org.webjars" % "jquery-textcomplete" % "0.3.7",
