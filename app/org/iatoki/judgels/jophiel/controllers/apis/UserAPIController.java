@@ -133,7 +133,7 @@ public final class UserAPIController extends Controller {
             clientSecret = form.get("client_secret");
         }
 
-        if (clientId != null) {
+        if ((clientId != null) && (clientService.clientExistByClientJid(clientId))) {
             Client client = clientService.findClientByJid(clientId);
             if (client.getSecret().equals(clientSecret)) {
                 String username = form.get("username");
@@ -178,13 +178,19 @@ public final class UserAPIController extends Controller {
             clientSecret = form.get("client_secret");
         }
 
-        if (clientId != null) {
+        if ((clientId != null) && (clientService.clientExistByClientJid(clientId))) {
             Client client = clientService.findClientByJid(clientId);
             if (client.getSecret().equals(clientSecret)) {
                 String userJid = form.get("userJid");
-                User response = userService.findPublicUserByUserJid(userJid);
+                if (userService.existsByUserJid(userJid)) {
+                    User response = userService.findPublicUserByUserJid(userJid);
 
-                return ok(Json.toJson(response));
+                    return ok(Json.toJson(response));
+                } else {
+                    ObjectNode node = Json.newObject();
+                    node.put("error", "invalid_user");
+                    return unauthorized(node);
+                }
             } else {
                 ObjectNode node = Json.newObject();
                 node.put("error", "unauthorized_client");
@@ -215,7 +221,7 @@ public final class UserAPIController extends Controller {
                 clientSecret = form.get("client_secret");
             }
 
-            if ((clientId != null) && (clientService.existByJid(clientId))) {
+            if ((clientId != null) && (clientService.clientExistByClientJid(clientId))) {
                 // TODO check if auth code is expired
                 Client client = clientService.findClientByJid(clientId);
                 if ((client.getSecret().equals(clientSecret)) && (authorizationCode.getClientJid().equals(client.getJid()))) {
@@ -283,7 +289,7 @@ public final class UserAPIController extends Controller {
                 clientSecret = form.get("client_secret");
             }
 
-            if ((clientId != null) && (clientService.existByJid(clientId))) {
+            if ((clientId != null) && (clientService.clientExistByClientJid(clientId))) {
                 Client client = clientService.findClientByJid(clientId);
                 if ((client.getSecret().equals(clientSecret)) && (refreshToken1.getClientJid().equals(client.getJid()))) {
                     ObjectNode result = Json.newObject();

@@ -109,23 +109,27 @@ public final class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public boolean existByJid(String clientJid) {
+    public boolean clientExistByClientJid(String clientJid) {
         return clientDao.existsByJid(clientJid);
     }
 
     @Override
-    public boolean existByName(String clientName) {
+    public boolean clientExistByClientName(String clientName) {
         return clientDao.existByName(clientName);
     }
 
     @Override
-    public Client findClientById(long clientId) {
+    public Client findClientById(long clientId) throws ClientNotFoundException {
         ClientModel clientModel = clientDao.findById(clientId);
-        Set<String> scopeString = ImmutableSet.copyOf(clientModel.scopes.split(","));
-        List<RedirectURIModel> redirectURIModels = redirectURIDao.findByClientJid(clientModel.jid);
-        List<String> redirectURIs = redirectURIModels.stream().map(r -> r.redirectURI).collect(Collectors.toList());
+        if (clientModel != null) {
+            Set<String> scopeString = ImmutableSet.copyOf(clientModel.scopes.split(","));
+            List<RedirectURIModel> redirectURIModels = redirectURIDao.findByClientJid(clientModel.jid);
+            List<String> redirectURIs = redirectURIModels.stream().map(r -> r.redirectURI).collect(Collectors.toList());
 
-        return createClientFromModel(clientModel, scopeString, redirectURIs);
+            return createClientFromModel(clientModel, scopeString, redirectURIs);
+        } else {
+            throw new ClientNotFoundException("Client not found.");
+        }
     }
 
     @Override

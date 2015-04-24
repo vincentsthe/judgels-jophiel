@@ -86,11 +86,15 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User findUserById(long userId) {
+    public User findUserById(long userId) throws UserNotFoundException {
         UserModel userModel = userDao.findById(userId);
-        EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
+        if (userModel != null) {
+            EmailModel emailModel = emailDao.findByUserJid(userModel.jid);
 
-        return createUserFromModels(userModel, emailModel);
+            return createUserFromModels(userModel, emailModel);
+        } else {
+            throw new UserNotFoundException("User not found.");
+        }
     }
 
     @Override

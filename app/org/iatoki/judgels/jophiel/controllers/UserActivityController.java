@@ -6,12 +6,12 @@ import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
+import org.iatoki.judgels.commons.controllers.BaseController;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.tabLayout;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.User;
 import org.iatoki.judgels.jophiel.commons.UserActivity;
-import org.iatoki.judgels.jophiel.UserActivityFilterForm;
 import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.Authorized;
@@ -20,7 +20,6 @@ import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import org.iatoki.judgels.jophiel.views.html.user.activity.listOwnActivitiesView;
 import org.iatoki.judgels.jophiel.views.html.user.activity.listUserActivitiesView;
 import org.iatoki.judgels.jophiel.views.html.user.activity.listUsersActivitiesView;
-import play.data.Form;
 import play.db.jpa.Transactional;
 import play.i18n.Messages;
 import play.mvc.Controller;
@@ -28,7 +27,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 
 @Transactional
-public final class UserActivityController extends Controller {
+public final class UserActivityController extends BaseController {
 
     private static final long PAGE_SIZE = 20;
     private final ClientService clientService;
@@ -51,7 +50,7 @@ public final class UserActivityController extends Controller {
         String [] clientName = clientNames.split(",");
         ImmutableSet.Builder<String> clientNamesSetBuilder = ImmutableSet.builder();
         for (String client : clientName) {
-            if ((!"".equals(client)) && (clientService.existByName(client))) {
+            if ((!"".equals(client)) && (clientService.clientExistByClientName(client))) {
                 clientNamesSetBuilder.add(client);
             }
         }
@@ -90,7 +89,7 @@ public final class UserActivityController extends Controller {
         String[] clientName = clientNames.split(",");
         ImmutableSet.Builder<String> clientNamesSetBuilder = ImmutableSet.builder();
         for (String client : clientName) {
-            if ((!"".equals(client)) && (clientService.existByName(client))) {
+            if ((!"".equals(client)) && (clientService.clientExistByClientName(client))) {
                 clientNamesSetBuilder.add(client);
             }
         }
@@ -126,7 +125,7 @@ public final class UserActivityController extends Controller {
             String[] clientName = clientNames.split(",");
             ImmutableSet.Builder<String> clientNamesSetBuilder = ImmutableSet.builder();
             for (String client : clientName) {
-                if ((!"".equals(client)) && (clientService.existByName(client))) {
+                if ((!"".equals(client)) && (clientService.clientExistByClientName(client))) {
                     clientNamesSetBuilder.add(client);
                 }
             }

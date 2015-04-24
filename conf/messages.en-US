@@ -19,7 +19,7 @@ profile.profile=Profile
 profile.avatar=Avatar
 profile.activities=Activities
 
-profile.error.passwordsDidntMatch=Passwords didn't match
+profile.error.passwordsDidntMatch=Passwords didn''t match
 profile.error.avatarNotPicture=Avatar is not a picture
 profile.error.overSizeLimit=Avatar size is maximum 2 MB
 profile.error.cantUpload=Avatar can't be uploaded into system

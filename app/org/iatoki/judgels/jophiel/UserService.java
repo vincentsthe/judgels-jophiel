@@ -14,7 +14,7 @@ public interface UserService {
 
     boolean isEmailOwnedByUser(String email, String username);
 
-    User findUserById(long userId);
+    User findUserById(long userId) throws UserNotFoundException;
 
     User findUserByUserJid(String userJid);
 

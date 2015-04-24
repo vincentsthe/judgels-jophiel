@@ -15,11 +15,11 @@ public interface ClientService {
 
     boolean isValidAccessTokenExist(String token);
 
-    boolean existByJid(String clientJid);
+    boolean clientExistByClientJid(String clientJid);
 
-    boolean existByName(String clientName);
+    boolean clientExistByClientName(String clientName);
 
-    Client findClientById(long clientId);
+    Client findClientById(long clientId) throws ClientNotFoundException;
 
     Client findClientByJid(String clientJid);
 

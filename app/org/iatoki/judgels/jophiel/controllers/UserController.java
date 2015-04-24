@@ -15,6 +15,7 @@ import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
+import org.iatoki.judgels.commons.controllers.BaseController;
 import org.iatoki.judgels.commons.views.html.layouts.centerLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
@@ -28,6 +29,7 @@ import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RegisterForm;
 import org.iatoki.judgels.jophiel.User;
 import org.iatoki.judgels.jophiel.UserCreateForm;
+import org.iatoki.judgels.jophiel.UserNotFoundException;
 import org.iatoki.judgels.jophiel.UserProfileForm;
 import org.iatoki.judgels.jophiel.UserProfilePictureForm;
 import org.iatoki.judgels.jophiel.UserService;
@@ -64,23 +66,16 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Transactional
-public final class UserController extends Controller {
+public final class UserController extends BaseController {
 
     private static final long PAGE_SIZE = 20;
     private final ClientService clientService;
@@ -147,7 +142,7 @@ public final class UserController extends Controller {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result viewUser(long userId) {
+    public Result viewUser(long userId) throws UserNotFoundException {
         User user = userService.findUserById(userId);
         LazyHtml content = new LazyHtml(viewUserView.render(user));
         content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.user") + " #" + userId + ": " + user.getName(), new InternalLink(Messages.get("commons.update"), routes.UserController.updateUser(userId)), c));
@@ -166,7 +161,7 @@ public final class UserController extends Controller {
     @AddCSRFToken
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result updateUser(long userId) {
+    public Result updateUser(long userId) throws UserNotFoundException {
         User user = userService.findUserById(userId);
         UserUpdateForm userUpdateForm = new UserUpdateForm(user);
         Form<UserUpdateForm> form = Form.form(UserUpdateForm.class).fill(userUpdateForm);
@@ -179,7 +174,7 @@ public final class UserController extends Controller {
     @RequireCSRFCheck
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result postUpdateUser(long userId) {
+    public Result postUpdateUser(long userId) throws UserNotFoundException {
         User user = userService.findUserById(userId);
         Form<UserUpdateForm> form = Form.form(UserUpdateForm.class).bindFromRequest();
 
@@ -201,7 +196,7 @@ public final class UserController extends Controller {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result deleteUser(long userId) {
+    public Result deleteUser(long userId) throws UserNotFoundException {
         User user = userService.findUserById(userId);
         userService.deleteUser(user.getId());
 
@@ -242,10 +237,10 @@ public final class UserController extends Controller {
                     try {
                         String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
                         Email email = new Email();
-                        email.setSubject(Play.application().configuration().getString("application.sub-title") + " " + Messages.get("registrationEmail.userRegistration"));
+                        email.setSubject(Play.application().configuration().getString("application.copyright") + " " + Messages.get("registrationEmail.userRegistration"));
                         email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
                         email.addTo(registerData.name + " <" + registerData.email + ">");
-                        email.setBodyHtml("<p>" + Messages.get("registrationEmail.thankYou") + " " + Play.application().configuration().getString("application.sub-title") + ".</p><p>" + Messages.get("registrationEmail.pleaseActivate") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>here</a>.</p>");
+                        email.setBodyHtml("<p>" + Messages.get("registrationEmail.thankYou") + " " + Play.application().configuration().getString("application.copyright") + ".</p><p>" + Messages.get("registrationEmail.pleaseActivate") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>here</a>.</p>");
                         MailerPlugin.send(email);
 
                         LazyHtml content = new LazyHtml(messageView.render(Messages.get("register.activationEmailSentTo") + " " + registerData.email + "."));
@@ -602,19 +597,23 @@ public final class UserController extends Controller {
 
                 AuthenticationRequest req = AuthenticationRequest.parse(redirectURI);
                 ClientID clientID = req.getClientID();
-                Client client = clientService.findClientByJid(clientID.toString());
+                if (clientService.clientExistByClientJid(clientID.toString())) {
+                    Client client = clientService.findClientByJid(clientID.toString());
 
-                List<String> scopes = req.getScope().toStringList();
-                if (clientService.isClientAuthorized(clientID.toString(), scopes)) {
-                    return postServiceAuthRequest(path);
+                    List<String> scopes = req.getScope().toStringList();
+                    if (clientService.isClientAuthorized(clientID.toString(), scopes)) {
+                        return postServiceAuthRequest(path);
+                    } else {
+                        LazyHtml content = new LazyHtml(serviceAuthView.render(path, client, scopes));
+                        content.appendLayout(c -> centerLayout.render(c));
+                        ControllerUtils.getInstance().appendTemplateLayout(content, "Auth");
+
+                        ControllerUtils.getInstance().addActivityLog(userService, "Try authorize client " + client.getName() + " <a href=\"\" + \"http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+
+                        return ControllerUtils.getInstance().lazyOk(content);
+                    }
                 } else {
-                    LazyHtml content = new LazyHtml(serviceAuthView.render(path, client, scopes));
-                    content.appendLayout(c -> centerLayout.render(c));
-                    ControllerUtils.getInstance().appendTemplateLayout(content, "Auth");
-
-                    ControllerUtils.getInstance().addActivityLog(userService, "Try authorize client " + client.getName() + " <a href=\"\" + \"http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
-
-                    return ControllerUtils.getInstance().lazyOk(content);
+                    return redirect(redirectURI + "?error=unauthorized_client");
                 }
             } catch (com.nimbusds.oauth2.sdk.ParseException e) {
                 Logger.error("Exception when parsing authentication request.", e);
@@ -628,7 +627,7 @@ public final class UserController extends Controller {
         try {
             AuthenticationRequest req = AuthenticationRequest.parse(path);
             ClientID clientID = req.getClientID();
-            if (clientService.existByJid(clientID.toString())) {
+            if (clientService.clientExistByClientJid(clientID.toString())) {
                 Client client = clientService.findClientByJid(clientID.toString());
                 URI redirectURI = req.getRedirectionURI();
                 ResponseType responseType = req.getResponseType();
@@ -646,7 +645,7 @@ public final class UserController extends Controller {
 
                 return redirect(result.toString());
             } else {
-                return redirect(path + "?error=invalid_request");
+                return redirect(path + "?error=unauthorized_client");
             }
         } catch (com.nimbusds.oauth2.sdk.ParseException | SerializeException e) {
             Logger.error("Exception when parsing authentication request.", e);

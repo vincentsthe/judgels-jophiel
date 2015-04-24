@@ -36,8 +36,8 @@ public final class UserActivityAPIController extends Controller {
 
         if (clientService.isValidAccessTokenExist(token)) {
             AccessToken accessToken = clientService.findAccessTokenByAccessToken(token);
-            User user = userService.findUserByUserJid(accessToken.getUserJid());
 
+            User user = userService.findUserByUserJid(accessToken.getUserJid());
             String userActivitiesString = form.get("userActivities");
             JsonNode jsonNode = Json.parse(userActivitiesString);
             for (int i=0;i<jsonNode.size();++i) {
