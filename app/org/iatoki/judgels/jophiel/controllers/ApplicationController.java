@@ -12,7 +12,7 @@ public final class ApplicationController extends BaseController {
     }
 
     public Result index() {
-        return redirect(routes.UserController.login().absoluteURL(request()));
+        return redirect(routes.UserController.login().absoluteURL(request(), request().secure()));
     }
 
 }
