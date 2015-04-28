@@ -12,11 +12,26 @@
 
     <input type="hidden" name="orderBy" value="@orderBy"/>
     <input type="hidden" name="orderDir" value="@orderDir"/>
-    <input type="text" class="client_multicomplete form-control" name="clientNames" value="@clientNames" autocomplete="off">
+    <div id="clientNames-input_field" class="form-group">
+        <label for="clientNames-input" class="control-label">@Messages.get("client.clients")</label>
+        <div class="">
+            <input id="clientNames" type="text" class="client_multicomplete form-control" name="clientNames" value="@clientNames" autocomplete="off">
+        </div>
+    </div>
     @if(filterUser) {
-        <input type="text" class="user_multicomplete form-control" name="usernames" value="@usernames" autocomplete="off">
+        <div id="usernames-input_field" class="form-group">
+            <label for="usernames-input" class="control-label">@Messages.get("user.users")</label>
+            <div class="">
+                <input id="usernames" type="text" class="user_multicomplete form-control" name="usernames" value="@usernames" autocomplete="off">
+            </div>
+        </div>
     }
-    <input type="search" class="form-control" name="filterString" value="@filterString">
+    <div id="filterString-input_field" class="form-group">
+        <label for="filterString-input" class="control-label">@Messages.get("commons.search")</label>
+        <div class="">
+            <input id="filterString" type="search" class="form-control" name="filterString" value="@filterString">
+        </div>
+    </div>
 
     @b3.submit('class -> "btn btn-primary") { @Messages.get("commons.filter") }
 }
