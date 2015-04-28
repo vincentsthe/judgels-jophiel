@@ -6,6 +6,8 @@ import org.iatoki.judgels.commons.InternalLink;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.controllers.AbstractControllerUtils;
 import org.iatoki.judgels.commons.views.html.layouts.sidebarLayout;
+import org.iatoki.judgels.commons.views.html.layouts.profileView;
+import org.iatoki.judgels.commons.views.html.layouts.menusLayout;
 import org.iatoki.judgels.jophiel.JophielUtils;
 import org.iatoki.judgels.jophiel.UserService;
 import play.i18n.Messages;
@@ -24,13 +26,15 @@ public final class ControllerUtils extends AbstractControllerUtils {
             internalLinkBuilder.add(new InternalLink(Messages.get("user.activities"), routes.UserActivityController.index()));
             internalLinkBuilder.add(new InternalLink(Messages.get("client.clients"), routes.ClientController.index()));
         }
-        content.appendLayout(c -> sidebarLayout.render(
-            IdentityUtils.getUsername(),
-            IdentityUtils.getUserRealName(),
-            org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(Http.Context.current().request()),
-            org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(Http.Context.current().request()),
-            internalLinkBuilder.build(), c)
-        );
+
+        LazyHtml sidebarContent = new LazyHtml(profileView.render(
+              IdentityUtils.getUsername(),
+              IdentityUtils.getUserRealName(),
+              org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(Http.Context.current().request()),
+              org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(Http.Context.current().request())
+        ));
+        sidebarContent.appendLayout(c -> menusLayout.render(internalLinkBuilder.build(), c));
+        content.appendLayout(c -> sidebarLayout.render(sidebarContent.render(), c));
     }
 
     public void addActivityLog(UserService userService, String log) {
