@@ -13,6 +13,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.InternalLink;
+import org.iatoki.judgels.commons.JudgelsProperties;
 import org.iatoki.judgels.commons.LazyHtml;
 import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.commons.controllers.BaseController;
@@ -25,6 +26,7 @@ import org.iatoki.judgels.jophiel.ChangePasswordForm;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.ForgotPasswordForm;
+import org.iatoki.judgels.jophiel.JophielProperties;
 import org.iatoki.judgels.jophiel.LoginForm;
 import org.iatoki.judgels.jophiel.RegisterForm;
 import org.iatoki.judgels.jophiel.User;
@@ -237,10 +239,10 @@ public final class UserController extends BaseController {
                     try {
                         String emailCode = userService.registerUser(registerData.username, registerData.name, registerData.email, registerData.password);
                         Email email = new Email();
-                        email.setSubject(Play.application().configuration().getString("application.copyright") + " " + Messages.get("registrationEmail.userRegistration"));
-                        email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
+                        email.setSubject(JudgelsProperties.getInstance().getAppCopyright() + " " + Messages.get("registrationEmail.userRegistration"));
+                        email.setFrom(JophielProperties.getInstance().getNoreplyName() + " <" + JophielProperties.getInstance().getNoreplyEmail() + ">");
                         email.addTo(registerData.name + " <" + registerData.email + ">");
-                        email.setBodyHtml("<p>" + Messages.get("registrationEmail.thankYou") + " " + Play.application().configuration().getString("application.copyright") + ".</p><p>" + Messages.get("registrationEmail.pleaseActivate") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>here</a>.</p>");
+                        email.setBodyHtml("<p>" + Messages.get("registrationEmail.thankYou") + " " + JudgelsProperties.getInstance().getAppCopyright() + ".</p><p>" + Messages.get("registrationEmail.pleaseActivate") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.verifyEmail(emailCode).absoluteURL(request()) + "'>here</a>.</p>");
                         MailerPlugin.send(email);
 
                         LazyHtml content = new LazyHtml(messageView.render(Messages.get("register.activationEmailSentTo") + " " + registerData.email + "."));
@@ -290,10 +292,10 @@ public final class UserController extends BaseController {
                 } else {
                     String forgotCode = userService.forgotPassword(forgotData.username, forgotData.email);
                     Email email = new Email();
-                    email.setSubject(Play.application().configuration().getString("application.sub-title") + " " + Messages.get("forgotPasswordEmail.forgotPassword"));
-                    email.setFrom(Play.application().configuration().getString("email.name") + " <" + Play.application().configuration().getString("email.email") + ">");
+                    email.setSubject(JudgelsProperties.getInstance().getAppCopyright() + " " + Messages.get("forgotPasswordEmail.forgotPassword"));
+                    email.setFrom(JophielProperties.getInstance().getNoreplyName() + " <" + JophielProperties.getInstance().getNoreplyEmail() + ">");
                     email.addTo(forgotData.email);
-                    email.setBodyHtml("<p>" + Messages.get("forgotPasswordEmail.request") + " " + Play.application().configuration().getString("application.sub-title") + ".</p><p>" + Messages.get("forgotPasswordEmail.changePassword") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.changePassword(forgotCode).absoluteURL(request()) + "'>here</a>.</p>");
+                    email.setBodyHtml("<p>" + Messages.get("forgotPasswordEmail.request") + " " + JudgelsProperties.getInstance().getAppCopyright() + ".</p><p>" + Messages.get("forgotPasswordEmail.changePassword") + " <a href='" + org.iatoki.judgels.jophiel.controllers.routes.UserController.changePassword(forgotCode).absoluteURL(request()) + "'>here</a>.</p>");
                     MailerPlugin.send(email);
 
                     LazyHtml content = new LazyHtml(messageView.render(Messages.get("forgotPasswordEmail.changePasswordRequestSentTo") + " " + forgotData.email + "."));

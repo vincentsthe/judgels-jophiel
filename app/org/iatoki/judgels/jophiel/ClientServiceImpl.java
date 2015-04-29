@@ -226,7 +226,7 @@ public final class ClientServiceImpl implements ClientService {
             JWTClaimsSet claimsSet = new JWTClaimsSet();
             claimsSet.setSubject(userId);
             claimsSet.setAudience(clientId);
-            claimsSet.setIssuer(JophielProperties.getInstance().getBaseURL());
+            claimsSet.setIssuer(JophielProperties.getInstance().getJophielBaseUrl());
             claimsSet.setIssueTime(new Date(System.currentTimeMillis()));
             claimsSet.setExpirationTime(new Date(expireTime));
             claimsSet.setClaim("auth_time", authTime);
