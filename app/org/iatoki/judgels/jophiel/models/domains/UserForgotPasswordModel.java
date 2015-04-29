@@ -8,8 +8,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "jophiel_forgot_password")
-public final class ForgotPasswordModel extends AbstractModel {
+@Table(name = "jophiel_user_forgot_password")
+public final class UserForgotPasswordModel extends AbstractModel {
 
     @Id
     @GeneratedValue
@@ -21,7 +21,7 @@ public final class ForgotPasswordModel extends AbstractModel {
 
     public boolean used;
 
-    public ForgotPasswordModel() {
+    public UserForgotPasswordModel() {
 
     }
 

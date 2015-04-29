@@ -7,8 +7,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "jophiel_phone")
-public final class PhoneModel extends AbstractModel {
+@Table(name = "jophiel_user_phone")
+public final class UserPhoneModel extends AbstractModel {
 
     @Id
     public long id;
@@ -19,11 +19,11 @@ public final class PhoneModel extends AbstractModel {
 
     public boolean phoneNumberVerified;
 
-    public PhoneModel() {
+    public UserPhoneModel() {
 
     }
 
-    public PhoneModel(long id, String phoneNumber, boolean phoneNumberVerified) {
+    public UserPhoneModel(long id, String phoneNumber, boolean phoneNumberVerified) {
         this.id = id;
         this.phoneNumber = phoneNumber;
         this.phoneNumberVerified = phoneNumberVerified;

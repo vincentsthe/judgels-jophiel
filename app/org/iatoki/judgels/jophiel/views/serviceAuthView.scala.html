@@ -6,7 +6,7 @@
 
 <h2>@Messages.get("auth.authorization")</h2>
 <p>@Messages.get("auth.wantToAuthorize")  @client.getName @Messages.get("auth.inTheseScopes")?</p>
-@b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserController.postServiceAuthRequest(hash)) {
+@b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserAccountController.postServiceAuthRequest(hash)) {
 
     @helper.CSRF.formField
 

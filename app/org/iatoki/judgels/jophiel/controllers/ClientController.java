@@ -9,12 +9,7 @@ import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.commons.controllers.BaseController;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.headingWithActionLayout;
-import org.iatoki.judgels.jophiel.Client;
-import org.iatoki.judgels.jophiel.ClientCreateForm;
-import org.iatoki.judgels.jophiel.ClientNotFoundException;
-import org.iatoki.judgels.jophiel.ClientService;
-import org.iatoki.judgels.jophiel.ClientUpdateForm;
-import org.iatoki.judgels.jophiel.UserService;
+import org.iatoki.judgels.jophiel.*;
 import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.Authorized;
 import org.iatoki.judgels.jophiel.controllers.security.HasRole;
@@ -41,11 +36,11 @@ public final class ClientController extends BaseController {
 
     private static final long PAGE_SIZE = 20;
     private final ClientService clientService;
-    private final UserService userService;
+    private final UserActivityService userActivityService;
 
-    public ClientController(ClientService clientService, UserService userService) {
+    public ClientController(ClientService clientService, UserActivityService userActivityService) {
         this.clientService = clientService;
-        this.userService = userService;
+        this.userActivityService = userActivityService;
     }
 
     public Result index() {
@@ -56,7 +51,7 @@ public final class ClientController extends BaseController {
     public Result createClient() {
         Form<ClientCreateForm> form = Form.form(ClientCreateForm.class);
 
-        ControllerUtils.getInstance().addActivityLog(userService, "Try to create client <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+        ControllerUtils.getInstance().addActivityLog(userActivityService, "Try to create client <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return showCreateClient(form);
     }
@@ -71,7 +66,7 @@ public final class ClientController extends BaseController {
             ClientCreateForm clientCreateForm = form.get();
             clientService.createClient(clientCreateForm.name, clientCreateForm.applicationType, clientCreateForm.scopes, Arrays.asList(clientCreateForm.redirectURIs.split(",")));
 
-            ControllerUtils.getInstance().addActivityLog(userService, "Create client " + clientCreateForm.name + ".");
+            ControllerUtils.getInstance().addActivityLog(userActivityService, "Create client " + clientCreateForm.name + ".");
 
             return redirect(routes.ClientController.index());
         }
@@ -88,7 +83,7 @@ public final class ClientController extends BaseController {
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Client - View");
 
-        ControllerUtils.getInstance().addActivityLog(userService, "View client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+        ControllerUtils.getInstance().addActivityLog(userActivityService, "View client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return ControllerUtils.getInstance().lazyOk(content);
     }
@@ -104,7 +99,7 @@ public final class ClientController extends BaseController {
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "Clients");
 
-        ControllerUtils.getInstance().addActivityLog(userService, "Open all clients <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+        ControllerUtils.getInstance().addActivityLog(userActivityService, "Open all clients <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return ControllerUtils.getInstance().lazyOk(content);
     }
@@ -120,7 +115,7 @@ public final class ClientController extends BaseController {
 
         Form<ClientUpdateForm> form = Form.form(ClientUpdateForm.class).fill(clientUpdateForm);
 
-        ControllerUtils.getInstance().addActivityLog(userService, "Try to update client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+        ControllerUtils.getInstance().addActivityLog(userActivityService, "Try to update client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return showUpdateClient(form, clientId, client.getName());
     }
@@ -135,7 +130,7 @@ public final class ClientController extends BaseController {
             ClientUpdateForm clientUpdateForm = form.get();
             clientService.updateClient(client.getId(), clientUpdateForm.name, clientUpdateForm.scopes, Arrays.asList(clientUpdateForm.redirectURIs.split(",")));
 
-            ControllerUtils.getInstance().addActivityLog(userService, "Update client " + client.getName() + ".");
+            ControllerUtils.getInstance().addActivityLog(userActivityService, "Update client " + client.getName() + ".");
 
             return redirect(routes.ClientController.index());
         }
@@ -145,7 +140,7 @@ public final class ClientController extends BaseController {
         Client client = clientService.findClientById(clientId);
         clientService.deleteClient(client.getId());
 
-        ControllerUtils.getInstance().addActivityLog(userService, "Delete client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+        ControllerUtils.getInstance().addActivityLog(userActivityService, "Delete client " + client.getName() + " <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return redirect(routes.ClientController.index());
     }

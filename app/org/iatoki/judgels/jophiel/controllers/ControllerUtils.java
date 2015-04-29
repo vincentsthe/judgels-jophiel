@@ -9,6 +9,7 @@ import org.iatoki.judgels.commons.views.html.layouts.sidebarLayout;
 import org.iatoki.judgels.commons.views.html.layouts.profileView;
 import org.iatoki.judgels.commons.views.html.layouts.menusLayout;
 import org.iatoki.judgels.jophiel.JophielUtils;
+import org.iatoki.judgels.jophiel.UserActivityService;
 import org.iatoki.judgels.jophiel.UserService;
 import play.i18n.Messages;
 import play.mvc.Http;
@@ -20,7 +21,7 @@ public final class ControllerUtils extends AbstractControllerUtils {
     @Override
     public void appendSidebarLayout(LazyHtml content) {
         ImmutableList.Builder<InternalLink> internalLinkBuilder = ImmutableList.builder();
-        internalLinkBuilder.add(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()));
+        internalLinkBuilder.add(new InternalLink(Messages.get("profile.profile"), routes.UserProfileController.profile()));
         if (JophielUtils.hasRole("admin")) {
             internalLinkBuilder.add(new InternalLink(Messages.get("user.users"), routes.UserController.index()));
             internalLinkBuilder.add(new InternalLink(Messages.get("user.activities"), routes.UserActivityController.index()));
@@ -30,15 +31,15 @@ public final class ControllerUtils extends AbstractControllerUtils {
         LazyHtml sidebarContent = new LazyHtml(profileView.render(
               IdentityUtils.getUsername(),
               IdentityUtils.getUserRealName(),
-              org.iatoki.judgels.jophiel.controllers.routes.UserController.profile().absoluteURL(Http.Context.current().request()),
-              org.iatoki.judgels.jophiel.controllers.routes.UserController.logout().absoluteURL(Http.Context.current().request())
+              org.iatoki.judgels.jophiel.controllers.routes.UserProfileController.profile().absoluteURL(Http.Context.current().request()),
+              org.iatoki.judgels.jophiel.controllers.routes.UserAccountController.logout().absoluteURL(Http.Context.current().request())
         ));
         sidebarContent.appendLayout(c -> menusLayout.render(internalLinkBuilder.build(), c));
         content.appendLayout(c -> sidebarLayout.render(sidebarContent.render(), c));
     }
 
-    public void addActivityLog(UserService userService, String log) {
-        userService.createUserActivity("localhost", IdentityUtils.getUserJid(), System.currentTimeMillis(), log, IdentityUtils.getIpAddress());
+    public void addActivityLog(UserActivityService userActivityService, String log) {
+        userActivityService.createUserActivity("localhost", IdentityUtils.getUserJid(), System.currentTimeMillis(), log, IdentityUtils.getIpAddress());
     }
 
     static ControllerUtils getInstance() {

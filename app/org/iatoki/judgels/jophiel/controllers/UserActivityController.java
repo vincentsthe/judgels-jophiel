@@ -9,10 +9,8 @@ import org.iatoki.judgels.commons.Page;
 import org.iatoki.judgels.commons.controllers.BaseController;
 import org.iatoki.judgels.commons.views.html.layouts.headingLayout;
 import org.iatoki.judgels.commons.views.html.layouts.tabLayout;
-import org.iatoki.judgels.jophiel.ClientService;
-import org.iatoki.judgels.jophiel.User;
+import org.iatoki.judgels.jophiel.*;
 import org.iatoki.judgels.jophiel.commons.UserActivity;
-import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.Authorized;
 import org.iatoki.judgels.jophiel.controllers.security.HasRole;
@@ -32,10 +30,12 @@ public final class UserActivityController extends BaseController {
     private static final long PAGE_SIZE = 20;
     private final ClientService clientService;
     private final UserService userService;
+    private final UserActivityService userActivityService;
 
-    public UserActivityController(ClientService clientService, UserService userService) {
+    public UserActivityController(ClientService clientService, UserService userService, UserActivityService userActivityService) {
         this.clientService = clientService;
         this.userService = userService;
+        this.userActivityService = userActivityService;
     }
 
     @Authenticated({LoggedIn.class, HasRole.class})
@@ -62,7 +62,7 @@ public final class UserActivityController extends BaseController {
             }
         }
 
-        Page<UserActivity> currentPage = userService.pageUsersActivities(page, PAGE_SIZE, orderBy, orderDir, filterString, clientNamesSetBuilder.build(), usernamesSetBuilder.build());
+        Page<UserActivity> currentPage = userActivityService.pageUsersActivities(page, PAGE_SIZE, orderBy, orderDir, filterString, clientNamesSetBuilder.build(), usernamesSetBuilder.build());
 
         LazyHtml content = new LazyHtml(listUsersActivitiesView.render(currentPage, orderBy, orderDir, filterString, clientNames, usernames));
         content.appendLayout(c -> headingLayout.render(Messages.get("user.activity.list"), c));
@@ -72,7 +72,7 @@ public final class UserActivityController extends BaseController {
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "User - Activities");
 
-        ControllerUtils.getInstance().addActivityLog(userService, "Open all user activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+        ControllerUtils.getInstance().addActivityLog(userActivityService, "Open all user activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return ControllerUtils.getInstance().lazyOk(content);
     }
@@ -94,19 +94,19 @@ public final class UserActivityController extends BaseController {
             }
         }
 
-        Page<UserActivity> currentPage = userService.pageUserActivities(page, PAGE_SIZE, orderBy, orderDir, filterString, clientNamesSetBuilder.build(), username);
+        Page<UserActivity> currentPage = userActivityService.pageUserActivities(page, PAGE_SIZE, orderBy, orderDir, filterString, clientNamesSetBuilder.build(), username);
 
         LazyHtml content = new LazyHtml(listOwnActivitiesView.render(currentPage, orderBy, orderDir, filterString, clientNames));
-        content.appendLayout(c -> tabLayout.render(ImmutableList.of(new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()), new InternalLink(Messages.get("profile.activities"), routes.UserActivityController.viewOwnActivities())), c));
+        content.appendLayout(c -> tabLayout.render(ImmutableList.of(new InternalLink(Messages.get("profile.profile"), routes.UserProfileController.profile()), new InternalLink(Messages.get("profile.activities"), routes.UserActivityController.viewOwnActivities())), c));
         content.appendLayout(c -> headingLayout.render("user.activities", c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-              new InternalLink(Messages.get("profile.profile"), routes.UserController.profile()),
+              new InternalLink(Messages.get("profile.profile"), routes.UserProfileController.profile()),
               new InternalLink(Messages.get("user.activities"), routes.UserActivityController.viewOwnActivities())
         ));
         ControllerUtils.getInstance().appendTemplateLayout(content, "User - Activities");
 
-        ControllerUtils.getInstance().addActivityLog(userService, "Open own activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+        ControllerUtils.getInstance().addActivityLog(userActivityService, "Open own activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return ControllerUtils.getInstance().lazyOk(content);
     }
@@ -130,19 +130,19 @@ public final class UserActivityController extends BaseController {
                 }
             }
 
-            Page<UserActivity> currentPage = userService.pageUserActivities(page, PAGE_SIZE, orderBy, orderDir, filterString, clientNamesSetBuilder.build(), username);
+            Page<UserActivity> currentPage = userActivityService.pageUserActivities(page, PAGE_SIZE, orderBy, orderDir, filterString, clientNamesSetBuilder.build(), username);
 
             LazyHtml content = new LazyHtml(listUserActivitiesView.render(username, currentPage, orderBy, orderDir, filterString, clientNames));
-            content.appendLayout(c -> tabLayout.render(ImmutableList.of(new InternalLink(Messages.get("profile.profile"), routes.UserController.viewProfile(username)), new InternalLink(Messages.get("profile.activities"), routes.UserActivityController.viewUserActivities(username))), c));
+            content.appendLayout(c -> tabLayout.render(ImmutableList.of(new InternalLink(Messages.get("profile.profile"), routes.UserProfileController.viewProfile(username)), new InternalLink(Messages.get("profile.activities"), routes.UserActivityController.viewUserActivities(username))), c));
             content.appendLayout(c -> headingLayout.render(username, c));
             ControllerUtils.getInstance().appendSidebarLayout(content);
             ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
-                  new InternalLink(Messages.get("profile.profile"), routes.UserController.viewProfile(username)),
+                  new InternalLink(Messages.get("profile.profile"), routes.UserProfileController.viewProfile(username)),
                   new InternalLink(Messages.get("user.activities"), routes.UserActivityController.viewUserActivities(username))
             ));
             ControllerUtils.getInstance().appendTemplateLayout(content, "User - Activities");
 
-            ControllerUtils.getInstance().addActivityLog(userService, "Open user " + user.getUsername() + " activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
+            ControllerUtils.getInstance().addActivityLog(userActivityService, "Open user " + user.getUsername() + " activities <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
             return ControllerUtils.getInstance().lazyOk(content);
         } else {

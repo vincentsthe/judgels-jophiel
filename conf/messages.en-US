@@ -1,10 +1,14 @@
 user.user=User
 user.users=Users
+user.unverifiedUsers=Unverified Users
 
 user.list=Users
 user.create=Create User
 user.update=Update User
 user.view=View User
+
+user.unverifiedUsers.list=Unverified Users
+user.email.resendVerification=Resend Verification
 
 user.username=Username
 user.name=Name

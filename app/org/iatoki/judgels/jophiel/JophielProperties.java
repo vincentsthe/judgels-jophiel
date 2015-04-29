@@ -2,9 +2,8 @@ package org.iatoki.judgels.jophiel;
 
 import com.amazonaws.services.s3.model.Region;
 import com.google.common.collect.Lists;
+import com.typesafe.config.Config;
 import org.apache.commons.io.FileUtils;
-import play.Configuration;
-import play.Play;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,15 +15,17 @@ public final class JophielProperties {
     private File avatarDir;
     private String baseURL;
     private String idTokenPrivateKey;
-    private String aWSAccessKey;
-    private String aWSSecretKey;
-    private String aWSAvatarBucketName;
-    private Region aWSAvatarBucketRegion;
-    private String aWSAvatarCloudFrontURL;
-    private boolean useAWS;
+    private String awsAvatarAccessKey;
+    private String awsAvatarSecretKey;
+    private String awsAvatarS3BucketName;
+    private Region awsAvatarS3BucketRegion;
+    private String awsAvatarCloudFrontURL;
+    private boolean awsAvatarS3UseKeyCredentials;
+    private boolean awsAvatarUse;
 
     private JophielProperties() {
-
+        awsAvatarS3UseKeyCredentials = false;
+        awsAvatarUse = false;
     }
 
     public File getAvatarDir() {
@@ -39,77 +40,77 @@ public final class JophielProperties {
         return idTokenPrivateKey;
     }
 
-    public String getaWSAccessKey() {
-        if ((useAWS) && (Play.isDev())) {
-            return aWSAccessKey;
+    public String getAwsAvatarAccessKey() {
+        if (awsAvatarUse) {
+            return awsAvatarAccessKey;
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    public String getaWSSecretKey() {
-        if ((useAWS) && (Play.isDev())) {
-            return aWSSecretKey;
+    public String getAwsAvatarSecretKey() {
+        if (awsAvatarUse) {
+            return awsAvatarSecretKey;
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    public String getaWSAvatarBucketName() {
-        if (useAWS) {
-            return aWSAvatarBucketName;
+    public String getAwsAvatarS3BucketName() {
+        if (awsAvatarUse) {
+            return awsAvatarS3BucketName;
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    public Region getaWSAvatarBucketRegion() {
-        if (useAWS) {
-            return aWSAvatarBucketRegion;
+    public Region getAwsAvatarS3BucketRegion() {
+        if (awsAvatarUse) {
+            return awsAvatarS3BucketRegion;
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    public String getaWSAvatarCloudFrontURL() {
-        if (useAWS) {
-            return aWSAvatarCloudFrontURL;
+    public String getAwsAvatarCloudFrontURL() {
+        if (awsAvatarUse) {
+            return awsAvatarCloudFrontURL;
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    public boolean isUseAWS() {
-        return useAWS;
+    public boolean isAwsAvatarUse() {
+        return awsAvatarUse;
     }
 
-    public static JophielProperties getInstance() {
-        if (INSTANCE == null) {
+    public boolean isAwsAvatarS3UseKeyCredentials() {
+        return awsAvatarS3UseKeyCredentials;
+    }
+
+    public synchronized static void buildInstance(Config config) {
+        if (INSTANCE != null) {
+            throw new IllegalStateException();
+        } else {
             INSTANCE = new JophielProperties();
 
-            Configuration conf = Play.application().configuration();
+            verifyConfiguration(config);
 
-            if (Play.isProd()) {
-                verifyConfigurationProd(conf);
-            } else if (Play.isDev()) {
-                verifyConfigurationDev(conf);
+            String baseDirName = config.getString("jophiel.baseDataDir");
 
-                if (INSTANCE.isUseAWS()) {
-                    INSTANCE.aWSAccessKey = conf.getString("aws.access.key");
-                    INSTANCE.aWSSecretKey = conf.getString("aws.secret.key");
+            if (INSTANCE.isAwsAvatarUse()) {
+                if (INSTANCE.isAwsAvatarS3UseKeyCredentials()) {
+                    INSTANCE.awsAvatarAccessKey = config.getString("aws.avatar.s3.key.access");
+                    INSTANCE.awsAvatarSecretKey = config.getString("aws.avatar.s3.key.secret");
                 }
+
+                INSTANCE.awsAvatarS3BucketName = config.getString("aws.avatar.s3.bucketName");
+                INSTANCE.awsAvatarS3BucketRegion = Region.fromValue(config.getString("aws.avatar.s3.bucketRegionId"));
+                INSTANCE.awsAvatarCloudFrontURL = config.getString("aws.avatar.cloudFront.url");
             }
 
-            String baseDirName = conf.getString("jophiel.baseDataDir");
-
-            if (INSTANCE.isUseAWS()) {
-                INSTANCE.aWSAvatarBucketName = conf.getString("aws.avatar.bucket.name");
-                INSTANCE.aWSAvatarBucketRegion = Region.fromValue(conf.getString("aws.avatar.bucket.region.id"));
-                INSTANCE.aWSAvatarCloudFrontURL = conf.getString("aws.avatar.cloudFront.url");
-            }
-
-            INSTANCE.baseURL = conf.getString("jophiel.baseUrl");
-            INSTANCE.idTokenPrivateKey = conf.getString("jophiel.idToken.key.private");
+            INSTANCE.baseURL = config.getString("jophiel.baseUrl");
+            INSTANCE.idTokenPrivateKey = config.getString("jophiel.idToken.key.private");
 
             File baseDir = new File(baseDirName);
             if (!baseDir.isDirectory()) {
@@ -124,49 +125,38 @@ public final class JophielProperties {
             }
 
         }
-        return INSTANCE;
     }
 
-    private static void verifyConfigurationDev(Configuration configuration) {
-        List<String> requiredKeys =  Lists.newArrayList(
-              "jophiel.baseDataDir",
-              "jophiel.baseUrl",
-              "jophiel.idToken.key.private",
-              "aws.use"
-        );
-
-        INSTANCE.useAWS = false;
-        if ((configuration.getBoolean("aws.use") != null) && (configuration.getBoolean("aws.use"))) {
-            INSTANCE.useAWS = true;
-            requiredKeys.add("aws.access.key");
-            requiredKeys.add("aws.secret.key");
-            requiredKeys.add("aws.avatar.bucket.name");
-            requiredKeys.add("aws.avatar.bucket.region.id");
-        }
-
-        for (String key : requiredKeys) {
-            if (configuration.getString(key) == null) {
-                throw new RuntimeException("Missing " + key + " property in conf/application.conf");
-            }
+    public static JophielProperties getInstance() {
+        if (INSTANCE == null) {
+            throw new IllegalStateException();
+        } else {
+            return INSTANCE;
         }
     }
 
-    private static void verifyConfigurationProd(Configuration configuration) {
+    private static void verifyConfiguration(Config config) {
         List<String> requiredKeys = Lists.newArrayList(
               "jophiel.baseDataDir",
               "jophiel.baseUrl",
               "jophiel.idToken.key.private",
-              "aws.use"
+              "aws.avatar.use",
+              "aws.avatar.s3.credentials.useKey"
         );
 
-        if ((configuration.getBoolean("aws.use") != null) && (configuration.getBoolean("aws.use"))) {
-            INSTANCE.useAWS = true;
-            requiredKeys.add("aws.avatar.bucket.name");
-            requiredKeys.add("aws.avatar.bucket.region.id");
+        if (config.getBoolean("aws.avatar.use")) {
+            INSTANCE.awsAvatarUse = true;
+            if (config.getBoolean("aws.avatar.s3.credentials.useKey")) {
+                INSTANCE.awsAvatarS3UseKeyCredentials = true;
+                requiredKeys.add("aws.avatar.s3.key.access");
+                requiredKeys.add("aws.avatar.s3.key.secret");
+            }
+            requiredKeys.add("aws.avatar.s3.bucketName");
+            requiredKeys.add("aws.avatar.s3.bucketRegionId");
         }
 
         for (String key : requiredKeys) {
-            if (configuration.getString(key) == null) {
+            if (config.getString(key) == null) {
                 throw new RuntimeException("Missing " + key + " property in conf/application.conf");
             }
         }

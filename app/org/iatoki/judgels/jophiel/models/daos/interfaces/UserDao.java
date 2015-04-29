@@ -14,7 +14,7 @@ public interface UserDao extends JudgelsDao<UserModel> {
 
     List<String> findUserJidsByFilter(String filterString);
 
-    List<String> sortUserJids(Collection<String> userJids, String sortBy, String order);
+    List<String> sortUserJidsByUserAttribute(Collection<String> userJids, String sortBy, String order);
 
     List<UserModel> findBySetOfUserJids(Collection<String> userJids, long first, long max);
 

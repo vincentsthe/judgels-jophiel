@@ -2,49 +2,55 @@ package org.iatoki.judgels.jophiel;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
-import org.iatoki.judgels.commons.AWSFileSystemProvider;
-import org.iatoki.judgels.commons.FileSystemProvider;
-import org.iatoki.judgels.commons.JudgelsProperties;
-import org.iatoki.judgels.commons.LocalFileSystemProvider;
-import org.iatoki.judgels.jophiel.controllers.ClientController;
-import org.iatoki.judgels.jophiel.controllers.UserActivityController;
-import org.iatoki.judgels.jophiel.controllers.UserController;
+import com.google.common.collect.ImmutableMap;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import org.iatoki.judgels.commons.*;
+import org.iatoki.judgels.jophiel.controllers.*;
 import org.iatoki.judgels.jophiel.controllers.apis.ClientAPIController;
 import org.iatoki.judgels.jophiel.controllers.apis.UserAPIController;
 import org.iatoki.judgels.jophiel.controllers.apis.UserActivityAPIController;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.AccessTokenHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.AuthorizationCodeHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.ClientHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.EmailHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.ForgotPasswordHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.IdTokenHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.RedirectURIHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.RefreshTokenHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.UserActivityHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.hibernate.UserHibernateDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.AccessTokenDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.AuthorizationCodeDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.ClientDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.EmailDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.ForgotPasswordDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.IdTokenDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.RedirectURIDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.RefreshTokenDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.UserActivityDao;
-import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import play.Application;
 import play.Play;
 import play.mvc.Controller;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public final class Global extends org.iatoki.judgels.commons.Global {
 
-    private final Map<Class, Controller> cache;
+    private final Map<Class, Controller> controllerRegistry;
 
     public Global() {
-        cache = new HashMap<>();
+        Config config = ConfigFactory.load();
+        JophielProperties.buildInstance(config);
+
+        FileSystemProvider avatarProvider;
+        if (JophielProperties.getInstance().isAwsAvatarUse()) {
+            AmazonS3Client s3Client;
+            if (JophielProperties.getInstance().isAwsAvatarS3UseKeyCredentials()) {
+                s3Client = new AmazonS3Client(new BasicAWSCredentials(JophielProperties.getInstance().getAwsAvatarAccessKey(), JophielProperties.getInstance().getAwsAvatarSecretKey()));
+            } else {
+                s3Client = new AmazonS3Client();
+            }
+            avatarProvider = new AWSFileSystemProvider(s3Client, JophielProperties.getInstance().getAwsAvatarS3BucketName(), JophielProperties.getInstance().getAwsAvatarCloudFrontURL(), JophielProperties.getInstance().getAwsAvatarS3BucketRegion());
+        } else {
+            avatarProvider = new LocalFileSystemProvider(JophielProperties.getInstance().getAvatarDir());
+        }
+        JophielControllerFactory jophielControllerFactory = new DefaultJophielControllerFactory(new DefaultJophielServiceFactory(new HibernateJophielDaoFactory(), avatarProvider));
+
+        ImmutableMap.Builder<Class, Controller> controllerRegistryBuilder = ImmutableMap.builder();
+        controllerRegistryBuilder.put(ApplicationController.class, jophielControllerFactory.createApplicationController());
+        controllerRegistryBuilder.put(ClientController.class, jophielControllerFactory.createClientController());
+        controllerRegistryBuilder.put(UserAccountController.class, jophielControllerFactory.createUserAccountController());
+        controllerRegistryBuilder.put(UserActivityController.class, jophielControllerFactory.createUserActivityController());
+        controllerRegistryBuilder.put(UserController.class, jophielControllerFactory.createUserController());
+        controllerRegistryBuilder.put(UserEmailController.class, jophielControllerFactory.createUserEmailController());
+        controllerRegistryBuilder.put(UserProfileController.class, jophielControllerFactory.createUserProfileController());
+        controllerRegistryBuilder.put(UserAPIController.class, jophielControllerFactory.createUserAPIController());
+        controllerRegistryBuilder.put(ClientAPIController.class, jophielControllerFactory.createClientAPIController());
+        controllerRegistryBuilder.put(UserActivityAPIController.class, jophielControllerFactory.createUserActivityAPIController());
+
+        controllerRegistry = controllerRegistryBuilder.build();
     }
 
     @Override
@@ -57,83 +63,11 @@ public final class Global extends org.iatoki.judgels.commons.Global {
 
     @Override
     public <A> A getControllerInstance(Class<A> controllerClass) throws Exception {
-        if (!cache.containsKey(controllerClass)) {
-            if (controllerClass.equals(UserController.class)) {
-                UserService userService = createUserService();
-                ClientService clientService = createClientService();
-
-                UserController userController = new UserController(clientService, userService);
-                cache.put(UserController.class, userController);
-            } else if (controllerClass.equals(UserActivityController.class)) {
-                UserService userService = createUserService();
-                ClientService clientService = createClientService();
-
-                UserActivityController userActivityController = new UserActivityController(clientService, userService);
-                cache.put(UserActivityController.class, userActivityController);
-            } else if (controllerClass.equals(ClientController.class)) {
-                UserService userService = createUserService();
-                ClientService clientService = createClientService();
-
-                ClientController clientController = new ClientController(clientService, userService);
-                cache.put(ClientController.class, clientController);
-            } else if (controllerClass.equals(ClientAPIController.class)) {
-                UserService userService = createUserService();
-                ClientService clientService = createClientService();
-
-                ClientAPIController clientAPIController = new ClientAPIController(clientService, userService);
-                cache.put(ClientAPIController.class, clientAPIController);
-            } else if (controllerClass.equals(UserAPIController.class)) {
-                ClientService clientService = createClientService();
-                UserService userService = createUserService();
-
-                UserAPIController userAPIController = new UserAPIController(clientService, userService);
-                cache.put(UserAPIController.class, userAPIController);
-            } else if (controllerClass.equals(UserActivityAPIController.class)) {
-                ClientService clientService = createClientService();
-                UserService userService = createUserService();
-
-                UserActivityAPIController userActivityAPIController = new UserActivityAPIController(clientService, userService);
-                cache.put(UserActivityAPIController.class, userActivityAPIController);
-            }
-        }
-        return controllerClass.cast(cache.get(controllerClass));
-    }
-
-    private UserService createUserService() {
-        UserDao userDao = new UserHibernateDao();
-        EmailDao emailDao = new EmailHibernateDao();
-        ForgotPasswordDao forgotPasswordDao = new ForgotPasswordHibernateDao();
-        UserActivityDao userActivityDao = new UserActivityHibernateDao();
-        ClientDao clientDao = new ClientHibernateDao();
-        FileSystemProvider avatarProvider;
-        if (JophielProperties.getInstance().isUseAWS()) {
-            AmazonS3Client s3Client;
-            if (Play.isProd()) {
-                s3Client = new AmazonS3Client();
-            } else {
-                s3Client = new AmazonS3Client(new BasicAWSCredentials(JophielProperties.getInstance().getaWSAccessKey(), JophielProperties.getInstance().getaWSSecretKey()));
-            }
-            avatarProvider = new AWSFileSystemProvider(s3Client, JophielProperties.getInstance().getaWSAvatarBucketName(), JophielProperties.getInstance().getaWSAvatarCloudFrontURL(), JophielProperties.getInstance().getaWSAvatarBucketRegion());
+        if (!controllerRegistry.containsKey(controllerClass)) {
+            return super.getControllerInstance(controllerClass);
         } else {
-            avatarProvider = new LocalFileSystemProvider(JophielProperties.getInstance().getAvatarDir());
+            return controllerClass.cast(controllerRegistry.get(controllerClass));
         }
-
-        UserService userService = new UserServiceImpl(userDao, emailDao, forgotPasswordDao, userActivityDao, clientDao, avatarProvider);
-
-        return userService;
-    }
-
-    private ClientService createClientService() {
-        ClientDao clientDao = new ClientHibernateDao();
-        RedirectURIDao redirectURIDao = new RedirectURIHibernateDao();
-        AuthorizationCodeDao authorizationCodeDao = new AuthorizationCodeHibernateDao();
-        AccessTokenDao accessTokenDao = new AccessTokenHibernateDao();
-        RefreshTokenDao refreshTokenDao = new RefreshTokenHibernateDao();
-        IdTokenDao idTokenDao = new IdTokenHibernateDao();
-
-        ClientService clientService = new ClientServiceImpl(clientDao, redirectURIDao, authorizationCodeDao, accessTokenDao, refreshTokenDao, idTokenDao);
-
-        return clientService;
     }
 
 }

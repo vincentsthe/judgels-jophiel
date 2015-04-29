@@ -1,5 +1,6 @@
 package org.iatoki.judgels.jophiel;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang3.StringUtils;
 import play.mvc.Http;
 
@@ -10,6 +11,10 @@ public final class JophielUtils {
 
     private JophielUtils() {
         // prevent instantiation
+    }
+
+    public static List<String> getDefaultRoles() {
+        return ImmutableList.of("user");
     }
 
     public static void saveRoleInSession(List<String> roles) {

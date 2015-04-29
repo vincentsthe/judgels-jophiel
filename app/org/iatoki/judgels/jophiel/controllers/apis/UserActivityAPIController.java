@@ -3,10 +3,7 @@ package org.iatoki.judgels.jophiel.controllers.apis;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.codec.binary.Base64;
-import org.iatoki.judgels.jophiel.AccessToken;
-import org.iatoki.judgels.jophiel.ClientService;
-import org.iatoki.judgels.jophiel.User;
-import org.iatoki.judgels.jophiel.UserService;
+import org.iatoki.judgels.jophiel.*;
 import org.iatoki.judgels.jophiel.commons.UserActivity;
 import play.data.DynamicForm;
 import play.db.jpa.Transactional;
@@ -18,10 +15,12 @@ public final class UserActivityAPIController extends Controller {
 
     private final ClientService clientService;
     private final UserService userService;
+    private final UserActivityService userActivityService;
 
-    public UserActivityAPIController(ClientService clientService, UserService userService) {
+    public UserActivityAPIController(ClientService clientService, UserService userService, UserActivityService userActivityService) {
         this.clientService = clientService;
         this.userService = userService;
+        this.userActivityService = userActivityService;
     }
 
     @Transactional
@@ -42,7 +41,7 @@ public final class UserActivityAPIController extends Controller {
             JsonNode jsonNode = Json.parse(userActivitiesString);
             for (int i=0;i<jsonNode.size();++i) {
                 UserActivity userActivity = Json.fromJson(jsonNode.get(i), UserActivity.class);
-                userService.createUserActivity(accessToken.getClientJid(), user.getJid(), userActivity.getTime(), userActivity.getLog(), userActivity.getIpAddress());
+                userActivityService.createUserActivity(accessToken.getClientJid(), user.getJid(), userActivity.getTime(), userActivity.getLog(), userActivity.getIpAddress());
             }
 
             ObjectNode result = Json.newObject();

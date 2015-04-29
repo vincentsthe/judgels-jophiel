@@ -69,7 +69,7 @@ public final class UserHibernateDao extends AbstractJudgelsHibernateDao<UserMode
     }
 
     @Override
-    public List<String> sortUserJids(Collection<String> userJids, String sortBy, String order) {
+    public List<String> sortUserJidsByUserAttribute(Collection<String> userJids, String sortBy, String order) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
         CriteriaQuery<String> query = cb.createQuery(String.class);
         Root<UserModel> root = query.from(UserModel.class);

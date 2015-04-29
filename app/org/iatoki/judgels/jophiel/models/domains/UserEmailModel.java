@@ -9,8 +9,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "jophiel_email")
-public final class EmailModel extends AbstractModel {
+@Table(name = "jophiel_user_email")
+public final class UserEmailModel extends AbstractModel {
 
     @Id
     @GeneratedValue
@@ -25,23 +25,23 @@ public final class EmailModel extends AbstractModel {
 
     public String emailCode;
 
-    public EmailModel() {
+    public UserEmailModel() {
 
     }
 
-    public EmailModel(String email, String emailCode) {
+    public UserEmailModel(String email, String emailCode) {
         this.email = email;
         this.emailVerified = false;
         this.emailCode = emailCode;
     }
 
-    public EmailModel(long id, String userJid, String email) {
+    public UserEmailModel(long id, String userJid, String email) {
         this.id = id;
         this.userJid = userJid;
         this.email = email;
     }
 
-    public EmailModel(String email, boolean emailVerified) {
+    public UserEmailModel(String email, boolean emailVerified) {
         this.email = email;
         this.emailVerified = emailVerified;
     }

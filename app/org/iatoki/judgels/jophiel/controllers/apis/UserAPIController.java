@@ -13,6 +13,7 @@ import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.IdToken;
 import org.iatoki.judgels.jophiel.RefreshToken;
 import org.iatoki.judgels.jophiel.User;
+import org.iatoki.judgels.jophiel.UserProfileService;
 import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
@@ -42,10 +43,12 @@ public final class UserAPIController extends Controller {
 
     private final ClientService clientService;
     private final UserService userService;
+    private final UserProfileService userProfileService;
 
-    public UserAPIController(ClientService clientService, UserService userService) {
+    public UserAPIController(ClientService clientService, UserService userService, UserProfileService userProfileService) {
         this.clientService = clientService;
         this.userService = userService;
+        this.userProfileService = userProfileService;
     }
 
     public Result preUserAutocompleteList() {
@@ -276,7 +279,7 @@ public final class UserAPIController extends Controller {
     public Result renderAvatarImage(String imageName) {
         response().setHeader("Cache-Control", "no-transform,public,max-age=300,s-maxage=900");
 
-        String avatarURL = userService.getAvatarImageUrlString(imageName);
+        String avatarURL = userProfileService.getAvatarImageUrlString(imageName);
         try {
             new URL(avatarURL);
             return temporaryRedirect(avatarURL);
