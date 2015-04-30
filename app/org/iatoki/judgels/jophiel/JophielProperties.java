@@ -1,164 +1,197 @@
 package org.iatoki.judgels.jophiel;
 
 import com.amazonaws.services.s3.model.Region;
-import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public final class JophielProperties {
     private static JophielProperties INSTANCE;
 
-    private File avatarDir;
-    private String baseURL;
+    private final Config config;
+
+    private String jophielBaseUrl;
+    private File jophielBaseDataDir;
+
     private String idTokenPrivateKey;
-    private String awsAvatarAccessKey;
-    private String awsAvatarSecretKey;
-    private String awsAvatarS3BucketName;
-    private Region awsAvatarS3BucketRegion;
-    private String awsAvatarCloudFrontURL;
-    private boolean awsAvatarS3UseKeyCredentials;
-    private boolean awsAvatarUse;
 
-    private JophielProperties() {
-        awsAvatarS3UseKeyCredentials = false;
-        awsAvatarUse = false;
-    }
+    private String noreplyName;
+    private String noreplyEmail;
 
-    public File getAvatarDir() {
-        return avatarDir;
-    }
+    private boolean avatarUsingAWSS3;
+    private File avatarLocalDir;
+    private boolean avatarAWSUsingKeys;
+    private String avatarAWSAccessKey;
+    private String avatarAWSSecretKey;
+    private String avatarAWSS3BucketName;
+    private Region avatarAWSS3BucketRegion;
+    private String avatarAWSCloudFrontUrl;
 
-    public String getBaseURL() {
-        return baseURL;
+    public String getJophielBaseUrl() {
+        return jophielBaseUrl;
     }
 
     public String getIdTokenPrivateKey() {
         return idTokenPrivateKey;
     }
 
-    public String getAwsAvatarAccessKey() {
-        if (awsAvatarUse) {
-            return awsAvatarAccessKey;
-        } else {
-            throw new UnsupportedOperationException();
+    public String getNoreplyName() {
+        return noreplyName;
+    }
+
+    public String getNoreplyEmail() {
+        return noreplyEmail;
+    }
+
+    public boolean isAvatarUsingAWSS3() {
+        return avatarUsingAWSS3;
+    }
+
+    public File getAvatarLocalDir() {
+        if (isAvatarUsingAWSS3()) {
+            throw new UnsupportedOperationException("Avatar is using AWS S3");
         }
+        return avatarLocalDir;
     }
 
-    public String getAwsAvatarSecretKey() {
-        if (awsAvatarUse) {
-            return awsAvatarSecretKey;
-        } else {
-            throw new UnsupportedOperationException();
+    public String getAvatarAWSAccessKey() {
+        if (!isAvatarUsingAWSS3()) {
+            throw new UnsupportedOperationException("Avatar is not using AWS S3");
         }
+        return avatarAWSAccessKey;
     }
 
-    public String getAwsAvatarS3BucketName() {
-        if (awsAvatarUse) {
-            return awsAvatarS3BucketName;
-        } else {
-            throw new UnsupportedOperationException();
+    public String getAvatarAWSSecretKey() {
+        if (!isAvatarUsingAWSS3()) {
+            throw new UnsupportedOperationException("Avatar is not using AWS S3");
         }
+        return avatarAWSSecretKey;
     }
 
-    public Region getAwsAvatarS3BucketRegion() {
-        if (awsAvatarUse) {
-            return awsAvatarS3BucketRegion;
-        } else {
-            throw new UnsupportedOperationException();
+    public String getAvatarAWSS3BucketName() {
+        if (!isAvatarUsingAWSS3()) {
+            throw new UnsupportedOperationException("Avatar is not using AWS S3");
         }
+        return avatarAWSS3BucketName;
     }
 
-    public String getAwsAvatarCloudFrontURL() {
-        if (awsAvatarUse) {
-            return awsAvatarCloudFrontURL;
-        } else {
-            throw new UnsupportedOperationException();
+    public Region getAvatarAWSS3BucketRegion() {
+        if (!isAvatarUsingAWSS3()) {
+            throw new UnsupportedOperationException("Avatar is not using AWS S3");
         }
+        return avatarAWSS3BucketRegion;
     }
 
-    public boolean isAwsAvatarUse() {
-        return awsAvatarUse;
+    public boolean isAvatarAWSUsingKeys() {
+        if (!isAvatarUsingAWSS3()) {
+            throw new UnsupportedOperationException("Avatar is not using AWS S3");
+        }
+        return avatarAWSUsingKeys;
     }
 
-    public boolean isAwsAvatarS3UseKeyCredentials() {
-        return awsAvatarS3UseKeyCredentials;
+    public String getAvatarAWSCloudFrontUrl() {
+        if (!isAvatarUsingAWSS3()) {
+            throw new UnsupportedOperationException("Avatar is not using AWS S3");
+        }
+        return avatarAWSCloudFrontUrl;
     }
 
-    public synchronized static void buildInstance(Config config) {
+    private JophielProperties(Config config) {
+        this.config = config;
+    }
+
+    public static synchronized void buildInstance(Config config) {
         if (INSTANCE != null) {
-            throw new IllegalStateException();
-        } else {
-            INSTANCE = new JophielProperties();
-
-            verifyConfiguration(config);
-
-            String baseDirName = config.getString("jophiel.baseDataDir");
-
-            if (INSTANCE.isAwsAvatarUse()) {
-                if (INSTANCE.isAwsAvatarS3UseKeyCredentials()) {
-                    INSTANCE.awsAvatarAccessKey = config.getString("aws.avatar.s3.key.access");
-                    INSTANCE.awsAvatarSecretKey = config.getString("aws.avatar.s3.key.secret");
-                }
-
-                INSTANCE.awsAvatarS3BucketName = config.getString("aws.avatar.s3.bucketName");
-                INSTANCE.awsAvatarS3BucketRegion = Region.fromValue(config.getString("aws.avatar.s3.bucketRegionId"));
-                INSTANCE.awsAvatarCloudFrontURL = config.getString("aws.avatar.cloudFront.url");
-            }
-
-            INSTANCE.baseURL = config.getString("jophiel.baseUrl");
-            INSTANCE.idTokenPrivateKey = config.getString("jophiel.idToken.key.private");
-
-            File baseDir = new File(baseDirName);
-            if (!baseDir.isDirectory()) {
-                throw new RuntimeException("jophiel.baseDataDir: " + baseDirName + " does not exist");
-            }
-
-            try {
-                INSTANCE.avatarDir = new File(baseDir, "avatar");
-                FileUtils.forceMkdir(INSTANCE.avatarDir);
-            } catch (IOException e) {
-                throw new RuntimeException("Cannot create folder inside " + baseDir.getAbsolutePath());
-            }
-
+            throw new UnsupportedOperationException("JophielProperties instance has already been built");
         }
+
+        INSTANCE = new JophielProperties(config);
+        INSTANCE.build();
     }
 
     public static JophielProperties getInstance() {
         if (INSTANCE == null) {
-            throw new IllegalStateException();
+            throw new UnsupportedOperationException("JophielProperties instance has not been built");
+        }
+        return INSTANCE;
+    }
+
+    private void build() {
+        jophielBaseUrl = requireStringValue("jophiel.baseUrl");
+        jophielBaseDataDir = requireDirectoryValue("jophiel.baseDataDir");
+
+        idTokenPrivateKey = requireStringValue("jophiel.idToken.key.private");
+
+        noreplyName = requireStringValue("noreply.name");
+        noreplyEmail = requireStringValue("noreply.email");
+
+        requireStringValue("smtp.host");
+        requireIntegerValue("smtp.port");
+        requireStringValue("smtp.ssl");
+        requireStringValue("smtp.user");
+        requireStringValue("smtp.password");
+
+        avatarUsingAWSS3 = requireBooleanValue("aws.avatar.s3.use");
+
+        if (avatarUsingAWSS3) {
+            avatarAWSUsingKeys = requireBooleanValue("aws.avatar.key.use");
+            avatarAWSAccessKey = requireStringValue("aws.avatar.key.access");
+            avatarAWSSecretKey = requireStringValue("aws.avatar.key.secret");
+            avatarAWSS3BucketName = requireStringValue("aws.avatar.s3.bucket.name");
+            avatarAWSS3BucketRegion = Region.fromValue(requireStringValue("aws.avatar.s3.bucket.regionId"));
+            avatarAWSCloudFrontUrl = requireStringValue("aws.avatar.cloudFront.baseUrl");
         } else {
-            return INSTANCE;
+            try {
+                avatarLocalDir = new File(jophielBaseDataDir, "avatar");
+                FileUtils.forceMkdir(avatarLocalDir);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    private static void verifyConfiguration(Config config) {
-        List<String> requiredKeys = Lists.newArrayList(
-              "jophiel.baseDataDir",
-              "jophiel.baseUrl",
-              "jophiel.idToken.key.private",
-              "aws.avatar.use",
-              "aws.avatar.s3.credentials.useKey"
-        );
-
-        if (config.getBoolean("aws.avatar.use")) {
-            INSTANCE.awsAvatarUse = true;
-            if (config.getBoolean("aws.avatar.s3.credentials.useKey")) {
-                INSTANCE.awsAvatarS3UseKeyCredentials = true;
-                requiredKeys.add("aws.avatar.s3.key.access");
-                requiredKeys.add("aws.avatar.s3.key.secret");
-            }
-            requiredKeys.add("aws.avatar.s3.bucketName");
-            requiredKeys.add("aws.avatar.s3.bucketRegionId");
+    private String getStringValue(String key) {
+        if (!config.hasPath(key)) {
+            return null;
         }
+        return config.getString(key);
+    }
 
-        for (String key : requiredKeys) {
-            if (config.getString(key) == null) {
-                throw new RuntimeException("Missing " + key + " property in conf/application.conf");
-            }
+    private String requireStringValue(String key) {
+        return config.getString(key);
+    }
+
+    private Integer getIntegerValue(String key) {
+        if (!config.hasPath(key)) {
+            return null;
         }
+        return config.getInt(key);
+    }
+
+    private int requireIntegerValue(String key) {
+        return config.getInt(key);
+    }
+
+    private Boolean getBooleanValue(String key) {
+        if (!config.hasPath(key)) {
+            return null;
+        }
+        return config.getBoolean(key);
+    }
+
+    private boolean requireBooleanValue(String key) {
+        return config.getBoolean(key);
+    }
+
+    private File requireDirectoryValue(String key) {
+        String filename = config.getString(key);
+
+        File dir = new File(filename);
+        if (!dir.isDirectory()) {
+            throw new IllegalStateException("Directory " + dir.getAbsolutePath() + " does not exist");
+        }
+        return dir;
     }
 }
