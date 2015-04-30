@@ -17,6 +17,7 @@ import play.mvc.Controller;
 import java.util.Map;
 
 public final class Global extends org.iatoki.judgels.commons.Global {
+    private static final String CONF_LOCATION = "conf/application.conf";
 
     private final Map<Class, Controller> controllerRegistry;
 
@@ -56,7 +57,7 @@ public final class Global extends org.iatoki.judgels.commons.Global {
     @Override
     public void onStart(Application application) {
         org.iatoki.judgels.jophiel.BuildInfo$ buildInfo = org.iatoki.judgels.jophiel.BuildInfo$.MODULE$;
-        JudgelsProperties.buildInstance(buildInfo.name(), buildInfo.version());
+        JudgelsProperties.buildInstance(buildInfo.name(), buildInfo.version(), Play.application().configuration(), CONF_LOCATION);
 
         super.onStart(application);
     }
