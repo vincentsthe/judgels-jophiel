@@ -16,9 +16,13 @@ import play.mvc.Controller;
 import java.util.Map;
 
 public final class Global extends org.iatoki.judgels.commons.Global {
-    private final Map<Class<?>, Controller> controllersRegistry;
+    private Map<Class<?>, Controller> controllersRegistry;
 
-    public Global() {
+    @Override
+    public void onStart(Application application) {
+        org.iatoki.judgels.jophiel.BuildInfo$ buildInfo = org.iatoki.judgels.jophiel.BuildInfo$.MODULE$;
+        JudgelsProperties.buildInstance(buildInfo.name(), buildInfo.version(), ConfigFactory.load());
+
         Config config = ConfigFactory.load();
         JophielProperties.buildInstance(config);
 
@@ -48,12 +52,6 @@ public final class Global extends org.iatoki.judgels.commons.Global {
                 .put(ClientAPIController.class, jophielControllerFactory.createClientAPIController())
                 .put(UserActivityAPIController.class, jophielControllerFactory.createUserActivityAPIController())
                 .build();
-    }
-
-    @Override
-    public void onStart(Application application) {
-        org.iatoki.judgels.jophiel.BuildInfo$ buildInfo = org.iatoki.judgels.jophiel.BuildInfo$.MODULE$;
-        JudgelsProperties.buildInstance(buildInfo.name(), buildInfo.version(), ConfigFactory.load());
 
         super.onStart(application);
     }
