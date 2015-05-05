@@ -175,7 +175,7 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUser(long userId, String username, String name, String email, List<String> roles) throws UserNotFoundException{
+    public void updateUser(long userId, String username, String name, String email, List<String> roles) throws UserNotFoundException {
         UserModel userModel = userDao.findById(userId);
         if (userModel != null) {
             UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
@@ -195,20 +195,24 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUser(long userId, String username, String name, String email, String password, List<String> roles) {
+    public void updateUser(long userId, String username, String name, String email, String password, List<String> roles) throws UserNotFoundException {
         UserModel userModel = userDao.findById(userId);
-        UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
+        if (userModel != null) {
+            UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
 
-        userModel.username = username;
-        userModel.name = name;
-        userModel.password = JudgelsUtils.hashSHA256(password);
-        userModel.roles = StringUtils.join(roles, ",");
+            userModel.username = username;
+            userModel.name = name;
+            userModel.password = JudgelsUtils.hashSHA256(password);
+            userModel.roles = StringUtils.join(roles, ",");
 
-        userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+            userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
 
-        emailModel.email = email;
+            emailModel.email = email;
 
-        userEmailDao.edit(emailModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+            userEmailDao.edit(emailModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+        } else {
+            throw new UserNotFoundException("User not found.");
+        }
     }
 
     @Override

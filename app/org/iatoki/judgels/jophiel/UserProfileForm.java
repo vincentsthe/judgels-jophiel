@@ -7,4 +7,7 @@ public final class UserProfileForm {
     @Constraints.Required
     public String name;
 
+    public String password;
+
+    public String confirmPassword;
 }

@@ -119,7 +119,17 @@ public final class UserProfileController extends BaseController {
             return showProfile(form, form2, continueUrl);
         } else {
             UserProfileForm userProfileForm = form.get();
-            userProfileService.updateProfile(IdentityUtils.getUserJid(), userProfileForm.name);
+
+            if (!"".equals(userProfileForm.password)) {
+                if (!userProfileForm.password.equals(userProfileForm.confirmPassword)) {
+                    Form<UserProfilePictureForm> form2 = Form.form(UserProfilePictureForm.class);
+                    form.reject("profile.error.passwordsDidntMatch");
+                    return showProfile(form, form2, continueUrl);
+                }
+                userProfileService.updateProfile(IdentityUtils.getUserJid(), userProfileForm.name, userProfileForm.password);
+            } else {
+                userProfileService.updateProfile(IdentityUtils.getUserJid(), userProfileForm.name);
+            }
 
             ControllerUtils.getInstance().addActivityLog(userActivityService, "Update profile.");
             if (continueUrl == null) {

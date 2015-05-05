@@ -28,7 +28,7 @@ public interface UserService {
 
     void updateUser(long userId, String username, String name, String email, List<String> roles) throws UserNotFoundException;
 
-    void updateUser(long userId, String username, String name, String email, String password, List<String> roles);
+    void updateUser(long userId, String username, String name, String email, String password, List<String> roles)  throws UserNotFoundException;
 
     void deleteUser(long userId);
 }

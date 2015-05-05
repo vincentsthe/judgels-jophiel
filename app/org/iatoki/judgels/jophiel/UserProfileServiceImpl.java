@@ -42,6 +42,16 @@ public final class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
+    public void updateProfile(String userJid, String name, String password) {
+        UserModel userModel = userDao.findByJid(userJid);
+        userModel.name = name;
+        userModel.password = JudgelsUtils.hashSHA256(password);
+
+        userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+        Http.Context.current().session().put("name", userModel.name);
+    }
+
+    @Override
     public String updateProfilePicture(String userJid, File imageFile, String extension) throws IOException {
         String newImageName = IdentityUtils.getUserJid() + "-" + JudgelsUtils.hashMD5(UUID.randomUUID().toString()) + "." + extension;
         List<String> filePath = ImmutableList.of(newImageName);
