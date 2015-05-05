@@ -55,15 +55,15 @@ public final class UserController extends BaseController {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result listUsers(long page, String orderBy, String orderDir, String filterString) {
-        Page<User> currentPage = userService.pageUsers(page, PAGE_SIZE, orderBy, orderDir, filterString);
+    public Result listUsers(long pageIndex, String orderBy, String orderDir, String filterString) {
+        Page<User> currentPage = userService.pageUsers(pageIndex, PAGE_SIZE, orderBy, orderDir, filterString);
 
         LazyHtml content = new LazyHtml(listUsersView.render(currentPage, orderBy, orderDir, filterString));
-        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("commons.create"), routes.UserController.createUser()), c));
         content.appendLayout(c -> tabLayout.render(ImmutableList.of(
               new InternalLink(Messages.get("user.users"), routes.UserController.index()),
               new InternalLink(Messages.get("user.unverifiedUsers"), routes.UserController.viewUnverifiedUsers())
         ), c));
+        content.appendLayout(c -> headingWithActionLayout.render(Messages.get("user.list"), new InternalLink(Messages.get("commons.create"), routes.UserController.createUser()), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
               new InternalLink(Messages.get("user.users"), routes.UserController.index())
@@ -83,15 +83,15 @@ public final class UserController extends BaseController {
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
     @Authorized(value = {"admin"})
-    public Result listUnverifiedUsers(long page, String orderBy, String orderDir, String filterString) {
-        Page<User> currentPage = userService.pageUnverifiedUsers(page, PAGE_SIZE, orderBy, orderDir, filterString);
+    public Result listUnverifiedUsers(long pageIndex, String orderBy, String orderDir, String filterString) {
+        Page<User> currentPage = userService.pageUnverifiedUsers(pageIndex, PAGE_SIZE, orderBy, orderDir, filterString);
 
         LazyHtml content = new LazyHtml(listUnverifiedUsersView.render(currentPage, orderBy, orderDir, filterString));
-        content.appendLayout(c -> headingLayout.render(Messages.get("user.unverifiedUsers.list"), c));
         content.appendLayout(c -> tabLayout.render(ImmutableList.of(
               new InternalLink(Messages.get("user.users"), routes.UserController.index()),
               new InternalLink(Messages.get("user.unverifiedUsers"), routes.UserController.viewUnverifiedUsers())
         ), c));
+        content.appendLayout(c -> headingLayout.render(Messages.get("user.unverifiedUsers.list"), c));
         ControllerUtils.getInstance().appendSidebarLayout(content);
         ControllerUtils.getInstance().appendBreadcrumbsLayout(content, ImmutableList.of(
               new InternalLink(Messages.get("user.unverifiedUsers"), routes.UserController.viewUnverifiedUsers())

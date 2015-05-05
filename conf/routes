@@ -12,7 +12,7 @@ GET            /vassets/*file                                   controllers.Asse
 GET            /users                                           @org.iatoki.judgels.jophiel.controllers.UserController.index()
 GET            /users/                                          @org.iatoki.judgels.jophiel.controllers.UserController.listUsers(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "")
 GET            /users/unverified                                @org.iatoki.judgels.jophiel.controllers.UserController.viewUnverifiedUsers()
-GET            /users/unverified                                @org.iatoki.judgels.jophiel.controllers.UserController.listUnverifiedUsers(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "")
+GET            /users/unverified/                               @org.iatoki.judgels.jophiel.controllers.UserController.listUnverifiedUsers(pageIndex: Long ?= 0, orderBy ?= "id", orderDir ?= "asc", filterString ?= "")
 GET            /users/create                                    @org.iatoki.judgels.jophiel.controllers.UserController.createUser()
 POST           /users/create                                    @org.iatoki.judgels.jophiel.controllers.UserController.postCreateUser()
 GET            /users/$uId<[0-9]{1,18}>/view                    @org.iatoki.judgels.jophiel.controllers.UserController.viewUser(uId: Long)
