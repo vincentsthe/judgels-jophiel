@@ -244,23 +244,31 @@ public final class UserAccountController extends BaseController {
                 Logger.error(form.errors().toString());
                 return showLogin(form, continueUrl);
             } else {
-                LoginForm loginData = form.get();
-                User user = userAccountService.login(loginData.usernameOrEmail, loginData.password);
-                if (user != null) {
-                    // TODO add expiry time and remember me options
-                    session("userJid", user.getJid());
-                    session("username", user.getUsername());
-                    session("name", user.getName());
-                    session("avatar", user.getProfilePictureUrl().toString());
-                    JophielUtils.saveRoleInSession(user.getRoles());
-                    ControllerUtils.getInstance().addActivityLog(userActivityService, "Logged In.");
-                    if (continueUrl == null) {
-                        return redirect(routes.UserProfileController.profile());
+                try {
+                    LoginForm loginData = form.get();
+                    User user = userAccountService.login(loginData.usernameOrEmail, loginData.password);
+                    if (user != null) {
+                        // TODO add expiry time and remember me options
+                        session("userJid", user.getJid());
+                        session("username", user.getUsername());
+                        session("name", user.getName());
+                        session("avatar", user.getProfilePictureUrl().toString());
+                        JophielUtils.saveRoleInSession(user.getRoles());
+                        ControllerUtils.getInstance().addActivityLog(userActivityService, "Logged In.");
+                        if (continueUrl == null) {
+                            return redirect(routes.UserProfileController.profile());
+                        } else {
+                            return redirect(continueUrl);
+                        }
                     } else {
-                        return redirect(continueUrl);
+                        form.reject("login.error.usernameOrEmailOrPasswordInvalid");
+                        return showLogin(form, continueUrl);
                     }
-                } else {
+                } catch (UserNotFoundException e) {
                     form.reject("login.error.usernameOrEmailOrPasswordInvalid");
+                    return showLogin(form, continueUrl);
+                } catch (EmailNotVerifiedException e) {
+                    form.reject("login.error.emailNotVerified");
                     return showLogin(form, continueUrl);
                 }
             }

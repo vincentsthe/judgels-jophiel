@@ -63,6 +63,7 @@ login.dontHaveAccount=Don''t have account?
 login.register=Register here
 login.forgotPassword=Forgot Password?
 login.error.usernameOrEmailOrPasswordInvalid=Invalid username or password
+login.error.emailNotVerified=Email is not verified
 
 register.registerNewAccount=Register New Account
 register.register=Register

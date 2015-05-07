@@ -86,7 +86,7 @@ public final class UserAccountServiceImpl implements UserAccountService {
     }
 
     @Override
-    public User login(String usernameOrEmail, String password) {
+    public User login(String usernameOrEmail, String password) throws UserNotFoundException, EmailNotVerifiedException{
         try {
             UserModel userModel;
             UserEmailModel emailModel;
@@ -97,16 +97,20 @@ public final class UserAccountServiceImpl implements UserAccountService {
                 emailModel = userEmailDao.findByEmail(usernameOrEmail);
                 userModel = userDao.findByJid(emailModel.userJid);
             } else {
-                return null;
+                throw new UserNotFoundException();
             }
 
-            if ((userModel != null) && (userModel.password.equals(JudgelsUtils.hashSHA256(password))) && (emailModel.emailVerified)) {
-                return createUserFromModels(userModel, emailModel);
+            if (userModel.password.equals(JudgelsUtils.hashSHA256(password))) {
+                if (emailModel.emailVerified) {
+                    return createUserFromModels(userModel, emailModel);
+                } else {
+                    throw new EmailNotVerifiedException();
+                }
             } else {
                 return null;
             }
         } catch (NoResultException e) {
-            return null;
+            throw new UserNotFoundException();
         }
     }
 
