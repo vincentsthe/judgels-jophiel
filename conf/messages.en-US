@@ -8,7 +8,8 @@ user.update=Update User
 user.view=View User
 
 user.unverifiedUsers.list=Unverified Users
-user.email.resendVerification=Resend Verification
+user.email.resendVerification=Resend
+user.email.activate=Activate
 
 user.username=Username
 user.name=Name

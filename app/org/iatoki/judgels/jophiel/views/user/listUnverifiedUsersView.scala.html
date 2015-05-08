@@ -29,6 +29,7 @@
                 <td>@user.getEmail</td>
                 <td class="text-center">
                     <a href="@routes.UserEmailController.resendEmailVerification(user.getId)" class="btn btn-primary btn-sm">@Messages.get("user.email.resendVerification")</a>
+                    <a href="@routes.UserEmailController.activateMainEmail(user.getId)" class="btn btn-primary btn-sm">@Messages.get("user.email.activate")</a>
                 </td>
             </tr>
         }

@@ -66,6 +66,7 @@ POST           /serviceProfile/avatar/:continueUrl              @org.iatoki.judg
 
 GET            /verifyEmail/:code                               @org.iatoki.judgels.jophiel.controllers.UserEmailController.verifyEmail(code: String)
 GET            /users/$uId<[0-9]{1,18}>/resendEmail             @org.iatoki.judgels.jophiel.controllers.UserEmailController.resendEmailVerification(uId: Long)
+GET            /users/$uId<[0-9]{1,18}>/activateMainEmail       @org.iatoki.judgels.jophiel.controllers.UserEmailController.activateMainEmail(uId: Long)
 
 POST           /token                                           @org.iatoki.judgels.jophiel.controllers.apis.UserAPIController.token()
 GET            /userinfo                                        @org.iatoki.judgels.jophiel.controllers.apis.UserAPIController.userInfo()

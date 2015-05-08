@@ -50,4 +50,18 @@ public final class UserEmailController extends BaseController {
             return forbidden();
         }
     }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    @Authorized(value = {"admin"})
+    public Result activateMainEmail(long userId) throws UserNotFoundException {
+        User user = userService.findUserById(userId);
+        if (userEmailService.isEmailNotVerified(user.getJid())) {
+            String code = userEmailService.getEmailCodeOfUnverifiedEmail(user.getJid());
+            userEmailService.activateEmail(code);
+
+            return redirect(routes.UserController.viewUnverifiedUsers());
+        } else {
+            return forbidden();
+        }
+    }
 }
