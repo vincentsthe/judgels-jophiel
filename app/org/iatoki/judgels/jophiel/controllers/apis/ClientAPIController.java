@@ -5,7 +5,7 @@ import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.User;
-import org.iatoki.judgels.jophiel.AutoComplete;
+import org.iatoki.judgels.commons.AutoComplete;
 import org.iatoki.judgels.jophiel.UserService;
 import org.iatoki.judgels.jophiel.controllers.security.Authenticated;
 import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;

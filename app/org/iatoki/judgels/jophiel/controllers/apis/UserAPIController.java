@@ -7,7 +7,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.jophiel.AccessToken;
-import org.iatoki.judgels.jophiel.AutoComplete;
+import org.iatoki.judgels.commons.AutoComplete;
 import org.iatoki.judgels.jophiel.Client;
 import org.iatoki.judgels.jophiel.ClientService;
 import org.iatoki.judgels.jophiel.IdToken;
@@ -63,6 +63,7 @@ public final class UserAPIController extends Controller {
     @Transactional
     public Result userAutoCompleteList() {
         response().setHeader("Access-Control-Allow-Origin", "*");
+        response().setContentType("application/javascript");
 
         DynamicForm form = DynamicForm.form().bindFromRequest();
         User user = userService.findUserByUserJid(IdentityUtils.getUserJid());
