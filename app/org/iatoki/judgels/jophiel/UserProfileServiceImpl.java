@@ -6,7 +6,6 @@ import org.iatoki.judgels.commons.IdentityUtils;
 import org.iatoki.judgels.commons.JudgelsUtils;
 import org.iatoki.judgels.jophiel.models.daos.interfaces.UserDao;
 import org.iatoki.judgels.jophiel.models.domains.UserModel;
-import play.api.Play;
 import play.mvc.Http;
 
 import java.io.File;
@@ -24,7 +23,7 @@ public final class UserProfileServiceImpl implements UserProfileService {
         this.avatarFileProvider = avatarFileProvider;
         if (!avatarFileProvider.fileExists(ImmutableList.of("avatar-default.png"))) {
             try {
-                avatarFileProvider.uploadFile(ImmutableList.of(), Play.getFile("default-assets/avatar-default.png", Play.current()), "avatar-default.png");
+                avatarFileProvider.uploadFileFromStream(ImmutableList.of(), getClass().getResourceAsStream("/public/images/avatar/avatar-default.png"), "avatar-default.png");
                 avatarFileProvider.makeFilePublic(ImmutableList.of("avatar-default.png"));
             } catch (IOException e) {
                 throw new IllegalStateException("Cannot create default avatar.");
