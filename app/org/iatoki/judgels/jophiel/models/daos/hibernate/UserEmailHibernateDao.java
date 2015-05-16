@@ -34,26 +34,25 @@ public final class UserEmailHibernateDao extends AbstractHibernateDao<Long, User
     }
 
     @Override
-    public boolean isExistNotVerifiedByUserJid(String userJid) {
+    public boolean isExistNotVerifiedByEmail(String email) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<UserEmailModel> root = query.from(UserEmailModel.class);
 
-        query.select(cb.count(root)).where(cb.and(cb.equal(root.get(UserEmailModel_.userJid), userJid), cb.equal(root.get(UserEmailModel_.emailVerified), false)));
+        query.select(cb.count(root)).where(cb.and(cb.equal(root.get(UserEmailModel_.email), email), cb.equal(root.get(UserEmailModel_.emailVerified), false)));
 
         return (JPA.em().createQuery(query).getSingleResult() != 0);
     }
 
     @Override
-    public UserEmailModel findByUserJid(String userJid) {
+    public boolean isExistByVerifiedEmail(String email) {
         CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
-        CriteriaQuery<UserEmailModel> query = cb.createQuery(UserEmailModel.class);
-
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<UserEmailModel> root = query.from(UserEmailModel.class);
 
-        query.where(cb.equal(root.get(UserEmailModel_.userJid), userJid));
+        query.select(cb.count(root)).where(cb.and(cb.equal(root.get(UserEmailModel_.email), email), cb.equal(root.get(UserEmailModel_.emailVerified), true)));
 
-        return JPA.em().createQuery(query).getSingleResult();
+        return (JPA.em().createQuery(query).getSingleResult() != 0);
     }
 
     @Override
@@ -97,6 +96,28 @@ public final class UserEmailHibernateDao extends AbstractHibernateDao<Long, User
         }
 
         query.select(root.get(UserEmailModel_.userJid)).where(condition).orderBy(orderBy);
+        return JPA.em().createQuery(query).getResultList();
+    }
+
+    @Override
+    public List<UserEmailModel> findAllByUserJid(String userJid) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<UserEmailModel> query = cb.createQuery(UserEmailModel.class);
+        Root<UserEmailModel> root = query.from(UserEmailModel.class);
+
+        query.where(cb.equal(root.get(UserEmailModel_.userJid), userJid));
+
+        return JPA.em().createQuery(query).getResultList();
+    }
+
+    @Override
+    public List<UserEmailModel> findAllByEmail(String email) {
+        CriteriaBuilder cb = JPA.em().getCriteriaBuilder();
+        CriteriaQuery<UserEmailModel> query = cb.createQuery(UserEmailModel.class);
+        Root<UserEmailModel> root = query.from(UserEmailModel.class);
+
+        query.where(cb.equal(root.get(UserEmailModel_.email), email));
+
         return JPA.em().createQuery(query).getResultList();
     }
 

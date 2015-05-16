@@ -16,6 +16,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class UserServiceImpl implements UserService {
 
@@ -43,7 +44,7 @@ public final class UserServiceImpl implements UserService {
         ImmutableList.Builder<User> userBuilder = ImmutableList.builder();
 
         for (UserModel userRecord : userModels) {
-            UserEmailModel emailRecord  = userEmailDao.findByUserJid(userRecord.jid);
+            UserEmailModel emailRecord  = userEmailDao.findByEmail(userRecord.primaryEmail);
             userBuilder.add(new User(userRecord.id, userRecord.jid, userRecord.username, userRecord.name, emailRecord.email, getAvatarImageUrl(userRecord.profilePictureImageName), Arrays.asList(userRecord.roles.split(","))));
         }
 
@@ -126,9 +127,7 @@ public final class UserServiceImpl implements UserService {
     public User findUserById(long userId) throws UserNotFoundException {
         UserModel userModel = userDao.findById(userId);
         if (userModel != null) {
-            UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
-
-            return createUserFromModels(userModel, emailModel);
+            return createUserFromModels(userModel);
         } else {
             throw new UserNotFoundException("User not found.");
         }
@@ -137,9 +136,7 @@ public final class UserServiceImpl implements UserService {
     @Override
     public User findUserByUserJid(String userJid) {
         UserModel userModel = userDao.findByJid(userJid);
-        UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
-
-        return createUserFromModels(userModel, emailModel);
+        return createUserFromModels(userModel);
     }
 
     @Override
@@ -152,9 +149,22 @@ public final class UserServiceImpl implements UserService {
     @Override
     public User findUserByUsername(String username) {
         UserModel userModel = userDao.findByUsername(username);
-        UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
+        return createUserFromModels(userModel);
+    }
 
-        return createUserFromModels(userModel, emailModel);
+    @Override
+    public UserEmail findUserPrimaryEmail(String userJid) {
+        UserModel userModel = userDao.findByJid(userJid);
+        List<UserEmailModel> userEmailModelList = userEmailDao.findAllByEmail(userModel.primaryEmail);
+        UserEmail userEmail = null;
+
+        for (UserEmailModel userEmailModel : userEmailModelList) {
+            if (userEmailModel.emailVerified) {
+                userEmail = new UserEmail(userEmailModel.id, userEmailModel.email, userEmailModel.emailVerified);
+            }
+        }
+
+        return userEmail;
     }
 
     @Override
@@ -163,6 +173,7 @@ public final class UserServiceImpl implements UserService {
         userModel.username = username;
         userModel.name = name;
         userModel.password = JudgelsUtils.hashSHA256(password);
+        userModel.primaryEmail = email;
         userModel.profilePictureImageName = "avatar-default.png";
         userModel.roles = StringUtils.join(roles, ",");
 
@@ -175,10 +186,18 @@ public final class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void changeUserPrimaryEmail(String userJid, String email) {
+        UserModel userModel = userDao.findByJid(userJid);
+
+        userModel.primaryEmail = email;
+        userDao.edit(userModel, IdentityUtils.getUserJid(), IdentityUtils.getIpAddress());
+    }
+
+    @Override
     public void updateUser(long userId, String username, String name, String email, List<String> roles) throws UserNotFoundException {
         UserModel userModel = userDao.findById(userId);
         if (userModel != null) {
-            UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
+            UserEmailModel emailModel = userEmailDao.findByEmail(userModel.primaryEmail);
 
             userModel.username = username;
             userModel.name = name;
@@ -198,7 +217,7 @@ public final class UserServiceImpl implements UserService {
     public void updateUser(long userId, String username, String name, String email, String password, List<String> roles) throws UserNotFoundException {
         UserModel userModel = userDao.findById(userId);
         if (userModel != null) {
-            UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
+            UserEmailModel emailModel = userEmailDao.findByEmail(userModel.primaryEmail);
 
             userModel.username = username;
             userModel.name = name;
@@ -218,7 +237,7 @@ public final class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(long userId) {
         UserModel userModel = userDao.findById(userId);
-        UserEmailModel emailModel = userEmailDao.findByUserJid(userModel.jid);
+        UserEmailModel emailModel = userEmailDao.findByEmail(userModel.primaryEmail);
 
         userEmailDao.remove(emailModel);
         userDao.remove(userModel);
@@ -228,8 +247,14 @@ public final class UserServiceImpl implements UserService {
         return new User(userModel.jid, userModel.username, userModel.name, getAvatarImageUrl(userModel.profilePictureImageName));
     }
 
-    private User createUserFromModels(UserModel userModel, UserEmailModel emailModel) {
-        return new User(userModel.id, userModel.jid, userModel.username, userModel.name, emailModel.email, getAvatarImageUrl(userModel.profilePictureImageName), Arrays.asList(userModel.roles.split(",")));
+    private User createUserFromModels(UserModel userModel) {
+        List<UserEmail> userEmailList = getUserEmailList(userModel);
+        return new User(userModel.id, userModel.jid, userModel.username, userModel.name, userModel.primaryEmail, userEmailList, getAvatarImageUrl(userModel.profilePictureImageName), Arrays.asList(userModel.roles.split(",")));
+    }
+
+    private List<UserEmail> getUserEmailList(UserModel userModel) {
+        List<UserEmailModel> userEmailModelList = userEmailDao.findAllByUserJid(userModel.jid);
+        return userEmailModelList.stream().map((e) -> new UserEmail(e.id, e.email, e.emailVerified, (e.email == userModel.primaryEmail))).collect(Collectors.toList());
     }
 
     private URL getAvatarImageUrl(String imageName) {

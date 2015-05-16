@@ -20,7 +20,7 @@ import org.iatoki.judgels.jophiel.controllers.security.LoggedIn;
 import org.iatoki.judgels.jophiel.views.html.activationView;
 import org.iatoki.judgels.jophiel.views.html.editProfileView;
 import org.iatoki.judgels.jophiel.views.html.serviceEditProfileView;
-import org.iatoki.judgels.jophiel.views.html.user.*;
+import org.iatoki.judgels.jophiel.views.html.editEmailTemplateView;
 import org.iatoki.judgels.jophiel.views.html.viewProfileView;
 import play.Logger;
 import play.data.Form;
@@ -43,11 +43,13 @@ public final class UserProfileController extends BaseController {
     private final UserService userService;
     private final UserProfileService userProfileService;
     private final UserActivityService userActivityService;
+    private final UserEmailService userEmailService;
 
-    public UserProfileController(UserService userService, UserProfileService userProfileService, UserActivityService userActivityService) {
+    public UserProfileController(UserService userService, UserProfileService userProfileService, UserActivityService userActivityService, UserEmailService userEmailService) {
         this.userService = userService;
         this.userProfileService = userProfileService;
         this.userActivityService = userActivityService;
+        this.userEmailService = userEmailService;
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
@@ -107,6 +109,13 @@ public final class UserProfileController extends BaseController {
         ControllerUtils.getInstance().addActivityLog(userActivityService, "Try to update profile <a href=\"" + "http://" + Http.Context.current().request().host() + Http.Context.current().request().uri() + "\">link</a>.");
 
         return showProfile(form, form2, continueUrl);
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result serviceEmail() {
+        Form<AddEmailForm> form = Form.form(AddEmailForm.class);
+
+        return showEmailPage(form);
     }
 
     @Authenticated(value = {LoggedIn.class, HasRole.class})
@@ -193,6 +202,57 @@ public final class UserProfileController extends BaseController {
         }
     }
 
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result postServiceEmail() {
+        Form<AddEmailForm> form = Form.form(AddEmailForm.class).bindFromRequest();
+        User user = userService.findUserByUserJid(IdentityUtils.getUserJid());
+
+        if (form.hasErrors()) {
+            Logger.error(form.errors().toString());
+            form.reject(Messages.get("form.email.needed"));
+            return showEmailPage(form);
+        } else {
+            AddEmailForm formData = form.get();
+            if (userEmailService.activatedEmailExist(formData.email)) {
+                form.reject(Messages.get("register.error.emailExists"));
+                return showEmailPage(form);
+            } else {
+                String emailCode = userEmailService.createUserEmail(IdentityUtils.getUserJid(), formData.email);
+                userEmailService.sendActivationEmail(user.getName(), formData.email, org.iatoki.judgels.jophiel.controllers.routes.UserEmailController.verifyEmail(emailCode).absoluteURL(request(), request().secure()));
+                flash("success", Messages.get("email.add.success"));
+
+                return redirect(routes.UserProfileController.serviceEmail());
+            }
+        }
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result makePrimaryEmail(long emailId) {
+        UserEmail userEmail = userEmailService.findEmailById(emailId);
+
+        if (userEmailService.isEmailOwnedByUser(emailId, IdentityUtils.getUsername()) && userEmail.isEmailVerified()) {
+            userService.changeUserPrimaryEmail(IdentityUtils.getUserJid(), userEmail.getEmail());
+            flash("success", Messages.get("email.primary_change.success"));
+        } else {
+            flash("error", Messages.get("email.not_activated"));
+        }
+        return redirect(routes.UserProfileController.serviceEmail());
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result resendVerification(long emailId) {
+        userEmailService.resendVerification(emailId);
+        flash("success", Messages.get("email.resend_verification.success"));
+        return redirect(routes.UserProfileController.serviceEmail());
+    }
+
+    @Authenticated(value = {LoggedIn.class, HasRole.class})
+    public Result deleteEmail(long emailId) {
+        userEmailService.deleteEmail(emailId);
+        flash("success", Messages.get("email.delete.success"));
+        return redirect(routes.UserProfileController.serviceEmail());
+    }
+
     private Result showProfile(Form<UserProfileForm> form, Form<UserProfilePictureForm> form2, String continueUrl) {
         LazyHtml content;
         if (continueUrl == null) {
@@ -212,6 +272,17 @@ public final class UserProfileController extends BaseController {
             ));
         }
         ControllerUtils.getInstance().appendTemplateLayout(content, "Profile");
+        return ControllerUtils.getInstance().lazyOk(content);
+    }
+
+    private Result showEmailPage(Form<AddEmailForm> form) {
+        User user = userService.findUserByUserJid(IdentityUtils.getUserJid());
+
+        LazyHtml content = new LazyHtml(editEmailTemplateView.render(form, user.getPrimaryEmail(), user.getEmailList()));
+        content.appendLayout(c -> headingLayout.render(Messages.get("profile.profile"), c));
+        ControllerUtils.getInstance().appendSidebarLayout(content);
+        ControllerUtils.getInstance().appendTemplateLayout(content, "Email");
+
         return ControllerUtils.getInstance().lazyOk(content);
     }
 }

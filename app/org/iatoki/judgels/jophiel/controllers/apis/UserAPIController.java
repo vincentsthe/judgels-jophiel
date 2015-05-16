@@ -113,7 +113,7 @@ public final class UserAPIController extends Controller {
             result.put("sub", user.getJid());
             result.put("name", user.getName());
             result.put("preferred_username", user.getUsername());
-            result.put("email", user.getEmail());
+            result.put("email", user.getPrimaryEmail());
             result.put("picture", user.getProfilePictureUrl().toString());
             return ok(result);
         } else {

@@ -51,7 +51,7 @@ public class DefaultJophielControllerFactory implements JophielControllerFactory
 
     @Override
     public UserProfileController createUserProfileController() {
-        return new UserProfileController(jophielServiceFactory.createUserService(), jophielServiceFactory.createUserProfileService(), jophielServiceFactory.createUserActivityService());
+        return new UserProfileController(jophielServiceFactory.createUserService(), jophielServiceFactory.createUserProfileService(), jophielServiceFactory.createUserActivityService(), jophielServiceFactory.createUserEmailService());
     }
 
     @Override

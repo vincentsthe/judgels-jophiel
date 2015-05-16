@@ -1,0 +1,59 @@
+@(form: Form[org.iatoki.judgels.jophiel.AddEmailForm], primaryEmail: String, emailList: List[org.iatoki.judgels.jophiel.UserEmail])
+
+@import play.i18n.Messages
+@import org.iatoki.judgels.jophiel.controllers.routes
+@import org.iatoki.judgels.commons.views.html.formErrorView
+
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-3", "col-md-9") }
+
+<img class="avatar-picture center-block" src="@session().get("avatar")" alt="profilePicture"/>
+<br />
+<br />
+
+@if(flash.containsKey("success")) {
+  <div class="alert alert-success">
+    @flash.get("success")
+  </div>
+}
+
+<div class="row">
+  <div class="col-md-3"><h5>@Messages.get("user.primary_email")</h5></div>
+  <div class="col-md-9"><h5>@primaryEmail</h5></div>
+</div>
+
+@formErrorView(form)
+
+@b3.form(org.iatoki.judgels.jophiel.controllers.routes.UserProfileController.postServiceEmail()) {
+
+  @b3.text(form("email"), '_label -> Messages.get("user.new_email"))
+  @b3.submit('class -> "btn btn-primary") { @Messages.get("commons.add") }
+}
+
+<h3>Registered Email</h3>
+<table class="table email-table">
+  <tbody>
+  @for(email <- emailList) {
+    <tr>
+      <td>
+      @if(email.isEmailVerified()) {
+        @email.getEmail()
+      } else {
+        <span class="text-danger">@email.getEmail() (@Messages.get("email.not_verified"))</span>
+      }
+      </td>
+      <td>
+      @if(!email.isPrimaryEmail()) {
+        @if(email.isEmailVerified()) {
+          <a class="btn btn-primary" href="@org.iatoki.judgels.jophiel.controllers.routes.UserProfileController.makePrimaryEmail(email.getId)" onclick="return confirm('Make this email as primary email?')">@Messages.get("email.make_primary")</a>
+        } else {
+          <a class="btn btn-primary" href="@org.iatoki.judgels.jophiel.controllers.routes.UserProfileController.resendVerification(email.getId())" onclick="return confirm('Resend confirmation email?')">@Messages.get("email.resend_verification")</a>
+        }
+        <a class="btn btn-warning" href="@org.iatoki.judgels.jophiel.controllers.routes.UserProfileController.deleteEmail(email.getId())" onclick="return confirm('Delete this email?')">@Messages.get("email.delete")</a>
+      }
+      </td>
+    </tr>
+  }
+  </tbody>
+</table>
+
+<script type="text/javascript" src="@controllers.routes.Assets.versioned("javascripts/userProfilePicture.js")"></script>

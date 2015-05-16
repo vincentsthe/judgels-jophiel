@@ -13,6 +13,7 @@ public abstract class UserModel_ extends org.iatoki.judgels.commons.models.domai
 	public static volatile SingularAttribute<UserModel, String> password;
     public static volatile SingularAttribute<UserModel, String> roles;
     public static volatile SingularAttribute<UserModel, String> profilePictureImageName;
+	public static volatile SingularAttribute<UserModel, String> primaryEmail;
 
 }
 

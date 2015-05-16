@@ -41,9 +41,9 @@ public final class UserEmailController extends BaseController {
     @Authorized(value = {"admin"})
     public Result resendEmailVerification(long userId) throws UserNotFoundException {
         User user = userService.findUserById(userId);
-        if (userEmailService.isEmailNotVerified(user.getJid())) {
-            String code = userEmailService.getEmailCodeOfUnverifiedEmail(user.getJid());
-            userEmailService.sendActivationEmail(user.getName(), user.getEmail(), org.iatoki.judgels.jophiel.controllers.routes.UserEmailController.verifyEmail(code).absoluteURL(request(), request().secure()));
+        if (!userService.findUserPrimaryEmail(user.getJid()).isEmailVerified()) {
+            String code = userEmailService.getEmailCodeOfUnverifiedEmail(user.getPrimaryEmail());
+            userEmailService.sendActivationEmail(user.getName(), user.getPrimaryEmail(), org.iatoki.judgels.jophiel.controllers.routes.UserEmailController.verifyEmail(code).absoluteURL(request(), request().secure()));
 
             return redirect(routes.UserController.viewUnverifiedUsers());
         } else {
@@ -55,8 +55,8 @@ public final class UserEmailController extends BaseController {
     @Authorized(value = {"admin"})
     public Result activateMainEmail(long userId) throws UserNotFoundException {
         User user = userService.findUserById(userId);
-        if (userEmailService.isEmailNotVerified(user.getJid())) {
-            String code = userEmailService.getEmailCodeOfUnverifiedEmail(user.getJid());
+        if (!userService.findUserPrimaryEmail(user.getJid()).isEmailVerified()) {
+            String code = userEmailService.getEmailCodeOfUnverifiedEmail(user.getPrimaryEmail());
             userEmailService.activateEmail(code);
 
             return redirect(routes.UserController.viewUnverifiedUsers());

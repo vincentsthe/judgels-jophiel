@@ -23,6 +23,8 @@ public final class UserModel extends AbstractJudgelsModel {
 
     public String roles;
 
+    public String primaryEmail;
+
     public UserModel() {
 
     }

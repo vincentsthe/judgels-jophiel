@@ -13,7 +13,9 @@ public final class User {
 
     private String name;
 
-    private String email;
+    private String primaryEmail;
+
+    private List<UserEmail> emailList;
 
     private URL profilePictureUrl;
 
@@ -26,12 +28,23 @@ public final class User {
         this.profilePictureUrl = profilePictureUrl;
     }
 
-    public User(long id, String jid, String username, String name, String email, URL profilePictureUrl, List<String> roles) {
+    public User(long id, String jid, String username, String name, String primaryEmail, URL profilePictureUrl, List<String> roles) {
         this.id = id;
         this.jid = jid;
         this.username = username;
         this.name = name;
-        this.email = email;
+        this.primaryEmail = primaryEmail;
+        this.profilePictureUrl = profilePictureUrl;
+        this.roles = roles;
+    }
+
+    public User(long id, String jid, String username, String name, String primaryEmail, List<UserEmail> emailList, URL profilePictureUrl, List<String> roles) {
+        this.id = id;
+        this.jid = jid;
+        this.username = username;
+        this.name = name;
+        this.primaryEmail = primaryEmail;
+        this.emailList = emailList;
         this.profilePictureUrl = profilePictureUrl;
         this.roles = roles;
     }
@@ -52,8 +65,8 @@ public final class User {
         return name;
     }
 
-    public String getEmail() {
-        return email;
+    public String getPrimaryEmail() {
+        return primaryEmail;
     }
 
     public URL getProfilePictureUrl() {
@@ -62,5 +75,9 @@ public final class User {
 
     public List<String> getRoles() {
         return roles;
+    }
+
+    public List<UserEmail> getEmailList() {
+        return emailList;
     }
 }

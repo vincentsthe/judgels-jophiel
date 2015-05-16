@@ -23,6 +23,7 @@ public final class UserEmailModel extends AbstractModel {
 
     public boolean emailVerified;
 
+    @Column(unique = true)
     public String emailCode;
 
     public UserEmailModel() {

@@ -69,6 +69,8 @@ login.error.emailNotVerified=Email is not verified
 register.registerNewAccount=Register New Account
 register.register=Register
 
+form.email.needed="Email needed"
+
 forgotPassword.forgotPassword=Forgot Password
 forgotPassword.successful=Change Password Request
 forgot_pass.error.emailIsNotOwnedByUser=Email is not owned by username
@@ -89,3 +91,14 @@ user.activity.list=User Activities
 user.activity.time=Time
 user.activity.log=Log
 user.activity.ip=IP Address
+user.manageEmail=Manage Email
+
+email.make_primary=Make Primary
+email.delete=delete
+email.resend_verification=Resend Verification
+email.delete.success=Email deleted successfully
+email.add.success=Email added successfully
+email.primary_change.success=Primary email changed
+email.not_activated=Email is not activated
+email.resend_verification.success=Verification send
+email.delete.success=Email deleted

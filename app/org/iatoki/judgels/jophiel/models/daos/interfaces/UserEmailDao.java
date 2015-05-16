@@ -10,15 +10,19 @@ public interface UserEmailDao extends Dao<Long, UserEmailModel> {
 
     boolean isExistByEmail(String email);
 
-    boolean isExistNotVerifiedByUserJid(String userJid);
+    boolean isExistNotVerifiedByEmail(String email);
 
-    UserEmailModel findByUserJid(String userJid);
+    boolean isExistByVerifiedEmail(String email);
 
     List<String> findUserJidsByFilter(String filterString);
 
     List<String> findUserJidsWithUnverifiedEmail();
 
     List<String> sortUserJidsByEmail(Collection<String> userJids, String sortBy, String order);
+
+    List<UserEmailModel> findAllByUserJid(String userJid);
+
+    List<UserEmailModel> findAllByEmail(String email);
 
     List<UserEmailModel> findBySetOfUserJids(Collection<String> userJidSet, long first, long max);
 

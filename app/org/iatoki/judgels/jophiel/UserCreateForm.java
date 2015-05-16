@@ -12,7 +12,7 @@ public final class UserCreateForm {
     public UserCreateForm(User user) {
         this.username = user.getUsername();
         this.name = user.getName();
-        this.email = user.getEmail();
+        this.email = user.getPrimaryEmail();
         this.roles = StringUtils.join(user.getRoles(), ",");
     }
 

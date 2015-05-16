@@ -24,7 +24,11 @@ public interface UserService {
 
     User findUserByUsername(String username);
 
+    UserEmail findUserPrimaryEmail(String userJid);
+
     void createUser(String username, String name, String email, String password, List<String> roles);
+
+    void changeUserPrimaryEmail(String userJid, String email);
 
     void updateUser(long userId, String username, String name, String email, List<String> roles) throws UserNotFoundException;
 
