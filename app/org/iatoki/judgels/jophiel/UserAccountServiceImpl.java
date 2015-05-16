@@ -15,6 +15,7 @@ import javax.validation.ConstraintViolationException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 public final class UserAccountServiceImpl implements UserAccountService {
@@ -89,20 +90,28 @@ public final class UserAccountServiceImpl implements UserAccountService {
     public User login(String usernameOrEmail, String password) throws UserNotFoundException, EmailNotVerifiedException{
         try {
             UserModel userModel;
-            UserEmailModel emailModel;
+            UserEmailModel userEmailModel = null;
             if (userDao.existByUsername(usernameOrEmail)) {
                 userModel = userDao.findByUsername(usernameOrEmail);
-                emailModel = userEmailDao.findByEmail(userModel.primaryEmail);
+                userEmailModel = userEmailDao.findByEmail(userModel.primaryEmail);
             } else if (userEmailDao.isExistByEmail(usernameOrEmail)) {
-                emailModel = userEmailDao.findByEmail(usernameOrEmail);
-                userModel = userDao.findByJid(emailModel.userJid);
+                List<UserEmailModel> userEmailModelList = userEmailDao.findAllByEmail(usernameOrEmail);
+                for (UserEmailModel emailRecord : userEmailModelList) {
+                    if (emailRecord.emailVerified) {
+                        userEmailModel = emailRecord;
+                    }
+                }
+                if (userEmailModel == null) {
+                    throw new EmailNotVerifiedException();
+                }
+                userModel = userDao.findByJid(userEmailModel.userJid);
             } else {
                 throw new UserNotFoundException();
             }
 
             if (userModel.password.equals(JudgelsUtils.hashSHA256(password))) {
-                if (emailModel.emailVerified) {
-                    return createUserFromModels(userModel, emailModel);
+                if (userEmailModel.emailVerified) {
+                    return createUserFromModels(userModel, userEmailModel);
                 } else {
                     throw new EmailNotVerifiedException();
                 }
